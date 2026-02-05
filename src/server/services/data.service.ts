@@ -10,21 +10,14 @@ import {
 	Workspace,
 } from "@rbxts/services";
 import Signal from "@rbxts/signal";
-import { DEFAULT_PLOT_DATA } from "shared/components/plot.shared.component";
 import { Logger } from "shared/logger";
-import { PlotData, PlotProps } from "shared/plot-state";
 const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],
 	cash: 0,
 	playtime: 0,
-	rebirths: 0,
+	
 	inventory: [],
-	plot:DEFAULT_PLOT_DATA
 };
-export type PLOT_SAVE =  {
-	floors: PlotData["floors"];
-	props: PlotProps;
-}
 type PurchaseHistoryEntry = {
 	purchase_type: "robux" | "cash";
 	price: number;

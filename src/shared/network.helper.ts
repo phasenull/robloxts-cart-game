@@ -1,16 +1,13 @@
 import { Networking } from "@flamework/networking"
-import { MovementDirection, Party, ProperReturns } from "./type.helper"
-import { PlotData } from "./plot-state"
-import { __IS_EDIT__ } from "./config.helper"
-import {
-	ClientHandler as ClientHandlerFunction,
-	GlobalFunction,
-	ServerHandler as ServerHandlerFunction
-} from "@flamework/networking/out/functions/types"
 import {
 	ClientHandler,
 	ServerHandler
 } from "@flamework/networking/out/events/types"
+import {
+	ClientHandler as ClientHandlerFunction,
+	ServerHandler as ServerHandlerFunction
+} from "@flamework/networking/out/functions/types"
+import { __IS_EDIT__ } from "./config.helper"
 /*
 
 	SERVER TO CLIENT
@@ -18,19 +15,6 @@ import {
 */
 interface ServerToClientFunctions {}
 interface ServerToClientEvents {
-	PartyService: {
-		partyUpdated: (new_party: Party | undefined, message?: string) => void
-	}
-	PlotService: {
-		replicate: <T extends PlotData | undefined>(
-			guid: string,
-			data: T,
-			hint: keyof PlotData | "full"
-		) => void
-	}
-	LogService: {
-		setTargetAttachment: (attachment: Attachment | undefined) => void
-	}
 }
 
 /*
@@ -40,29 +24,10 @@ interface ServerToClientEvents {
 */
 
 interface ClientToServerFunctions {
-	PartyService: {
-		createParty: () => ProperReturns<Party>
-		inviteToParty: (player: Player) => ProperReturns<true>
-		getAvailableParties: () => ProperReturns<Party[]>
-		leaveParty: () => ProperReturns<true>
-		joinParty: (party_id: string) => ProperReturns<Party>
 
-		changeVisibility: (is_public: boolean) => ProperReturns<true>
-		kickFromParty: (player: Player) => ProperReturns<true>
-		promoteToOwner: (player: Player) => ProperReturns<true>
-
-		startPartyMatchmaking: () => ProperReturns<true>
-
-		getPartyState: () => ProperReturns<Party | undefined>
-	}
-	PlotService: {
-		requestPlotReplication: (guid: string) => PlotData | undefined
-	}
 }
 interface ClientToServerEvents {
-	LogService: {
-		setMovementDirection: (direction: MovementDirection, hint?: Model) => void
-	},
+
 	CartService: {
 		spawnCart: (button: Model) => void
 	}

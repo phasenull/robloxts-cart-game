@@ -11,8 +11,6 @@ import { SettingsGui } from "./gui/main/settings-gui"
 import Sidebar from "./gui/sidebar"
 import { ShopGui } from "./gui/main/shop-gui"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
-import { PartyGui } from "./gui/main/party/party-gui"
-import { PartyProvider } from "./contexts/party.context"
 import { CartGui } from "./gui/main/cart-gui"
 import { CartHud } from "./gui/cart/cart-hud"
 export function App(props: { initial_gui?: GUI_KEYS,cart_enabled?: boolean }) {
@@ -44,7 +42,6 @@ export function App(props: { initial_gui?: GUI_KEYS,cart_enabled?: boolean }) {
 	const [is_sidebar_open, set_is_sidebar_open] = useState<boolean>(true)
 	return (
 		<ErrorProvider>
-			<PartyProvider>
 				<QueryClientProvider value={query_client}>
 					<GuiContext.Provider
 						value={{
@@ -61,9 +58,6 @@ export function App(props: { initial_gui?: GUI_KEYS,cart_enabled?: boolean }) {
 							<BlurGui />
 							<PopGui id={"settings"}>
 								<SettingsGui />
-							</PopGui>
-							<PopGui id={"party"}>
-								<PartyGui />
 							</PopGui>
 
 							<PopGui id={"items"} />
@@ -89,7 +83,6 @@ export function App(props: { initial_gui?: GUI_KEYS,cart_enabled?: boolean }) {
 						</SettingsProvider>
 					</GuiContext.Provider>
 				</QueryClientProvider>
-			</PartyProvider>
 		</ErrorProvider>
 	)
 }

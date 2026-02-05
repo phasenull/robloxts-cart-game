@@ -1,5 +1,3 @@
-import { PLOT_PROPS_CONFIG } from "./configs/plot-props"
-import { PropType } from "./plot-state"
 
 export function formatDate(seconds: number, ignore_day = false): string {
 	const days = math.floor(seconds / 86400)
@@ -36,13 +34,4 @@ export function arrayOf<T>(n: number, val: T): T[] {
 }
 export function buildFontAssetId(font_name:string) {
 	return `rbxasset://fonts/families/${font_name || Enum.Font.FredokaOne.Name}.json`
-}
-
-export function findPropFromDescriptorAndType(
-	descriptor: string,
-	prop_type: PropType
-) {
-	return( PLOT_PROPS_CONFIG[prop_type as keyof typeof PLOT_PROPS_CONFIG]||[]).find(
-		(prop) => prop.descriptor === descriptor
-	)
 }

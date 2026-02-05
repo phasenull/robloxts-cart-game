@@ -1,12 +1,9 @@
 import React, { Fragment, useEffect } from "@rbxts/react"
 import Signal from "@rbxts/signal"
 import { CartClientComponent } from "client/components/cart.client.component"
-import useAnimateValue from "../../hooks/useAnimateValue"
-import { UIDIM } from "../../constants"
-import { RottenButton } from "../../components/buttons/rotten-button"
-import { SpeedometerHud } from "./cart-speedometer"
 import { Logger } from "shared/logger"
 import { CartButtons } from "./cart-buttons"
+import { SpeedometerHud } from "./cart-speedometer"
 const logger = new Logger("CartHud")
 export function CartHud(props: {
 	__story?: {

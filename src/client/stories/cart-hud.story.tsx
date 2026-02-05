@@ -2,9 +2,7 @@ import React from "@rbxts/react"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
 import ReactRoblox from "@rbxts/react-roblox"
 import { InferFusionProps, Number } from "@rbxts/ui-labs"
-import PopGui from "client/ui/components/pop-gui"
 import { CartHud } from "client/ui/gui/cart/cart-hud"
-import { PlotGui } from "client/ui/gui/main/plot-gui"
 
 const controls = {
 	cart_enabled: true,
