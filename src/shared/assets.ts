@@ -77,14 +77,5 @@ export namespace A {
 export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {
 	log_base:log_base
 }
-export const plot_assets = assets.FindFirstChild("plots") as Folder
 export const scriptables = Workspace.FindFirstChild("scriptables") as Folder
-export const plot_locations = scriptables?.FindFirstChild(
-	"plot_locations"
-) as Folder
 export const runtime = scriptables?.FindFirstChild("runtime") as Folder
-export const plots = scriptables?.FindFirstChild(
-	"plots"
-) as Folder
-assert(plots, "Plots folder not found in scriptables")
-assert(plot_assets, "Plot assets folder not found in assets")

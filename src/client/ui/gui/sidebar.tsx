@@ -43,7 +43,6 @@ export default function Sidebar() {
 			</SidebarButton>
 			<SidebarButton ui_key="gift" icon={A.icons.gift} />
 			<SidebarButton ui_key="items" icon={A.icons.backpack} />
-			{/* <SidebarButton ui_key="plot" icon={A.icons.hammer} /> */}
 			<SidebarButton BackgroundColor3={new Color3(0,1,0)} ui_key="party" icon={A.icons.plus} />
 			<SidebarButton ui_key="settings" icon={A.icons.settings} />
 			<SidebarButton ui_key="cart" icon={A.icons.cart} />
