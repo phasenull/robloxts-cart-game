@@ -129,17 +129,22 @@ export class CartClientComponent
 		const seat = this.instance.VehicleSeat
 		const player = Players.LocalPlayer
 		seat.GetPropertyChangedSignal("Occupant").Connect(() => {
+			const new_rider = seat.Occupant as Humanoid | undefined
 			const char = player.Character
 			const humanoid = char?.FindFirstChildOfClass("Humanoid")
-			if (seat.Occupant !== undefined && humanoid !== seat.Occupant) {
+			if (new_rider === undefined && this.rider === humanoid) {
+				// local player just got off
+				this.rider = undefined
+				this.logger.log("Local player got off the cart")
+				this.cleanupRide()
 				return
 			}
-			this.rider = seat.Occupant as Humanoid | undefined
-			this.logger.log(`Cart ridden by: ${this.rider?.Parent?.Name ?? "None"}`)
-			if (this.rider) {
+			if (new_rider === humanoid) {
+				// local player just got on
+				this.rider = humanoid
+				this.logger.log("Local player got on the cart")
 				this.onRide()
-			} else {
-				this.cleanupRide()
+				return
 			}
 		})
 	}
