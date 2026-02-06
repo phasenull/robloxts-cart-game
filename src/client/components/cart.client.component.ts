@@ -23,9 +23,10 @@ export class CartClientComponent
 		if (!rider_character) return undefined
 		return Players.GetPlayerFromCharacter(rider_character)
 	}
+	private wheel_hitboxes: Part[] = []
 	private power: number = 170
 	private friction: number = 5
-	private brake_friction: number = 50
+	private brake_friction: number = 30
 	honk(): void {
 		print("HOOOOG RAYDAAAAAĞĞĞĞ")
 	}
@@ -39,7 +40,7 @@ export class CartClientComponent
 			return
 		}
 		const force = this.instance.Root.VectorForce
-		force.Force = humanoid.MoveDirection.mul(this.brake ? 0 : 1 * this.power)
+		force.Force = humanoid.MoveDirection.mul(this.power)
 		const direction = humanoid.MoveDirection.Unit
 		if (direction.Magnitude > 0) {
 			this.instance.Wheels.GetChildren().forEach((_) => {
@@ -86,6 +87,16 @@ export class CartClientComponent
 		this.power = new_power
 	}
 	setFriction(new_friction: number) {
+		if (new_friction > 5) {
+			this.wheel_hitboxes.forEach((hitbox) => {
+				hitbox.CustomPhysicalProperties = new PhysicalProperties(.7,2,.2)
+			})
+		} else {
+			
+			this.wheel_hitboxes.forEach((hitbox) => {
+				hitbox.CustomPhysicalProperties = new PhysicalProperties(.7,.3,.2)
+			})
+		}
 		const wheel_constraints = this.instance
 			.GetDescendants()
 			.filter((descendant) =>
@@ -141,8 +152,14 @@ export class CartClientComponent
 		CartLisener.Fire(this)
 	}
 	toggleBrake(enable: boolean): void {
-		for (const brake of this.brakes) {
-			brake.Enabled = enable
+		if (this.instance.Root.AssemblyLinearVelocity.Magnitude > 1 && enable) {
+			for (const brake of this.brakes) {
+				brake.Enabled = true
+			}
+		} else {
+			for (const brake of this.brakes) {
+				brake.Enabled = false
+			}
 		}
 		this.brakeListener.Fire(enable)
 		this.setFriction(enable ? this.brake_friction : this.friction)
@@ -166,8 +183,8 @@ export class CartClientComponent
 			this.cleanupRide()
 		})
 		this.instance
-			.GetChildren()
-			.filter((child) => StringUtils.endsWith(child.Name, "_Ball"))
+			.Wheels.GetDescendants()
+			.filter((child) => child.Name === "BALL")
 			.forEach((child) => {
 				if (child.IsA("BasePart")) {
 					const brake = brake_original.Clone()
@@ -176,6 +193,11 @@ export class CartClientComponent
 					this.brakes.push(brake)
 				}
 			})
+		this.instance.Wheels.GetChildren().forEach((_) => {
+			if (!_.IsA("Model")) return
+			const model = _ as IWheel
+			this.wheel_hitboxes.push(model.BALL)
+		})
 		this.AnimationController.preload({
 			key: "cart_spawn",
 			animationId: this.cart_spawn_animation_id

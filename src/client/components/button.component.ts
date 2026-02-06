@@ -78,7 +78,7 @@ export class ButtonComponent
 			{
 				Position: new Vector3(
 					this.touch.Position.X,
-					new_pressed ? this.default_h : this.default_h + 0.4,
+					new_pressed ? this.default_h-.4 : this.default_h,
 					this.touch.Position.Z
 				),
 				Color: new_pressed ? this.pressed_color : this.available_color
