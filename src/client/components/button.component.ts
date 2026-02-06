@@ -2,10 +2,8 @@ import { BaseComponent, Component } from "@flamework/components"
 import { OnStart } from "@flamework/core"
 import { Players, TweenService } from "@rbxts/services"
 import Signal from "@rbxts/signal"
-type ButtonModel = Model & {
-	ButtonBase: Part
-	ButtonTouch: Part
-}
+import { ButtonModel } from "shared/type.helper"
+
 @Component({ tag: "ButtonComponent" })
 export class ButtonComponent
 	extends BaseComponent<{}, ButtonModel>
@@ -14,15 +12,45 @@ export class ButtonComponent
 	private is_pressed: boolean = false
 	private __cooldown: number = 0
 	private readonly duration = 1
-	private readonly default_h = this.instance.ButtonTouch.Position.Y
-	private pressed_color = new Color3(1, 0, 0)
-	private available_color = this.instance.ButtonTouch.Color
+	private readonly default_h: number
+	private readonly pressed_color = new Color3(1, 0, 0)
+	private readonly available_color: Color3
+	private readonly touch: BasePart
+	private readonly spawn_platform: CFrame
 	constructor() {
 		super()
+		this.instance["Spawn Button"].WaitForChild("Part",9999999)
+		const touch = this.instance["Spawn Button"]
+			.GetChildren()
+			.find(
+				(child) =>
+					child.IsA("BasePart") && child.Size === new Vector3(3, 0.7, 3)
+			) as Part
+		if (!touch)
+			assert(
+				touch,
+				"Could not find button touch part, available parts: " +
+					this.instance["Spawn Button"]
+						.GetChildren()
+						.map((c) => c.Name)
+						.join(", ")
+			)
+		this.touch = touch
+		this.default_h = touch.Position.Y
+		this.available_color = touch.Color
+		const spawn_platform = this.instance["SpawnPlatform"]
+			.GetChildren()
+			.find(
+				(child) =>
+					child.IsA("BasePart") && child.Size === new Vector3(8, 0.2, 6)
+			) as BasePart
+		assert(spawn_platform, "Could not find spawn platform")
+		this.spawn_platform = spawn_platform.GetPivot()
+		touch.Name = "ButtonTouch"
 	}
 	onStart(): void {
 		this.setPressed(true)
-		this.instance.ButtonTouch.Touched.Connect((hit) => {
+		this.touch.Touched.Connect((hit) => {
 			const char = hit.Parent
 			if (!char || !char.FindFirstChild("Humanoid")) {
 				return
@@ -31,10 +59,10 @@ export class ButtonComponent
 			if (!player) {
 				return
 			}
-			this.setPressed(true,player)
+			this.setPressed(true, player)
 		})
 	}
-	public readonly onPressed = new Signal<(player:Player) => void>()
+	public readonly onPressed = new Signal<(player: Player) => void>()
 	setPressed(new_pressed: boolean, player?: Player) {
 		if (this.is_pressed === new_pressed) {
 			return
@@ -45,13 +73,13 @@ export class ButtonComponent
 		this.__cooldown = tick()
 		this.is_pressed = new_pressed
 		TweenService.Create(
-			this.instance.ButtonTouch,
+			this.touch,
 			new TweenInfo(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
 			{
 				Position: new Vector3(
-					this.instance.ButtonBase.Position.X,
+					this.touch.Position.X,
 					new_pressed ? this.default_h : this.default_h + 0.4,
-					this.instance.ButtonBase.Position.Z
+					this.touch.Position.Z
 				),
 				Color: new_pressed ? this.pressed_color : this.available_color
 			}

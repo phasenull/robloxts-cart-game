@@ -4,6 +4,7 @@ import { Players, Workspace } from "@rbxts/services"
 import { ButtonComponent } from "client/components/button.component"
 import { Logger } from "shared/logger"
 import { ClientEvents } from "shared/network.helper"
+import { ButtonModel } from "shared/type.helper"
 
 @Controller({loadOrder: 5})
 export class CartController implements OnStart {
@@ -15,7 +16,8 @@ export class CartController implements OnStart {
 		task.wait(3)
 		const components = Dependency<Components>()
 		this.logger.log(`Found ${this.spawners.size()} cart spawners`)
-		this.spawners.forEach((spawner) => {
+		this.spawners.forEach((_) => {
+			const spawner = _ as ButtonModel
 			const component = components.getComponent<ButtonComponent>(spawner)
 			if (!component) {
 				return

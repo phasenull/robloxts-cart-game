@@ -21,9 +21,11 @@ export type Party = {
 	state: "lobby" | "playing"
 	max_players: number
 }
-
+export type ButtonModel = Model & {
+	["Spawn Button"]: Model
+	["SpawnPlatform"]: Model
+}
 export type ICart = Model & {
-	FL_Ball: Part & {}
 	VehicleSeat: Seat & {
 		WeldConstraint: WeldConstraint
 	}
@@ -36,7 +38,24 @@ export type ICart = Model & {
 		VectorForce: VectorForce
 	}
 	Brake:ParticleEmitter
-	RR_Ball: Part & {}
-	FR_Ball: Part & {}
-	RL_Ball: Part & {}
+	Wheels : Model & {
+		FL: IWheel
+		FR: IWheel
+		RL: IWheel
+		RR: IWheel
+	}
+}
+
+export type IWheel = Model & {
+	WHEEL: Part & {
+		WeldConstraint: WeldConstraint
+	}
+	CONNECTION: Part & {
+		Attachment: Attachment
+		HingeConstraint: HingeConstraint
+	}
+	BALL: Part & {
+		BallSocketConstraint: BallSocketConstraint
+		Attachment: Attachment
+	}
 }

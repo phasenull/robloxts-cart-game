@@ -18,7 +18,7 @@ export function CartHud(props: {
 	
 	useEffect(() => {
 		const connection = CartLisener.Connect((cart) => {
-			logger.log("Received cart update!")
+			logger.log(`Received cart update!: ${cart?.instance.GetFullName()}`)
 			setCart(cart)
 		})
 		return () => {
