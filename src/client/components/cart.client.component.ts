@@ -135,6 +135,13 @@ export class CartClientComponent
 			animationId: this.cart_idle_animation_id,
 			looped: true
 		})
+		const seat = this.instance.VehicleSeat
+		const seat_weld = seat.FindFirstChildOfClass("Weld")
+		const pp = character?.PrimaryPart
+		if (seat_weld) {
+			seat_weld.C0 = new CFrame(0, .6, 0)
+			seat_weld.C1 = new CFrame(0, 0, 0)
+		}
 		this.rider.JumpHeight = 0
 		const humanoid = this.rider
 		const conn = this.rider.GetPropertyChangedSignal("Jump").Connect(() => {
