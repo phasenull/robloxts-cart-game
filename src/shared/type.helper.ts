@@ -12,6 +12,17 @@ export type log_base = Model & {
 	// 	RightSeat:Seat
 	// }
 }
+
+export type IConfig = {
+	CartConfig: ICartConfig
+}
+export type ICartConfig = ICartEntry[]
+export type ICartEntry = {
+	name: string,
+	friction: number,
+	max_velocity: number,
+	power: number
+} & ({gamepass_id:number} |{price:number})
 export type Party = {
 	players: Array<Player>
 	owner: Player

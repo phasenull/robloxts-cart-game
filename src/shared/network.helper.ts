@@ -9,7 +9,7 @@ import {
 } from "@flamework/networking/out/functions/types";
 import { __IS_CLIENT__, __IS_EDIT__, __IS_SERVER__ } from "./config.helper";
 import { Logger } from "./logger";
-import { ButtonModel } from "./type.helper";
+import { ButtonModel, ICartConfig, ProperReturns } from "./type.helper";
 /*
 
 	SERVER TO CLIENT
@@ -24,7 +24,11 @@ interface ServerToClientEvents {}
 
 */
 
-interface ClientToServerFunctions {}
+interface ClientToServerFunctions {
+	CartService: {
+		getConfig: () => ProperReturns<ICartConfig>
+	}
+}
 interface ClientToServerEvents {
 	CartService: {
 		spawnCart: (button: ButtonModel) => void;

@@ -1,3 +1,4 @@
+import { __IS_STUDIO__ } from "./config.helper"
 
 export function formatDate(seconds: number, ignore_day = false): string {
 	const days = math.floor(seconds / 86400)
@@ -34,4 +35,54 @@ export function arrayOf<T>(n: number, val: T): T[] {
 }
 export function buildFontAssetId(font_name:string) {
 	return `rbxasset://fonts/families/${font_name || Enum.Font.FredokaOne.Name}.json`
+}
+export function normalizeVector3(vec: Vector3,by: number = 1): Vector3 {
+	const mag = vec.Magnitude
+	if (mag === 0) {
+		return new Vector3()
+	}
+	return vec.div(mag).mul(by)
+}
+
+export function calculateSteepDiffFromHumanoid(humanoid: Humanoid): number {
+	assert(humanoid?.RootPart, "Humanoid has no RootPart")
+	const walk_direction = humanoid.MoveDirection
+	const character = humanoid.RootPart.Parent as Model
+	assert(character, "Could not find character model from humanoid")
+	const root_cframe = humanoid.RootPart.CFrame
+	const forward_vector = root_cframe.LookVector
+	const right_vector = root_cframe.RightVector
+	const forward_dot = forward_vector.Dot(walk_direction)
+	const right_dot = right_vector.Dot(walk_direction)
+	const angle = math.atan2(right_dot, forward_dot)
+	return math.deg(angle)
+}
+export function MasslessPart(parent:Instance,name:string) {
+	const part = new Instance("Part", parent)
+	part.Size = new Vector3(1, 1, 1)
+	part.Name = name
+	part.Transparency = __IS_STUDIO__ ? 0.5 : 1
+	part.CanCollide = false
+	part.Massless = true
+	return part
+} 
+export function BuildWeldConstraints(part0: BasePart, part1: BasePart) {
+	const weld = new Instance("WeldConstraint")
+	weld.Part0 = part0
+	weld.Part1 = part1
+	part1.Anchored = false
+	weld.Parent = part1
+	weld.Name = `${part0.Name}->${part1.Name}`
+	return weld
+}
+
+export function BuildDeepWeldConstraints(part0: BasePart, part1: BasePart|Model) {
+	if (part1.IsA("BasePart")) {
+		BuildWeldConstraints(part0, part1)
+	}
+	part1.GetDescendants().forEach((descendant) => {
+		if (descendant.IsA("BasePart")) {
+			BuildWeldConstraints(part0, descendant)
+		}
+	})
 }

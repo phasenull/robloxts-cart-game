@@ -11,7 +11,7 @@ export class ButtonComponent
 {
 	private is_pressed: boolean = false
 	private __cooldown: number = 0
-	private readonly duration = 1
+	private readonly duration = .5
 	private readonly default_h: number
 	private readonly pressed_color = new Color3(1, 0, 0)
 	private readonly available_color: Color3

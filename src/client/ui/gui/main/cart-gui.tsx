@@ -41,12 +41,11 @@ export function CartGui() {
 		queryKey: "updateCartStats",
 		mutationFn: async (params: { power?: number; friction?: number }) => {
 			if (!data) return true
-			if (params.power !== undefined) {
-				data.setPower(params.power)
-			}
-			if (params.friction !== undefined) {
-				data.setFriction(params.friction)
-			}
+			data.overrideConfig({
+				power: params.power ?? data.getPower(),
+				friction: params.friction ?? data.getWheelFriction(),
+				max_velocity: data.getMaxVelocity()
+			})
 			return true
 		}
 	})
@@ -90,7 +89,7 @@ export function CartGui() {
 				></textbox>
 				<GoofyText Text={"Set Friction"} />
 				<textbox
-					Text={`${data?.getFriction()}`}
+					Text={`${data?.getWheelFriction()}`}
 					Event={{
 						InputEnded: (txt) => {
 							set_friction(tonumber(txt.Text || "0") || 0)

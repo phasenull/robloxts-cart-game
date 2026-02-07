@@ -1,8 +1,9 @@
 import { OnStart, Service } from "@flamework/core"
 import { Workspace } from "@rbxts/services"
 import { assets } from "shared/assets"
+import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
-import { ServerEvents } from "shared/network.helper"
+import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { ButtonModel } from "shared/type.helper"
 
 @Service()
@@ -14,30 +15,40 @@ export class CartService implements OnStart {
 			this.logger.log(`Spawning cart for player ${player.Name}`)
 			this.spawnPlayerCart(player, button)
 		})
-
-
+		ServerFunctions.CartService.getConfig.setCallback(() => {
+			const config = getConfig()
+			return [config.CartConfig]
+		})
+		assets.carts.GetChildren().forEach((cart) => {
+			if (!cart.IsA("Model")) return
+			cart.AddTag("CartComponent")
+		})
 	}
 	destroyPlayerCart(player: Player) {}
 	getPlayerCart(player: Player): Model | undefined {
 		return this.PLAYER_CARTS.get(player)
 	}
-	private readonly cart_model= assets.FindFirstChild("Cart") as Model
+	getPlayerSkin(player: Player): string {
+		return "Cart"
+	}
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		const existing = this.PLAYER_CARTS.get(player)
 		existing?.Destroy()
-		const cart = this.cart_model.Clone()
+		const cart_skin = this.getPlayerSkin(player)
+		const orig_cart = assets.carts.FindFirstChild(cart_skin) as Model
+		assert(orig_cart, `Cart model ${cart_skin} not found in assets`)
+		const cart_model = orig_cart.Clone()
 		const cframe_part = button.SpawnPlatform.GetChildren().find(
 			(child) =>
 				child.IsA("BasePart") && child.Size === new Vector3(8, 0.2, 6)
 		) as BasePart
 		assert(cframe_part, "Could not find spawn platform")
 
-		cart.PivotTo(
-			cframe_part.GetPivot().mul(new CFrame(0, this.cart_model.GetExtentsSize().Y / 2, 0)).mul(CFrame.Angles(0, math.rad(-90), 0))
+		cart_model.PivotTo(
+			cframe_part.GetPivot().mul(new CFrame(0, cart_model.GetExtentsSize().Y / 2, 0)).mul(CFrame.Angles(0, math.rad(-90), 0))
 		)
-		cart.Name = `Cart_${player.Name}`
-		cart.Parent = Workspace
-		this.PLAYER_CARTS.set(player, cart)
-		return cart
+		cart_model.Parent = Workspace
+		this.PLAYER_CARTS.set(player, cart_model)
+		return cart_model
 	}
 }
