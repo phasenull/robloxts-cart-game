@@ -1,5 +1,5 @@
 import { OnStart, Service } from "@flamework/core"
-import { Workspace } from "@rbxts/services"
+import { PhysicsService, Workspace } from "@rbxts/services"
 import { assets } from "shared/assets"
 import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
@@ -23,6 +23,10 @@ export class CartService implements OnStart {
 			if (!cart.IsA("Model")) return
 			cart.AddTag("CartComponent")
 		})
+		const spike_group = PhysicsService.RegisterCollisionGroup("Spike")
+		const hitbox_group = PhysicsService.RegisterCollisionGroup("Hitbox")
+		PhysicsService.CollisionGroupSetCollidable("Spike", "Hitbox", false)
+		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Hitbox", true)
 	}
 	destroyPlayerCart(player: Player) {}
 	getPlayerCart(player: Player): Model | undefined {

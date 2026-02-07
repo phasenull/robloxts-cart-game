@@ -32,7 +32,7 @@ export function CartButtons(props: {
 		},
 		queryKey:["reset-character"]
 	})
-	const { data, err, isLoading, mutate } = useMutation({
+	const { mutate } = useMutation({
 		queryKey: ["honk", is_braking],
 		mutationFn: async () => {
 			if (cart) {
@@ -41,6 +41,16 @@ export function CartButtons(props: {
 			}
 			if (__IS_STUDIO__) {
 				UIHelper.playSound(A.sounds.mango_scream)
+			}
+			return true
+		}
+	})
+	const { mutate:flipMutate } = useMutation({
+		queryKey: ["flip"],
+		mutationFn: async () => {
+			if (cart) {
+				cart.flipCart()
+				return true
 			}
 			return true
 		}
@@ -151,6 +161,7 @@ export function CartButtons(props: {
 					Size={UIDIM.ONE}
 					Ratio={2}
 					Text="FLIP"
+					onClick={flipMutate}
 					Color={new Color3(0.11, 0.75, 0.95)}
 				/>
 				<RottenButton

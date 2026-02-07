@@ -1,10 +1,12 @@
 import { BaseComponent, Component } from "@flamework/components"
 import { OnPhysics, OnStart } from "@flamework/core"
+import { sphere } from "@rbxts/better-gizmos"
 import { Players, Workspace } from "@rbxts/services"
 import Signal from "@rbxts/signal"
 import StringUtils from "@rbxts/string-utils"
 import { t } from "@rbxts/t"
 import { AnimationController } from "client/controllers/animation.controller"
+import { __STUDIO__ } from "client/ui/constants"
 import { CartLisener } from "client/ui/gui/cart/cart-hud"
 import { Logger } from "shared/logger"
 import { ClientFunctions } from "shared/network.helper"
@@ -131,19 +133,19 @@ export class CartClientComponent
 				const model = _ as IWheel
 				const wheel = model.WHEEL
 				const connection = model.CONNECTION
-				// const lerped = model.CONNECTION.CFrame.Lerp(
-				// 	CFrame.fromMatrix(
-				// 		connection.Position,
-				// 		direction.mul(-1),
-				// 		Vector3.yAxis
-				// 	).mul(CFrame.Angles(0, 0, math.rad(90))),
-				// 	math.clamp(dt*5, 0, 1)
-				// )
-				// connection.CFrame = CFrame.lookAt(
-				// 	connection.Position,
-				// 	connection.Position.add(direction.mul(-1)),
-				// 	Vector3.yAxis
-				// ).mul(CFrame.Angles(0, 0, math.rad(90)))
+				const align_orientation =
+					connection.FindFirstChildOfClass("AlignOrientation")
+				if (!align_orientation) return
+				const lookat_pos = connection.Position.add(
+					new Vector3(direction.X * 2, 0, direction.Z * 2)
+				)
+				// if (__STUDIO__) {
+				const drawing = sphere.draw(lookat_pos, 0.3)
+				task.delay(dt, () => {
+					drawing.Destroy()
+				})
+				// }
+				align_orientation.LookAtPosition = lookat_pos
 			})
 		}
 		if (this.brake) {
@@ -183,9 +185,6 @@ export class CartClientComponent
 			.filter((descendant) =>
 				descendant.IsA("BallSocketConstraint")
 			) as BallSocketConstraint[]
-		// for (const wheel_constraint of wheel_constraints) {
-		// 	wheel_constraint.MaxFrictionTorque = new_friction
-		// }
 	}
 	private brake = false
 	private readonly cart_spawn_animation_id = 130142615868904
@@ -197,7 +196,7 @@ export class CartClientComponent
 		if (my_hunanoid !== this.rider) {
 			return
 		}
-		this.toggleFriction(false)
+		this.toggleBrake(false)
 		this.setPower(this.power)
 		if (!this.rider) {
 			return
@@ -273,15 +272,57 @@ export class CartClientComponent
 				descendant.IsA("BallSocketConstraint")
 			) as BallSocketConstraint[]
 		wheel_constraints.forEach((constraint) => {
-			if (enable) {
-				constraint.MaxFrictionTorque = this.wheel_friction * 20
-			} else {
-				constraint.MaxFrictionTorque = 0
-			}
+			constraint.MaxFrictionTorque = enable ? 30 : 5
 		})
 		this.brakeListener.Fire(enable)
 		this.toggleFriction(enable)
 		this.brake = enable
+	}
+	private __last_flip_time = 0
+	flipCart(): void {
+		if (!this.rider) return
+		const now = tick()
+		if (now - this.__last_flip_time < 3) {
+			return
+		}
+		this.__last_flip_time = now
+		const attachment = this.instance.Root.FindFirstChild("Root") as Attachment
+		const align_position = new Instance("AlignPosition", this.instance.Root)
+
+		align_position.MaxForce = math.huge
+		align_position.Responsiveness = 20
+		align_position.Position = this.instance.Root.Position.add(
+			new Vector3(0, 5, 0)
+		)
+		align_position.Attachment0 = attachment
+		align_position.Mode = Enum.PositionAlignmentMode.OneAttachment
+		const align_orientation = new Instance(
+			"AlignOrientation",
+			this.instance.Root
+		)
+		align_orientation.MaxTorque = math.huge
+		align_orientation.Responsiveness = 20
+		align_orientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+		align_orientation.Attachment0 = attachment
+		const y_orientation = this.instance.Root.Orientation.Y
+		print("Current Y orientation: " + y_orientation)
+		// make the cart look at the direction of its root
+
+		const rotated_cframe = new CFrame((this.instance.Root.Position).add(new Vector3(0, 5, 0))).mul(
+			CFrame.Angles(math.rad(180), 0, math.rad(y_orientation))
+		)
+		const lookat_pos = rotated_cframe.Position.add(
+			rotated_cframe.LookVector.mul(5)
+		)
+		align_orientation.LookAtPosition = lookat_pos
+
+		// align_orientation.LookAtPosition = new CFrame(this.instance.Root.Position)
+		// 	.mul(CFrame.Angles(0, math.rad(y_orientation), 0))
+		// 	.mul(new CFrame(0, 0, 1)).Position
+		task.delay(1, () => {
+			align_orientation.Destroy()
+			align_position.Destroy()
+		})
 	}
 	cleanupRide(reason: string): void {
 		this.logger.log(`Cleaning up ride: ${reason}`)
@@ -298,7 +339,7 @@ export class CartClientComponent
 		this.instance.WaitForChild("Root", 10)?.Destroying.Once(() => {
 			this.cleanupRide("Root destroyed")
 		})
-		this.toggleFriction(true)
+		this.toggleBrake(true)
 		let cart_config: ICartEntry | undefined = undefined
 		try {
 			const [config, err] =

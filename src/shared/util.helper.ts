@@ -61,7 +61,7 @@ export function MasslessPart(parent:Instance,name:string) {
 	const part = new Instance("Part", parent)
 	part.Size = new Vector3(1, 1, 1)
 	part.Name = name
-	part.Transparency = __IS_STUDIO__ ? 0.5 : 1
+	part.Transparency = 1
 	part.CanCollide = false
 	part.Massless = true
 	return part
