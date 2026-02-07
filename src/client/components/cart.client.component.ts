@@ -109,45 +109,47 @@ export class CartClientComponent
 		const max_velocity = this.max_velocity
 		const is_going_down = velocity.Y < -10
 		this.toggleSteepState(is_going_down && !is_in_air)
-		if (velocity.Magnitude > max_velocity && !is_in_air) {
-			if (this.is_steep) {
-				if (velocity.Magnitude > max_velocity * 2) {
-					this.instance.Root.AssemblyLinearVelocity = normalizeVector3(
-						velocity,
-						max_velocity * 3
-					)
-				}
-			} else {
-				this.instance.Root.AssemblyLinearVelocity = normalizeVector3(
-					velocity,
-					math.lerp(velocity.Magnitude, max_velocity, dt * 10)
-				)
-			}
-		}
+		// speed limitting
+		// if (velocity.Magnitude > max_velocity && !is_in_air) {
+		// 	if (this.is_steep) {
+		// 		if (velocity.Magnitude > max_velocity * 2) {
+		// 			this.instance.Root.AssemblyLinearVelocity = normalizeVector3(
+		// 				velocity,
+		// 				max_velocity * 3
+		// 			)
+		// 		}
+		// 	} else {
+		// 		this.instance.Root.AssemblyLinearVelocity = normalizeVector3(
+		// 			velocity,
+		// 			math.lerp(velocity.Magnitude, max_velocity, dt * 10)
+		// 		)
+		// 	}
+		// }
 		const force = this.instance.Root.VectorForce
 		force.Force = humanoid.MoveDirection.mul(this.power)
-		const direction = humanoid.MoveDirection.Unit
-		if (direction.Magnitude > 0) {
-			this.instance.Wheels.GetChildren().forEach((_) => {
-				if (!_.IsA("Model")) return
-				const model = _ as IWheel
-				const wheel = model.WHEEL
-				const connection = model.CONNECTION
-				const align_orientation =
-					connection.FindFirstChildOfClass("AlignOrientation")
-				if (!align_orientation) return
-				const lookat_pos = connection.Position.add(
-					new Vector3(direction.X * 2, 0, direction.Z * 2)
-				)
-				// if (__STUDIO__) {
-				const drawing = sphere.draw(lookat_pos, 0.3)
-				task.delay(dt, () => {
-					drawing.Destroy()
-				})
-				// }
-				align_orientation.LookAtPosition = lookat_pos
-			})
-		}
+		// wheel alignment
+		// const direction = humanoid.MoveDirection.Unit
+		// if (direction.Magnitude > 0) {
+		// 	this.instance.Wheels.GetChildren().forEach((_) => {
+		// 		if (!_.IsA("Model")) return
+		// 		const model = _ as IWheel
+		// 		const wheel = model.WHEEL
+		// 		const connection = model.CONNECTION
+		// 		const align_orientation =
+		// 			connection.FindFirstChildOfClass("AlignOrientation")
+		// 		if (!align_orientation) return
+		// 		const lookat_pos = connection.Position.add(
+		// 			new Vector3(direction.X * 2, 0, direction.Z * 2)
+		// 		)
+		// 		// if (__STUDIO__) {
+		// 		const drawing = sphere.draw(lookat_pos, 0.3)
+		// 		task.delay(dt, () => {
+		// 			drawing.Destroy()
+		// 		})
+		// 		// }
+		// 		align_orientation.LookAtPosition = lookat_pos
+		// 	})
+		// }
 		if (this.brake) {
 			this.toggleBrake(true)
 		} else {
