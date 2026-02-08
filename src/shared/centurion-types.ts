@@ -1,5 +1,6 @@
 import { BaseRegistry, TransformResult, TypeBuilder } from "@rbxts/centurion";
 import Object from "@rbxts/object-utils";
+import { assets } from "./assets";
 function buildEnumType(type_name:string, options:string[]) {
 	const itemType = TypeBuilder.create<string>(type_name)
 		.transform((text) => {
@@ -27,4 +28,5 @@ function clearQuotes(str: string): string {
 export = async (registry: BaseRegistry) => {
 	
 	await registry.registerType(buildEnumType("__example", Object.keys({"hello":"world"})));
+	await registry.registerType(buildEnumType("CartSkin", assets.carts.GetChildren().map((cart) => cart.Name)));
 };

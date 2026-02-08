@@ -35,7 +35,46 @@ export class CartService implements OnStart {
 		return this.PLAYER_CARTS.get(player)
 	}
 	getPlayerSkin(player: Player): string {
-		return "Couch Cart"
+		return "Cart"
+	}
+	spawnPlayerCartAtLocation(player: Player, cframe: CFrame, cart_skin?: string): Model {
+		const existing = this.PLAYER_CARTS.get(player)
+		existing?.Destroy()
+		const target_skin = cart_skin ?? this.getPlayerSkin(player)
+		const orig_cart = assets.carts.FindFirstChild(target_skin) as Model
+		assert(orig_cart, `Cart model ${target_skin} not found in assets`)
+		const cart_model = orig_cart.Clone()
+		
+
+		cart_model.PivotTo(
+			cframe
+				.mul(new CFrame(0, cart_model.GetExtentsSize().Y / 2, 0))
+				.mul(CFrame.Angles(0, math.rad(-90), 0))
+		)
+		cart_model.Parent = Workspace
+		this.PLAYER_CARTS.set(player, cart_model)
+		const dependecy = Dependency<Components>()
+		cart_model.Name = `${cart_model.Name}_${player.Name}`
+		task.spawn(async () => {
+			const component = await dependecy.waitForComponent(
+				cart_model,
+				CartServerComponent
+			)
+			component.instance.Destroying.Once(() => {
+				this.PLAYER_CARTS.delete(player)
+			})
+			this.logger.log("component added to cart, sitting player")
+			const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
+			if (vehicle_seat) {
+				this.logger.log(`Sitting player ${player.Name} in cart`)
+				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
+			} else {
+				this.logger.warn(
+					`Could not find vehicle seat for cart ${cart_model.GetFullName()}`
+				)
+			}
+		})
+		return cart_model
 	}
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		const existing = this.PLAYER_CARTS.get(player)
@@ -60,7 +99,10 @@ export class CartService implements OnStart {
 		const dependecy = Dependency<Components>()
 		cart_model.Name = `${cart_model.Name}_${player.Name}`
 		task.spawn(async () => {
-			const component = await dependecy.waitForComponent(cart_model,CartServerComponent)
+			const component = await dependecy.waitForComponent(
+				cart_model,
+				CartServerComponent
+			)
 			component.instance.Destroying.Once(() => {
 				this.PLAYER_CARTS.delete(player)
 			})
@@ -70,8 +112,9 @@ export class CartService implements OnStart {
 				this.logger.log(`Sitting player ${player.Name} in cart`)
 				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
 			} else {
-				
-				this.logger.warn(`Could not find vehicle seat for cart ${cart_model.GetFullName()}`)
+				this.logger.warn(
+					`Could not find vehicle seat for cart ${cart_model.GetFullName()}`
+				)
 			}
 		})
 		return cart_model
