@@ -21,6 +21,10 @@ export class CartService implements OnStart {
 			const config = getConfig()
 			return [config.CartConfig]
 		})
+		ServerFunctions.CartService.respawn.setCallback((player) => {
+			this.logger.log(`Respawning player ${player.Name}`)
+			this.reloadCharacter(player)
+		})
 		assets.carts.GetChildren().forEach((cart) => {
 			if (!cart.IsA("Model")) return
 			cart.AddTag("CartComponent")
@@ -36,6 +40,9 @@ export class CartService implements OnStart {
 	}
 	getPlayerSkin(player: Player): string {
 		return "Cart"
+	}
+	reloadCharacter(player: Player) {
+		player.LoadCharacterAsync()
 	}
 	spawnPlayerCartAtLocation(player: Player, cframe: CFrame, cart_skin?: string): Model {
 		const existing = this.PLAYER_CARTS.get(player)

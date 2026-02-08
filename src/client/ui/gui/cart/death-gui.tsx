@@ -3,6 +3,7 @@ import React, { Fragment, useEffect } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { Players, Workspace } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
+import { UIHelper } from "client/ui.helper"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { UIDIM } from "client/ui/constants"
@@ -10,6 +11,7 @@ import useAnimateValue from "client/ui/hooks/useAnimateValue"
 import { assets } from "shared/assets"
 import { RigCartModel } from "shared/cart.helper"
 import { __IS_EDIT__ } from "shared/config.helper"
+import { ClientFunctions } from "shared/network.helper"
 import { ICart } from "shared/type.helper"
 
 export function DeathGui() {
@@ -23,14 +25,13 @@ export function DeathGui() {
 			return
 		}
 		const cart_controller = Dependency<CartController>()
-		const connection = cart_controller.onDeath.Connect((spawn_point) => {
+		const connection = cart_controller.toggleOnDeathScreen.Connect((spawn_point) => {
 			setSpawnPoint(spawn_point)
 		})
 		return () => {
 			connection.Disconnect()
 		}
 	}, [])
-
 	const my_char = Players.LocalPlayer.Character
 	if (my_char && my_char.PrimaryPart) {
 		my_char.PrimaryPart.Anchored = !!spawnPoint
@@ -67,6 +68,11 @@ export function DeathGui() {
 			char.PivotTo(example_cart.GetPivot())
 			const humanoid = char.FindFirstChildOfClass("Humanoid")
 			char.PrimaryPart!.Anchored = true
+			const my_char = Players.LocalPlayer.Character
+
+			if (my_char && my_char.PrimaryPart) {
+				my_char.PivotTo(spawnPoint.sub(new Vector3(0, 50, 0)))
+			}
 			if (humanoid) {
 				// humanoid.SetStateEnabled(Enum.HumanoidStateType.None, false)
 
@@ -156,7 +162,21 @@ export function DeathGui() {
 				/>
 				<RottenButton
 					Size={UIDIM.ONE}
-					onClick={() => setSpawnPoint(undefined)}
+					onClick={async () => {
+						UIHelper.toggleFade(true)
+						task.wait(0.5)
+						await ClientFunctions.CartService.respawn
+							.invokeWithTimeout(5000)
+							.then(() => {
+								UIHelper.toggleFade(false)
+								setSpawnPoint(undefined)
+							})
+							.catch((err) => {
+								warn(`Failed to respawn player: ${err}`)
+								UIHelper.toggleFade(false)
+								setSpawnPoint(undefined)
+							})
+					}}
 					Text="RESET"
 				>
 					<GoofyText

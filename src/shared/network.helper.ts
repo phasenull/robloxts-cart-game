@@ -27,6 +27,7 @@ interface ServerToClientEvents {}
 interface ClientToServerFunctions {
 	CartService: {
 		getConfig: () => ProperReturns<ICartConfig>
+		respawn: () => void
 	}
 }
 interface ClientToServerEvents {

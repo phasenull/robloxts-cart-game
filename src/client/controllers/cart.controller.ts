@@ -29,12 +29,12 @@ export class CartController implements OnStart {
 			new_handle.adornmentLine.Destroy()
 		})
 	}
-	public onDeath = new Signal<(spawn_point: CFrame | undefined) => void>()
+	public toggleOnDeathScreen = new Signal<(spawn_point: CFrame | undefined) => void>()
 	toggleDeathScreen(enabled: boolean) {
 		if (enabled && this.__last_checkpoint) {
-			this.onDeath.Fire(this.__last_checkpoint)
+			this.toggleOnDeathScreen.Fire(this.__last_checkpoint)
 		} else {
-			this.onDeath.Fire(undefined)
+			this.toggleOnDeathScreen.Fire(undefined)
 		}
 	}
 	private readonly revive_product_id = 3532858318

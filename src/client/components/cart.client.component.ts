@@ -8,6 +8,7 @@ import StringUtils from "@rbxts/string-utils"
 import { t } from "@rbxts/t"
 import { AnimationController } from "client/controllers/animation.controller"
 import { CartController } from "client/controllers/cart.controller"
+import { UIHelper } from "client/ui.helper"
 import { __STUDIO__ } from "client/ui/constants"
 import { CartLisener } from "client/ui/gui/cart/cart-hud"
 import { Logger } from "shared/logger"
@@ -183,7 +184,10 @@ export class CartClientComponent
 		}
 	}
 	private logger: Logger
-	constructor(private AnimationController: AnimationController,private CartController: CartController) {
+	constructor(
+		private AnimationController: AnimationController,
+		private CartController: CartController
+	) {
 		super()
 
 		const instance_name = this.instance.Name
@@ -391,9 +395,15 @@ export class CartClientComponent
 			return
 		}
 		this.__is_cleaned_up = true
-		this.AnimationController.stop("cart_idle",0)
-		const controller = Dependency<CartController>()
-		controller.toggleDeathScreen(true)
+		this.AnimationController.stop("cart_idle", 0)
+		task.spawn(() => {
+			const controller = Dependency<CartController>()
+			UIHelper.toggleFade(true)
+			task.wait(.5)
+			controller.toggleDeathScreen(true)
+			task.wait(.2)
+			UIHelper.toggleFade(false)
+		})
 		this.toggleFriction(false)
 		this.setPower(0)
 		if (!this.rider) {
@@ -456,9 +466,17 @@ export class CartClientComponent
 			}
 			assert(config, "Failed to get config from server")
 			cart_config = config.find((entry) => entry.name === this.descriptor)
+
 			if (!cart_config) {
-				this.cleanupRide("Failed to get config from server")
-				return
+				this.logger.warn(
+					`No cart config found for descriptor ${this.descriptor}, falling back to "Cart"`
+				)
+				cart_config = config.find((entry) => entry.name === "Cart")
+				if (!cart_config) {
+					this.logger.warn(`!!FATAL!! No cart config found for default cart, cleaning up ride ${this.descriptor}`)
+					this.cleanupRide("Failed to get config from server")
+					return
+				}
 			}
 		} catch (e) {
 			this.logger.warn("Error while getting config from server: " + tostring(e))
@@ -533,16 +551,21 @@ export class CartClientComponent
 			this.instance,
 			this.rider?.Parent
 		].filterUndefined()
+		ray_info.IgnoreWater = true
 		ray_info.FilterType = Enum.RaycastFilterType.Blacklist
 		for (const corner of corners) {
 			const ray = Workspace.Raycast(
 				root.Position.add(corner),
-				new Vector3(0, -1, 0).mul(10),
+				new Vector3(0, -1, 0).mul(9),
 				ray_info
 			)
 			if (!ray) {
 				return false
 			}
+			const drawn = sphere.draw(ray.Position, 0.3)
+			task.delay(0.05, () => {
+				drawn.Destroy()
+			})
 		}
 
 		return true
