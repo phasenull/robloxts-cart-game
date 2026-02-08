@@ -1,13 +1,16 @@
 import { Dependency } from "@flamework/core"
 import React, { Fragment, useEffect } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
-import { Players, Workspace } from "@rbxts/services"
+import { Players, UserInputService, Workspace } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
 import { UIHelper } from "client/ui.helper"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { GoofyText } from "client/ui/components/goofy-text"
-import { UIDIM } from "client/ui/constants"
+import { Icon } from "client/ui/components/icon"
+import { GAMEPAD_BUTTONS, UIDIM } from "client/ui/constants"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
+import { useInput } from "client/ui/hooks/useInput"
+import { useInputType } from "client/ui/hooks/useInputType"
 import { assets } from "shared/assets"
 import { RigCartModel } from "shared/cart.helper"
 import { __IS_EDIT__ } from "shared/config.helper"
@@ -25,9 +28,11 @@ export function DeathGui() {
 			return
 		}
 		const cart_controller = Dependency<CartController>()
-		const connection = cart_controller.toggleOnDeathScreen.Connect((spawn_point) => {
-			setSpawnPoint(spawn_point)
-		})
+		const connection = cart_controller.toggleOnDeathScreen.Connect(
+			(spawn_point) => {
+				setSpawnPoint(spawn_point)
+			}
+		)
 		return () => {
 			connection.Disconnect()
 		}
@@ -95,6 +100,22 @@ export function DeathGui() {
 			example_cart.Destroy()
 		}
 	}, [spawnPoint])
+	function confirmReset(spawnPoint: CFrame | undefined) {
+		print(`Confirming reset...: spawnPoint: ${spawnPoint}`)
+		UIHelper.toggleFade(true)
+		task.wait(0.5)
+		ClientFunctions.CartService.respawn
+			.invokeWithTimeout(5000)
+			.then(() => {
+				UIHelper.toggleFade(false)
+				setSpawnPoint(undefined)
+			})
+			.catch((err) => {
+				warn(`Failed to respawn player: ${err}`)
+				UIHelper.toggleFade(false)
+				setSpawnPoint(undefined)
+			})
+	}
 	const rotation = useAnimateValue({
 		initial_value: 0,
 		target_value: 1,
@@ -128,6 +149,17 @@ export function DeathGui() {
 			}
 		}
 	}
+	const device = useInputType()
+
+	const is_revive_down = useInput(GAMEPAD_BUTTONS.REVIVE,(value)=>{
+		if (!(should_show && value)) {
+			return false
+		}
+		const controller = Dependency<CartController>()
+		controller.promptRevive()
+		return true
+	})
+	const is_confirm_reset_down = useInput(GAMEPAD_BUTTONS.CONFIRM_RESET, value => should_show && value ? confirmReset(spawnPoint):undefined)
 	useEffect(() => {
 		return () => {
 			const camera = Workspace.CurrentCamera
@@ -145,6 +177,9 @@ export function DeathGui() {
 			Enum.EasingDirection.Out
 		)
 	})
+	if (post_transparency === 1 && !should_show) {
+		return undefined
+	}
 	return (
 		<Fragment>
 			<imagelabel
@@ -163,20 +198,9 @@ export function DeathGui() {
 				<RottenButton
 					Size={UIDIM.ONE}
 					onClick={async () => {
-						UIHelper.toggleFade(true)
-						task.wait(0.5)
-						await ClientFunctions.CartService.respawn
-							.invokeWithTimeout(5000)
-							.then(() => {
-								UIHelper.toggleFade(false)
-								setSpawnPoint(undefined)
-							})
-							.catch((err) => {
-								warn(`Failed to respawn player: ${err}`)
-								UIHelper.toggleFade(false)
-								setSpawnPoint(undefined)
-							})
+						confirmReset(spawnPoint)
 					}}
+					mockMouseDown={is_confirm_reset_down}
 					Text="RESET"
 				>
 					<GoofyText
@@ -186,17 +210,39 @@ export function DeathGui() {
 						AnchorPoint={UIDIM.A_TOP.add(new Vector2(0, 0.1))}
 						Text={"(last checkpoint)"}
 					></GoofyText>
+					{device === "Gamepad" && (
+						<Icon
+							Size={new UDim2(0.5, 0, 0.5, 0)}
+							Image={UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.CONFIRM_RESET)}
+							AnchorPoint={UIDIM.A_CENTER}
+							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
+							Color3={new Color3(0.36, 0.66, 1)}
+							Transparency={0.1}
+						/>
+					)}
 				</RottenButton>
 				<RottenButton
 					onClick={() => {
 						const controller = Dependency<CartController>()
 						controller.promptRevive()
 					}}
+					mockMouseDown={is_revive_down}
 					Color={new Color3(0.09, 0.86, 0.09)}
 					Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
 					Text="REVIVE"
 					Ratio={1.5}
-				/>
+				>
+					{device === "Gamepad" && (
+						<Icon
+							Size={new UDim2(0.5, 0, 0.5, 0)}
+							Image={UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.REVIVE)}
+							AnchorPoint={UIDIM.A_CENTER}
+							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
+							Color3={new Color3(0.36, 0.66, 1)}
+							Transparency={0.1}
+						/>
+					)}
+				</RottenButton>
 			</imagelabel>
 		</Fragment>
 	)

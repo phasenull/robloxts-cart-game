@@ -46,10 +46,8 @@ export function CartButtons(props: {
 		mutationFn: async () => {
 			if (cart) {
 				cart.honk()
-				return true
-			}
-			if (__IS_STUDIO__) {
 				UIHelper.playSound(A.sounds.mango_scream)
+				return true
 			}
 			return true
 		}
@@ -64,18 +62,24 @@ export function CartButtons(props: {
 			return true
 		}
 	})
-	useInput(GAMEPAD_BUTTONS.BRAKE,(value)=>setBraking(value))
+	useInput(GAMEPAD_BUTTONS.BRAKE, (value) => setBraking(value))
 	const is_gamepad_honking = useInput(GAMEPAD_BUTTONS.HONK)
 	const is_gamepad_flipping = useInput(GAMEPAD_BUTTONS.FLIP)
-	const is_gamepad_resetting = useInput(GAMEPAD_BUTTONS.RESET,value=>value && mutateReset())
+	const is_gamepad_resetting = useInput(GAMEPAD_BUTTONS.RESET)
 	useEffect(() => {
+		if (!cart) {
+			return
+		}
 		if (is_gamepad_honking) {
 			mutateHonk()
 		}
 		if (is_gamepad_flipping) {
 			mutateFlip()
 		}
-	}, [cart, is_gamepad_honking, is_gamepad_flipping])
+		if (is_gamepad_resetting) {
+			mutateReset()
+		}
+	}, [cart, is_gamepad_honking, is_gamepad_flipping,is_gamepad_resetting])
 
 	const brake_shake = useAnimateValue({
 		target_value: is_braking ? 1 : 0,

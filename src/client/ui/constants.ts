@@ -4,7 +4,11 @@ export const GAMEPAD_BUTTONS = {
 	"BRAKE": Enum.KeyCode.ButtonA,
 	"HONK": Enum.KeyCode.ButtonB,
 	"FLIP": Enum.KeyCode.ButtonY,
-	"RESET": Enum.KeyCode.ButtonX
+	"RESET": Enum.KeyCode.ButtonX,
+
+	
+	"REVIVE": Enum.KeyCode.ButtonA,
+	"CONFIRM_RESET": Enum.KeyCode.ButtonY
 }
 export const TESTING_USERS = [
 	{
