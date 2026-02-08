@@ -1,106 +1,19 @@
-import { Dependency } from "@flamework/core"
-import React, { Fragment, useEffect } from "@rbxts/react"
-import { useQuery } from "@rbxts/react-query"
-import { Players, UserInputService, Workspace } from "@rbxts/services"
-import { CartController } from "client/controllers/cart.controller"
+import React, { Fragment } from "@rbxts/react"
 import { UIHelper } from "client/ui.helper"
-import { RottenButton } from "client/ui/components/buttons/rotten-button"
-import { GoofyText } from "client/ui/components/goofy-text"
-import { Icon } from "client/ui/components/icon"
-import { GAMEPAD_BUTTONS, UIDIM } from "client/ui/constants"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
-import { useInput } from "client/ui/hooks/useInput"
-import { useInputType } from "client/ui/hooks/useInputType"
-import { assets } from "shared/assets"
-import { RigCartModel } from "shared/cart.helper"
-import { __IS_EDIT__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
-import { ICart } from "shared/type.helper"
+import { DeathButtons } from "./components/DeathButtons"
+import { useDeathCamera } from "./hooks/useDeathCamera"
+import { useDeathPreview } from "./hooks/useDeathPreview"
+import { useDeathScreen } from "./hooks/useDeathScreen"
 
 export function DeathGui() {
-	const [spawnPoint, setSpawnPoint] = React.useState<CFrame | undefined>(
-		undefined
-	)
-	const should_show = spawnPoint !== undefined
-	React.useEffect(() => {
-		if (__IS_EDIT__) {
-			// setSpawnPoint(new CFrame(-34.11, 20.933, 0.999))
-			return
-		}
-		const cart_controller = Dependency<CartController>()
-		const connection = cart_controller.toggleOnDeathScreen.Connect(
-			(spawn_point) => {
-				setSpawnPoint(spawn_point)
-			}
-		)
-		return () => {
-			connection.Disconnect()
-		}
-	}, [])
-	const my_char = Players.LocalPlayer.Character
-	if (my_char && my_char.PrimaryPart) {
-		my_char.PrimaryPart.Anchored = !!spawnPoint
-	}
-	useEffect(() => {
-		if (!spawnPoint) {
-			return
-		}
-		const example_cart = assets.carts.FindFirstChild("Cart")?.Clone() as ICart
-		if (!example_cart) {
-			return
-		}
-		RigCartModel(example_cart)
-		const seat = example_cart.FindFirstChildOfClass("Seat")
-		if (!seat) {
-			return
-		}
-		example_cart.PrimaryPart!.Anchored = true
-		const highlight = new Instance("Highlight", example_cart)
-		highlight.FillColor = Color3.fromRGB(41, 212, 255)
-		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-		const local_player = Players.LocalPlayer
-		let char: Model | undefined = undefined
-		try {
-			char = Players.CreateHumanoidModelFromUserIdAsync(local_player.UserId)
-			char.GetDescendants().forEach((desc) => {
-				if (
-					["LocalScript", "Script", "ModuleScript"].includes(desc.ClassName)
-				) {
-					// desc.Destroy()
-				}
-			})
-			char.Parent = example_cart
-			char.PivotTo(example_cart.GetPivot())
-			const humanoid = char.FindFirstChildOfClass("Humanoid")
-			char.PrimaryPart!.Anchored = true
-			const my_char = Players.LocalPlayer.Character
+	const { spawnPoint, setSpawnPoint, shouldShow } = useDeathScreen()
 
-			if (my_char && my_char.PrimaryPart) {
-				my_char.PivotTo(spawnPoint.sub(new Vector3(0, 50, 0)))
-			}
-			if (humanoid) {
-				// humanoid.SetStateEnabled(Enum.HumanoidStateType.None, false)
+	useDeathPreview({ spawnPoint })
+	useDeathCamera({ spawnPoint, shouldShow })
 
-				const animator = humanoid.FindFirstChildOfClass("Animator")
-				const anim = new Instance("Animation", animator)
-				anim.AnimationId = "rbxassetid://100765437584509"
-				if (animator) {
-					const track = animator.LoadAnimation(anim)
-					track.Looped = true
-					track.Play()
-				}
-			}
-		} catch (err) {
-			warn(`Failed to create humanoid model for death screen: ${err}`)
-		}
-
-		example_cart.PivotTo(spawnPoint)
-		example_cart.Parent = Workspace.CurrentCamera
-		return () => {
-			example_cart.Destroy()
-		}
-	}, [spawnPoint])
-	function confirmReset(spawnPoint: CFrame | undefined) {
+	const handleConfirmReset = (spawnPoint: CFrame | undefined) => {
 		print(`Confirming reset...: spawnPoint: ${spawnPoint}`)
 		UIHelper.toggleFade(true)
 		task.wait(0.5)
@@ -116,134 +29,29 @@ export function DeathGui() {
 				setSpawnPoint(undefined)
 			})
 	}
-	const rotation = useAnimateValue({
-		initial_value: 0,
-		target_value: 1,
-		tween_info: new TweenInfo(
-			10,
-			Enum.EasingStyle.Linear,
-			Enum.EasingDirection.Out,
-			-1
-		),
-		enabled: should_show
-	})
-	const distance = 16
-	const target_cframe = spawnPoint
-		? CFrame.lookAt(
-				new CFrame(spawnPoint.Position)
-					.mul(CFrame.Angles(0, math.rad(rotation * 360), 0))
-					.mul(new CFrame(0, 5, -distance)).Position,
-				spawnPoint.Position
-			)
-		: undefined
-	const camera = Workspace.CurrentCamera
-	if (camera) {
-		if (target_cframe) {
-			camera.CameraType = Enum.CameraType.Scriptable
-			camera.CFrame = target_cframe
-		} else {
-			camera.CameraType = Enum.CameraType.Custom
-			const char = Players.LocalPlayer.Character
-			if (char && char.PrimaryPart) {
-				camera.CameraSubject = char.PrimaryPart
-			}
-		}
-	}
-	const device = useInputType()
 
-	const is_revive_down = useInput(GAMEPAD_BUTTONS.REVIVE,(value)=>{
-		if (!(should_show && value)) {
-			return false
-		}
-		const controller = Dependency<CartController>()
-		controller.promptRevive()
-		return true
-	})
-	const is_confirm_reset_down = useInput(GAMEPAD_BUTTONS.CONFIRM_RESET, value => should_show && value ? confirmReset(spawnPoint):undefined)
-	useEffect(() => {
-		return () => {
-			const camera = Workspace.CurrentCamera
-			if (camera) {
-				camera.CameraType = Enum.CameraType.Custom
-			}
-		}
-	}, [spawnPoint])
 	const transition_duration = 0.5
 	const post_transparency = useAnimateValue({
-		target_value: should_show ? 1 : 0,
+		target_value: shouldShow ? 1 : 0,
 		tween_info: new TweenInfo(
 			transition_duration,
 			Enum.EasingStyle.Quad,
 			Enum.EasingDirection.Out
 		)
 	})
-	if (post_transparency === 1 && !should_show) {
+
+	if (post_transparency === 1 && !shouldShow) {
 		return undefined
 	}
+
 	return (
 		<Fragment>
-			<imagelabel
-				Size={UDim2.fromScale(0.2, 0.2)}
-				AnchorPoint={UIDIM.A_BOTTOM}
-				Position={UDim2.fromScale(0.5, 0.95 + 1 - post_transparency)}
-			>
-				<uiaspectratioconstraint AspectRatio={4} />
-				<uilistlayout
-					Padding={new UDim(0.3, 0)}
-					FillDirection={Enum.FillDirection.Horizontal}
-					HorizontalAlignment={Enum.HorizontalAlignment.Center}
-					VerticalAlignment={Enum.VerticalAlignment.Center}
-					SortOrder={Enum.SortOrder.LayoutOrder}
-				/>
-				<RottenButton
-					Size={UIDIM.ONE}
-					onClick={async () => {
-						confirmReset(spawnPoint)
-					}}
-					mockMouseDown={is_confirm_reset_down}
-					Text="RESET"
-				>
-					<GoofyText
-						MinTextSize={1}
-						Size={UDim2.fromScale(1, 0.3)}
-						Position={UIDIM.BOTTOM_CENTER}
-						AnchorPoint={UIDIM.A_TOP.add(new Vector2(0, 0.1))}
-						Text={"(last checkpoint)"}
-					></GoofyText>
-					{device === "Gamepad" && (
-						<Icon
-							Size={new UDim2(0.5, 0, 0.5, 0)}
-							Image={UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.CONFIRM_RESET)}
-							AnchorPoint={UIDIM.A_CENTER}
-							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-							Color3={new Color3(0.36, 0.66, 1)}
-							Transparency={0.1}
-						/>
-					)}
-				</RottenButton>
-				<RottenButton
-					onClick={() => {
-						const controller = Dependency<CartController>()
-						controller.promptRevive()
-					}}
-					mockMouseDown={is_revive_down}
-					Color={new Color3(0.09, 0.86, 0.09)}
-					Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
-					Text="REVIVE"
-					Ratio={1.5}
-				>
-					{device === "Gamepad" && (
-						<Icon
-							Size={new UDim2(0.5, 0, 0.5, 0)}
-							Image={UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.REVIVE)}
-							AnchorPoint={UIDIM.A_CENTER}
-							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-							Color3={new Color3(0.36, 0.66, 1)}
-							Transparency={0.1}
-						/>
-					)}
-				</RottenButton>
-			</imagelabel>
+			<DeathButtons
+				spawnPoint={spawnPoint}
+				shouldShow={shouldShow}
+				transparency={post_transparency}
+				onConfirmReset={handleConfirmReset}
+			/>
 		</Fragment>
 	)
 }
