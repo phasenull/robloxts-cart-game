@@ -13,9 +13,11 @@ import { ShopGui } from "./gui/main/shop-gui"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
 import { CartGui } from "./gui/main/cart-gui"
 import { CartHud } from "./gui/cart/cart-hud"
+import { DeathGui } from "./gui/cart/death-gui"
+import { __IS_STUDIO__ } from "shared/config.helper"
 export function App(props: { initial_gui?: GUI_KEYS,cart_enabled?: boolean }) {
 	const [open_gui, set_open_gui] = useState<GUI_KEYS | undefined>(
-		props.initial_gui
+		__IS_STUDIO__ ? props.initial_gui : undefined
 	)
 	const { showError } = useErrorPage()
 	const query_client = new QueryClient({
@@ -52,6 +54,7 @@ export function App(props: { initial_gui?: GUI_KEYS,cart_enabled?: boolean }) {
 						}}
 					>
 						<SettingsProvider>
+							<DeathGui/>
 							{is_sidebar_open && <Sidebar />}
 							<CartHud/>
 							<ErrorPopup />

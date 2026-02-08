@@ -1,5 +1,5 @@
 import { BaseComponent, Component } from "@flamework/components"
-import { OnPhysics, OnStart } from "@flamework/core"
+import { Dependency, OnPhysics, OnStart } from "@flamework/core"
 import { sphere } from "@rbxts/better-gizmos"
 import { copy } from "@rbxts/object-utils"
 import { Players, Workspace } from "@rbxts/services"
@@ -7,6 +7,7 @@ import Signal from "@rbxts/signal"
 import StringUtils from "@rbxts/string-utils"
 import { t } from "@rbxts/t"
 import { AnimationController } from "client/controllers/animation.controller"
+import { CartController } from "client/controllers/cart.controller"
 import { __STUDIO__ } from "client/ui/constants"
 import { CartLisener } from "client/ui/gui/cart/cart-hud"
 import { Logger } from "shared/logger"
@@ -176,9 +177,13 @@ export class CartClientComponent
 		} else {
 			this.toggleBrake(false)
 		}
+		const is_checkpoint_available = this.checkCheckpointAvailability()
+		if (is_checkpoint_available) {
+			this.CartController.saveCheckpoint(this.instance.GetPivot())
+		}
 	}
 	private logger: Logger
-	constructor(private AnimationController: AnimationController) {
+	constructor(private AnimationController: AnimationController,private CartController: CartController) {
 		super()
 
 		const instance_name = this.instance.Name
@@ -379,10 +384,15 @@ export class CartClientComponent
 			align_position.Destroy()
 		})
 	}
+	private __is_cleaned_up = false
 	cleanupRide(reason: string): void {
-		if (this.resolvePlayer() === Players.LocalPlayer) {
-			this.logger.log(`${this.getDescriptor()} Cleaning up ride: ${reason}`)
+		if (this.__is_cleaned_up) return
+		if (this.resolvePlayer() !== Players.LocalPlayer) {
+			return
 		}
+		this.__is_cleaned_up = true
+		const controller = Dependency<CartController>()
+		controller.toggleDeathScreen(true)
 		this.toggleFriction(false)
 		this.setPower(0)
 		if (!this.rider) {
@@ -491,5 +501,17 @@ export class CartClientComponent
 		seat.GetPropertyChangedSignal("Occupant").Connect(() => {
 			this.triggetOccupantChanged()
 		})
+	}
+	checkCheckpointAvailability(): boolean {
+		const h = this.getHeight()
+		const is_in_air = h > 5
+		if (is_in_air) {
+			return false
+		}
+		const steepness = this.getSteepAngle()
+		if (steepness > math.rad(3)) {
+			return false
+		}
+		return true
 	}
 }

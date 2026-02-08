@@ -16,6 +16,7 @@ export function RottenButton(props: {
 	Ratio?: number
 	Rotation?: number
 	mockMouseDown?: boolean
+	LayoutOrder?: number
 	children?: React.ReactNode
 	onDown?: (status: boolean) => void
 }) {
@@ -44,6 +45,7 @@ export function RottenButton(props: {
 			Event={{
 				MouseButton1Click: props.onClick
 			}}
+			LayoutOrder={props.LayoutOrder}
 			ZIndex={props.ZIndex}
 			Position={props.Position}
 			AnchorPoint={props.AnchorPoint}

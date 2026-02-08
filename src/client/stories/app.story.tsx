@@ -1,11 +1,11 @@
 import React from "@rbxts/react"
 import ReactRoblox from "@rbxts/react-roblox"
-import { InferFusionProps } from "@rbxts/ui-labs"
+import { Choose, InferFusionProps } from "@rbxts/ui-labs"
 import { App } from "client/ui/App"
 import { GUI_KEYS } from "client/ui/constants"
 
 const controls = {
-	initial_gui: "party" as GUI_KEYS,
+	initial_gui: Choose(["", "Shop", "Cart", "Settings"]),
 	cart_enabled: false,
 }
 
