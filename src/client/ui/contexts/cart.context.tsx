@@ -1,6 +1,11 @@
 import { Components } from "@flamework/components"
 import { Dependency } from "@flamework/core"
-import React, { createContext, useContext, useEffect, useState } from "@rbxts/react"
+import React, {
+	createContext,
+	useContext,
+	useEffect,
+	useState
+} from "@rbxts/react"
 import { Players } from "@rbxts/services"
 import { CartClientComponent } from "client/components/cart.client.component"
 import { CartController } from "client/controllers/cart.controller"
@@ -15,7 +20,7 @@ interface CartContextValue {
 	cart: CartClientComponent | undefined
 	state: CartState
 	spawnPoint: CFrame | undefined
-	setReviving: () => void
+	changeState: (state: CartState) => void
 	confirmReset: () => void
 }
 
@@ -53,14 +58,6 @@ export function CartProvider(props: { children: React.ReactNode }) {
 		}
 
 		checkCart()
-		
-		let running = true
-		task.spawn(() => {
-			while (running) {
-				task.wait(1)
-				checkCart()
-			}
-		})
 
 		// Listen for death screen
 		const deathConnection = cart_controller.toggleOnDeathScreen.Connect(
@@ -74,7 +71,6 @@ export function CartProvider(props: { children: React.ReactNode }) {
 		)
 
 		return () => {
-			running = false
 			deathConnection.Disconnect()
 		}
 	}, [cart])
@@ -88,12 +84,15 @@ export function CartProvider(props: { children: React.ReactNode }) {
 	}, [spawnPoint])
 
 	const setReviving = () => {
-		logger.log("Setting state to reviving")
+		logger.log("STATE-> REVIVING")
 		setState("reviving")
 	}
-
+	const changeState = (new_state: CartState) => {
+		logger.log(`STATE-> ${new_state}`)
+		setState(new_state)
+	}
 	const confirmReset = () => {
-		logger.log("Confirming reset")
+		logger.log("STATE-> NONE")
 		setSpawnPoint(undefined)
 		setState("none")
 	}
@@ -102,11 +101,13 @@ export function CartProvider(props: { children: React.ReactNode }) {
 		cart,
 		state,
 		spawnPoint,
-		setReviving,
+		changeState,
 		confirmReset
 	}
 
-	return <CartContext.Provider value={value}>{props.children}</CartContext.Provider>
+	return (
+		<CartContext.Provider value={value}>{props.children}</CartContext.Provider>
+	)
 }
 
 export function useCart() {

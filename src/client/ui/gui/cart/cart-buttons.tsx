@@ -31,63 +31,96 @@ export function CartButtons(props: {
 	const honk_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.HONK)
 	const flip_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.FLIP)
 	const reset_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.RESET)
-	const [braking, setBraking] = React.useState<boolean>(false)
-	const is_braking = props.__story?.override_brake || braking
 
+	const cartId = cart?.instance.Name ?? "no-cart"
+
+	const { mutate: mutateBrake, data: is_braking_data } = useMutation({
+		queryKey: ["brake", cartId],
+		mutationFn: async (is_braking: boolean, force_value?: boolean) => {
+			if (force_value !== undefined) {
+				return force_value
+			}
+			if (!cart) return false
+			if (is_braking) {
+				const sound = UIHelper.playSound(A.sounds.drift)
+				if (sound) {
+					sound.PlaybackSpeed = 1.5
+					sound.Volume = 0
+					TweenService.Create(
+						sound,
+						new TweenInfo(
+							0.5,
+							Enum.EasingStyle.Linear,
+							Enum.EasingDirection.InOut,
+							0,
+							true
+						),
+						{
+							Volume: 1
+						}
+					).Play()
+				}
+			}
+			cart.toggleBrake(is_braking)
+			return is_braking
+		}
+	})
+
+	const is_braking = props.__story?.override_brake ?? is_braking_data ?? false
 	const { mutate: mutateReset } = useMutation({
 		mutationFn: async () => {
-			if (!cart) {
-				return true
-			}
+			if (!cart) return true
 			cart.cleanupRide("reset by player")
 			return true
 		},
-		queryKey: ["reset-character"]
+		queryKey: ["reset-character", cartId]
 	})
+
 	const { mutate: mutateHonk } = useMutation({
-		queryKey: ["honk", is_braking],
+		queryKey: ["honk", cartId],
 		mutationFn: async () => {
-			if (cart) {
-				cart.honk()
-				UIHelper.playSound(A.sounds.mango_scream)
-				return true
-			}
+			if (!cart) return true
+			cart.honk()
+			UIHelper.playSound(A.sounds.mango_scream)
 			return true
 		}
 	})
+
 	const { mutate: mutateFlip } = useMutation({
-		queryKey: ["flip"],
+		queryKey: ["flip", cartId],
 		mutationFn: async () => {
-			if (cart) {
-				cart.flipCart()
-				return true
-			}
+			if (!cart) return true
+			cart.flipCart()
 			return true
 		}
 	})
+
 	const is_showing = !!(cart || props.__story?.cart_enabled)
 	const is_alive = props.state === "alive" || !!props.__story?.cart_enabled
-	useInput({key: GAMEPAD_BUTTONS.BRAKE, handler: (value) => setBraking(value), enabled: is_showing && is_alive})
-	const is_gamepad_honking = useInput({key:GAMEPAD_BUTTONS.HONK,enabled: is_showing && is_alive})
-	const is_gamepad_flipping = useInput({key:GAMEPAD_BUTTONS.FLIP, enabled: is_showing && is_alive})
-	const is_gamepad_resetting = useInput({key:GAMEPAD_BUTTONS.RESET, enabled: is_showing && is_alive})
-	useEffect(() => {
-		if (!is_showing) {
-			return
-		}
-		if (is_gamepad_honking) {
-			mutateHonk()
-			return
-		}
-		if (is_gamepad_flipping) {
-			mutateFlip()
-			return
-		}
-		if (is_gamepad_resetting) {
-			mutateReset()
-			return
-		}
-	}, [cart, is_gamepad_honking, is_gamepad_flipping,is_gamepad_resetting])
+
+	useInput({
+		key: GAMEPAD_BUTTONS.BRAKE,
+		handler: (value) => mutateBrake(value),
+		enabled: is_showing && is_alive
+	})
+
+	useInput({
+		key: GAMEPAD_BUTTONS.HONK,
+		handler: (value) => value && mutateHonk(),
+		enabled: is_showing && is_alive
+	})
+
+	useInput({
+		key: GAMEPAD_BUTTONS.FLIP,
+		handler: (value) => value && mutateFlip(),
+		enabled: is_showing && is_alive
+	})
+
+	useInput({
+		key: GAMEPAD_BUTTONS.RESET,
+		handler: (value) => value && mutateReset(),
+		enabled: is_showing && is_alive
+	})
 
 	const brake_shake = useAnimateValue({
 		target_value: is_braking ? 1 : 0,
@@ -101,40 +134,13 @@ export function CartButtons(props: {
 		),
 		enabled: is_braking
 	})
-	useEffect(() => {
-		if (braking) {
-			const sound = UIHelper.playSound(A.sounds.drift)
-			if (sound) {
-				sound.PlaybackSpeed = 1.5
-				sound.Volume = 0
-				TweenService.Create(
-					sound,
-					new TweenInfo(
-						0.5,
-						Enum.EasingStyle.Linear,
-						Enum.EasingDirection.InOut,
-						0,
-						true
-					),
-					{
-						Volume: 1
-					}
-				).Play()
-			}
-		}
-		if (!cart) {
-			return
-		}
-		cart.toggleBrake(braking)
-		return
-	}, [cart, braking])
 
 	useEffect(() => {
 		if (!cart) {
 			return
 		}
 		const brakeConnection = cart.brakeListener.Connect((status) => {
-			setBraking(status)
+			mutateBrake(status, status)
 		})
 		return () => {
 			brakeConnection.Disconnect()
@@ -172,7 +178,6 @@ export function CartButtons(props: {
 				Ratio={1.2}
 				Text="HONK"
 				Color={new Color3(0.95, 0.86, 0.11)}
-				mockMouseDown={is_gamepad_honking ? true : undefined}
 				onDown={(val) => val && mutateHonk()}
 			>
 				{device === "Gamepad" && (
@@ -200,8 +205,7 @@ export function CartButtons(props: {
 					AnchorPoint={UIDIM.A_CENTER}
 					Text="BRAKE"
 					Color={new Color3(1, 0.02, 0.02)}
-					onDown={(is_down) => setBraking(is_down)}
-					mockMouseDown={is_braking === true ? true : undefined}
+					onDown={(is_down) => mutateBrake(is_down)}
 				>
 					{device === "Gamepad" && (
 						<Icon
@@ -228,8 +232,7 @@ export function CartButtons(props: {
 					Size={UIDIM.ONE}
 					Ratio={2}
 					Text="FLIP"
-					onClick={mutateFlip}
-					mockMouseDown={is_gamepad_flipping ? true : undefined}
+					onDown={(val) => val && mutateFlip()}
 					Color={new Color3(0.11, 0.75, 0.95)}
 				>
 					{device === "Gamepad" && (
@@ -244,10 +247,9 @@ export function CartButtons(props: {
 					)}
 				</RottenButton>
 				<RottenButton
-					onClick={mutateReset}
+					onDown={(val) => val && mutateReset()}
 					Size={UIDIM.ONE}
 					Ratio={2}
-					mockMouseDown={is_gamepad_resetting ? true : undefined}
 					Text="RESET"
 					Color={new Color3(0.69, 0.02, 1)}
 				>

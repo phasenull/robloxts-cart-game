@@ -1,4 +1,5 @@
 import React from "@rbxts/react"
+import { useMutation } from "@rbxts/react-query"
 import { UIHelper } from "client/ui.helper"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
 import { useCart } from "client/ui/contexts/cart.context"
@@ -8,38 +9,46 @@ import { useDeathCamera } from "./hooks/useDeathCamera"
 import { useDeathPreview } from "./hooks/useDeathPreview"
 
 export function DeathGui() {
-	const { spawnPoint, state, confirmReset, setReviving } = useCart()
+	const { spawnPoint, state, confirmReset, changeState } = useCart()
 	const shouldShow = state === "revive_prompted" || state === "reviving"
 
 	useDeathPreview({ spawnPoint })
 	useDeathCamera({ spawnPoint, shouldShow })
 
-	const [lock, setLock] = React.useState(false)
+	const { mutate: mutateConfirmReset, isLoading: isResetPending } = useMutation(
+		{
+			queryKey: ["confirm-reset"],
+			mutationFn: async () => {
+				if (!spawnPoint) {
+					warn("No spawn point set for death screen")
+					return false
+				}
+				UIHelper.toggleFade(true)
+				task.wait(0.5)
+				confirmReset()
+				try {
+					await ClientFunctions.CartService.respawn.invokeWithTimeout(5000)
+					UIHelper.toggleFade(false)
+					changeState("none")
+					return true
+				} catch (err) {
+					warn(`Failed to respawn player: ${err}`)
+					UIHelper.toggleFade(false)
+					changeState("none")
 
-	const handleConfirmReset = () => {
-		if (lock) {
-			return
+					return false
+				}
+			}
 		}
-		if (!spawnPoint) {
-			warn("No spawn point set for death screen")
-			return
+	)
+
+	const { mutate: mutateRevive } = useMutation({
+		queryKey: ["revive"],
+		mutationFn: async () => {
+			changeState("revive_prompted")
+			return true
 		}
-		setLock(true)
-		UIHelper.toggleFade(true)
-		task.wait(0.5)
-		confirmReset()
-		ClientFunctions.CartService.respawn
-			.invokeWithTimeout(5000)
-			.then(() => {
-				UIHelper.toggleFade(false)
-				setLock(false)
-			})
-			.catch((err) => {
-				warn(`Failed to respawn player: ${err}`)
-				UIHelper.toggleFade(false)
-				setLock(false)
-			})
-	}
+	})
 
 	const transition_duration = 0.5
 	const post_transparency = useAnimateValue({
@@ -59,8 +68,9 @@ export function DeathGui() {
 		<DeathButtons
 			shouldShow={shouldShow}
 			transparency={post_transparency}
-			onConfirmReset={handleConfirmReset}
-			onRevive={setReviving}
+			onConfirmReset={() => mutateConfirmReset()}
+			onRevive={() => mutateRevive()}
+			isResetPending={isResetPending}
 		/>
 	)
 }

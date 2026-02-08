@@ -1,5 +1,6 @@
 import { Dependency } from "@flamework/core"
 import React from "@rbxts/react"
+import { useMutation } from "@rbxts/react-query"
 import { UserInputService } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
@@ -14,44 +15,46 @@ interface DeathButtonsProps {
 	transparency: number
 	onConfirmReset: () => void
 	onRevive: () => void
+	isResetPending?: boolean
 }
 
 export function DeathButtons({
 	shouldShow,
 	transparency,
 	onConfirmReset,
-	onRevive
+	onRevive,
+	isResetPending
 }: DeathButtonsProps) {
 	const device = useInputType()
 
-	const handleRevive = () => {
-		const controller = Dependency<CartController>()
-		controller.promptRevive()
-		onRevive()
-	}
-
-	const is_revive_down = useInput({
-		key: GAMEPAD_BUTTONS.REVIVE,
-		handler: (value) => {
-			if (!value) {
-				return false
-			}
-			handleRevive()
+	const { mutate: mutateRevive } = useMutation({
+		queryKey: ["death-revive"],
+		mutationFn: async () => {
+			const controller = Dependency<CartController>()
+			controller.promptRevive()
+			onRevive()
 			return true
-		},
+		}
+	})
+
+	const { mutate: mutateReset } = useMutation({
+		queryKey: ["death-reset"],
+		mutationFn: async () => {
+			onConfirmReset()
+			return true
+		}
+	})
+
+	useInput({
+		key: GAMEPAD_BUTTONS.REVIVE,
+		handler: (value) => value && mutateRevive(),
 		enabled: shouldShow
 	})
 
-	const is_confirm_reset_down = useInput({
+	useInput({
 		key: GAMEPAD_BUTTONS.CONFIRM_RESET,
-		handler: (value) => {
-			if (!value) {
-				return false
-			}
-			onConfirmReset()
-			return true
-		},
-		enabled: shouldShow
+		handler: (value) => value && mutateReset(),
+		enabled: shouldShow && !isResetPending
 	})
 
 	return (
@@ -70,8 +73,7 @@ export function DeathButtons({
 			/>
 			<RottenButton
 				Size={UIDIM.ONE}
-				onClick={async () => onConfirmReset()}
-				mockMouseDown={is_confirm_reset_down}
+				onDown={(val) => val && mutateReset()}
 				Text="RESET"
 			>
 				<GoofyText
@@ -95,8 +97,7 @@ export function DeathButtons({
 				)}
 			</RottenButton>
 			<RottenButton
-				onClick={handleRevive}
-				mockMouseDown={is_revive_down}
+				onDown={(val) => val && mutateRevive()}
 				Color={new Color3(0.09, 0.86, 0.09)}
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
 				Text="REVIVE"
