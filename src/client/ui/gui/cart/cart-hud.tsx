@@ -11,12 +11,10 @@ export function CartHud(props: {
 		override_device: "Gamepad" | "Keyboard" | "Mobile"
 	}
 }) {
-	const { cart, state } = useCart()
-
 	return (
 		<Fragment>
-			<CartButtons cart={cart} state={state} __story={props.__story} />
-			<SpeedometerHud cart={cart} __story={props.__story} />
+			<CartButtons  __story={props.__story} />
+			<SpeedometerHud __story={props.__story} />
 		</Fragment>
 	)
 }

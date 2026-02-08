@@ -14,14 +14,14 @@ import { Logger } from "shared/logger"
 
 const logger = new Logger("CartContext")
 
-export type CartState = "none" | "alive" | "revive_prompted" | "reviving"
+export type CartState = "none" | "alive" | "death_screen" | "reviving"
 
 interface CartContextValue {
 	cart: CartClientComponent | undefined
 	state: CartState
 	spawnPoint: CFrame | undefined
 	changeState: (state: CartState) => void
-	confirmReset: () => void
+	confirmHardReset: () => void
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
@@ -65,7 +65,7 @@ export function CartProvider(props: { children: React.ReactNode }) {
 				logger.log(`Death screen toggled: ${spawn_point !== undefined}`)
 				setSpawnPoint(spawn_point)
 				if (spawn_point) {
-					setState("revive_prompted")
+					setState("death_screen")
 				}
 			}
 		)
@@ -87,8 +87,8 @@ export function CartProvider(props: { children: React.ReactNode }) {
 		logger.log(`STATE-> ${new_state}`)
 		setState(new_state)
 	}
-	const confirmReset = () => {
-		logger.log("STATE-> NONE")
+	const confirmHardReset = () => {
+		logger.log("STATE-> RESETING")
 		setSpawnPoint(undefined)
 		setState("none")
 	}
@@ -98,7 +98,7 @@ export function CartProvider(props: { children: React.ReactNode }) {
 		state,
 		spawnPoint,
 		changeState,
-		confirmReset
+		confirmHardReset
 	}
 	useEffect(() => {
 		const cart_controller = Dependency<CartController>()

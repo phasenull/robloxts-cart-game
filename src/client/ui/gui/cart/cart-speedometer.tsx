@@ -3,14 +3,15 @@ import { Players, RunService } from "@rbxts/services"
 import { CartClientComponent } from "client/components/cart.client.component"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { UIDIM } from "client/ui/constants"
+import { useCart } from "client/ui/contexts/cart.context"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
 import { A } from "shared/assets"
 import { Logger } from "shared/logger"
 const logger = new Logger("SpeedometerHud")
 export function SpeedometerHud(props: {
-	cart: CartClientComponent | undefined
 	__story?: { cart_enabled: boolean; override_speed: number }
 }) {
+	const {cart,state} = useCart()
 	const max_speed = 70
 	const degrees_range = [-20, 110]
 	const [speed, set_speed] = useState<number>(0)
@@ -37,7 +38,6 @@ export function SpeedometerHud(props: {
 		degrees_range[0]
 	const speed_keypoints = [0, 10, 20, 30, 40, 50, 60, 70]
 	useEffect(() => {
-		const cart = props.cart
 		if (!cart) {
 			logger.log("No cart available, skipping speedometer setup")
 			return
@@ -53,8 +53,8 @@ export function SpeedometerHud(props: {
 			logger.log("Cleaning up speedometer connection")
 			connection?.Disconnect()
 		}
-	}, [props.cart])
-	const is_open = props.cart || props.__story?.cart_enabled
+	}, [cart])
+	const is_open = cart || props.__story?.cart_enabled
 	const value = useAnimateValue({
 		target_value: is_open ? 1 : 0,
 		tween_info: new TweenInfo(

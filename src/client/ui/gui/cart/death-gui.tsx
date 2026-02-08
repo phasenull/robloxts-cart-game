@@ -9,13 +9,13 @@ import { useDeathCamera } from "./hooks/useDeathCamera"
 import { useDeathPreview } from "./hooks/useDeathPreview"
 
 export function DeathGui() {
-	const { spawnPoint, state, confirmReset, changeState } = useCart()
-	const shouldShow = state === "revive_prompted" || state === "reviving"
+	const { spawnPoint, state, confirmHardReset: confirmReset, changeState } = useCart()
+	const shouldShow = state === "death_screen" || state === "reviving"
 
 	useDeathPreview({ spawnPoint })
 	useDeathCamera({ spawnPoint, shouldShow })
 
-	const { mutate: mutateConfirmReset, isLoading: isResetPending } = useMutation(
+	const { mutate: mutateHardReset, isLoading: isResetPending } = useMutation(
 		{
 			queryKey: ["confirm-reset"],
 			mutationFn: async () => {
@@ -23,18 +23,17 @@ export function DeathGui() {
 					warn("No spawn point set for death screen")
 					return false
 				}
+				changeState("none")
 				UIHelper.toggleFade(true)
 				task.wait(0.5)
 				confirmReset()
 				try {
 					await ClientFunctions.CartService.respawn.invokeWithTimeout(5000)
 					UIHelper.toggleFade(false)
-					changeState("none")
 					return true
 				} catch (err) {
 					warn(`Failed to respawn player: ${err}`)
 					UIHelper.toggleFade(false)
-					changeState("none")
 
 					return false
 				}
@@ -45,7 +44,7 @@ export function DeathGui() {
 	const { mutate: mutateRevive } = useMutation({
 		queryKey: ["revive"],
 		mutationFn: async () => {
-			changeState("revive_prompted")
+			changeState("reviving")
 			return true
 		}
 	})
@@ -68,7 +67,7 @@ export function DeathGui() {
 		<DeathButtons
 			shouldShow={shouldShow}
 			transparency={post_transparency}
-			onConfirmReset={() => mutateConfirmReset()}
+			onConfirmReset={() => mutateHardReset()}
 			onRevive={() => mutateRevive()}
 			isResetPending={isResetPending}
 		/>

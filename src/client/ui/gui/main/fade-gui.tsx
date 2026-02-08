@@ -25,6 +25,7 @@ export function FadeGui() {
 			BackgroundTransparency={1-transparency}
 			BackgroundColor3={new Color3(0, 0, 0)}
 			BorderSizePixel={0}
+			ZIndex={99}
 		/>
 	)
 }
