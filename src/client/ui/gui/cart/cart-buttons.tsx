@@ -6,12 +6,13 @@ import { CartClientComponent } from "client/components/cart.client.component"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { useMutation } from "@rbxts/react-query"
 import { __IS_STUDIO__ } from "shared/config.helper"
-import { UIHelper } from "shared/ui.helper"
+
 import { A } from "shared/assets"
 import { Players, TweenService, UserInputService } from "@rbxts/services"
 import { useInputType } from "client/ui/hooks/useInputType"
 import { Icon } from "client/ui/components/icon"
 import { useInput } from "client/ui/hooks/useInput"
+import { UIHelper } from "client/ui.helper"
 export function CartButtons(props: {
 	__story?: {
 		cart_enabled: boolean
@@ -32,11 +33,10 @@ export function CartButtons(props: {
 
 	const { mutate: mutateReset } = useMutation({
 		mutationFn: async () => {
-			const player = Players.LocalPlayer
-			const humanoid = player.Character?.FindFirstChildOfClass("Humanoid")
-			if (humanoid) {
-				humanoid.Health = 0
+			if (!cart) {
+				return true
 			}
+			cart.cleanupRide("reset by player")
 			return true
 		},
 		queryKey: ["reset-character"]

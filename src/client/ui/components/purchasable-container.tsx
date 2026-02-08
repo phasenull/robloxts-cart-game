@@ -8,12 +8,12 @@ import { LoadingIndicator } from "./loading-indicator"
 import { GoofyButton } from "./buttons/goofy-button"
 import { Logger } from "shared/logger"
 import { EmptyContainer } from "./empty-container"
-import { UIHelper } from "shared/ui.helper"
 import { useErrorPage } from "../contexts/error.context"
 import Object from "@rbxts/object-utils"
 import { extractMessageFromError } from "shared/util.helper"
 import { useNavigator } from "../hooks/useNavigator"
 import { Sparkle } from "./sparkle"
+import { UIHelper } from "client/ui.helper"
 const logger = new Logger("GamepassContainer")
 export function PurchasableContainer<T extends "gamepass" | "product">(props: {
 	purchasable_id: number

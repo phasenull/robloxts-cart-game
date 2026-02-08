@@ -1,24 +1,26 @@
 import { Components } from "@flamework/components"
 import { Controller, Dependency, OnStart } from "@flamework/core"
 import { arrow } from "@rbxts/better-gizmos"
-import { Players, Workspace } from "@rbxts/services"
+import { MarketplaceService, Players, Workspace } from "@rbxts/services"
 import Signal from "@rbxts/signal"
 import { ButtonComponent } from "client/components/button.component"
 import { CartClientComponent } from "client/components/cart.client.component"
+import { UIHelper } from "client/ui.helper"
 import { Logger } from "shared/logger"
 import { ClientEvents } from "shared/network.helper"
 import { ButtonModel } from "shared/type.helper"
 
-@Controller({loadOrder: 5})
+@Controller({ loadOrder: 5 })
 export class CartController implements OnStart {
-	constructor(
-		private logger: Logger
-	) {}
+	constructor(private logger: Logger) {}
 	private __last_checkpoint: CFrame | undefined
 	private arrow = arrow
 	saveCheckpoint(cframe: CFrame) {
 		this.__last_checkpoint = cframe
-		const new_handle = this.arrow.draw(cframe.Position,cframe.Position.add(cframe.LookVector.mul(1)))
+		const new_handle = this.arrow.draw(
+			cframe.Position,
+			cframe.Position.add(cframe.LookVector.mul(1))
+		)
 		task.delay(1.5, () => {
 			if (this.__last_checkpoint === cframe) {
 				return
@@ -27,13 +29,63 @@ export class CartController implements OnStart {
 			new_handle.adornmentLine.Destroy()
 		})
 	}
-	public onDeath = new Signal<(spawn_point: CFrame|undefined) => void>()
+	public onDeath = new Signal<(spawn_point: CFrame | undefined) => void>()
 	toggleDeathScreen(enabled: boolean) {
 		if (enabled && this.__last_checkpoint) {
 			this.onDeath.Fire(this.__last_checkpoint)
 		} else {
 			this.onDeath.Fire(undefined)
 		}
+	}
+	private readonly revive_product_id = 3532858318
+	promptRevive() {
+		if (!this.__last_checkpoint) {
+			return
+		}
+		MarketplaceService.PromptProductPurchase(
+			Players.LocalPlayer,
+			this.revive_product_id
+		)
+		const connection = MarketplaceService.PromptProductPurchaseFinished.Connect(
+			(user_id, assetId, wasPurchased) => {
+				if (user_id !== Players.LocalPlayer.UserId) return
+				if (assetId !== this.revive_product_id) return
+				if (!wasPurchased) return
+				connection.Disconnect()
+				this.revivePlayer()
+			}
+		)
+	}
+	revivePlayer() {
+		this.logger.log("Reviving player...")
+		const target = this.__last_checkpoint
+		this.__last_checkpoint = undefined
+		if (!target) {
+			return
+		}
+		const components = Dependency<Components>()
+		const random_button = components.getAllComponents(ButtonComponent)[0]
+		if (!random_button) {
+			return
+		}
+		UIHelper.toggleFade(true)
+		task.wait(0.5)
+		this.toggleDeathScreen(false)
+		ClientEvents.CartService.spawnCart.fire(random_button.instance)
+		task.wait(0.5)
+		const cart = this.getMyCart()
+		if (cart) {
+			cart.instance.PivotTo(target)
+		}
+		UIHelper.toggleFade(false)
+	}
+	getMyCart(): CartClientComponent | undefined {
+		const components = Dependency<Components>()
+		const carts = components.getAllComponents(CartClientComponent)
+		const my_cart = carts.find((cart) => {
+			return cart.resolvePlayer() === Players.LocalPlayer
+		})
+		return my_cart
 	}
 	onStart(): void {
 		const components = Dependency<Components>()

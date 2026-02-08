@@ -1,10 +1,11 @@
 import React, { forwardRef, ReactNode, useEffect, useMemo, useRef } from "react"
-import { UIHelper } from "shared/ui.helper"
+
 import { UIDIM } from "../../constants"
 import { GoofyText } from "../goofy-text"
 import { A } from "shared/assets"
 import { useMouseEvents } from "../../hooks/useMouseEvents"
 import useAnimateValue from "../../hooks/useAnimateValue"
+import { UIHelper } from "client/ui.helper"
 interface GoofyButtonProps {
 	Text: string
 	OnClick: () => void

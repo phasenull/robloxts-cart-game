@@ -84,15 +84,13 @@ export function DeathGui() {
 		}
 
 		example_cart.PivotTo(spawnPoint)
-		task.delay(transition_duration*2, () => {
-			example_cart.Parent = Workspace.CurrentCamera
-		})
+		example_cart.Parent = Workspace.CurrentCamera
 		return () => {
 			example_cart.Destroy()
-
 		}
 	}, [spawnPoint])
 	const rotation = useAnimateValue({
+		initial_value: 0,
 		target_value: 1,
 		tween_info: new TweenInfo(
 			10,
@@ -118,6 +116,10 @@ export function DeathGui() {
 			camera.CFrame = target_cframe
 		} else {
 			camera.CameraType = Enum.CameraType.Custom
+			const char = Players.LocalPlayer.Character
+			if (char && char.PrimaryPart) {
+				camera.CameraSubject = char.PrimaryPart
+			}
 		}
 	}
 	useEffect(() => {
@@ -129,27 +131,12 @@ export function DeathGui() {
 		}
 	}, [spawnPoint])
 	const transition_duration = 0.5
-	const transparency = useAnimateValue({
-		initial_value: 1,
-		target_value: should_show ? 0 : 1,
-		tween_info: new TweenInfo(
-			transition_duration,
-			Enum.EasingStyle.Quad,
-			Enum.EasingDirection.Out,
-			0,
-			true,
-			transition_duration
-		)
-	})
 	const post_transparency = useAnimateValue({
 		target_value: should_show ? 1 : 0,
 		tween_info: new TweenInfo(
 			transition_duration,
 			Enum.EasingStyle.Quad,
-			Enum.EasingDirection.Out,
-			0,
-			false,
-			transition_duration
+			Enum.EasingDirection.Out
 		)
 	})
 	return (
@@ -157,7 +144,7 @@ export function DeathGui() {
 			<imagelabel
 				Size={UDim2.fromScale(0.2, 0.2)}
 				AnchorPoint={UIDIM.A_BOTTOM}
-				Position={UDim2.fromScale(0.5, 0.95 + 1- post_transparency)}
+				Position={UDim2.fromScale(0.5, 0.95 + 1 - post_transparency)}
 			>
 				<uiaspectratioconstraint AspectRatio={4} />
 				<uilistlayout
@@ -181,19 +168,16 @@ export function DeathGui() {
 					></GoofyText>
 				</RottenButton>
 				<RottenButton
+					onClick={() => {
+						const controller = Dependency<CartController>()
+						controller.promptRevive()
+					}}
 					Color={new Color3(0.09, 0.86, 0.09)}
 					Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
 					Text="REVIVE"
 					Ratio={1.5}
 				/>
 			</imagelabel>
-			{/* fade in-out */}
-			<frame
-				Size={UDim2.fromScale(1, 1)}
-				BackgroundTransparency={transparency}
-				BackgroundColor3={new Color3(0, 0, 0)}
-				BorderSizePixel={0}
-			/>
 		</Fragment>
 	)
 }

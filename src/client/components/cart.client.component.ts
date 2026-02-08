@@ -391,6 +391,7 @@ export class CartClientComponent
 			return
 		}
 		this.__is_cleaned_up = true
+		this.AnimationController.stop("cart_idle",0)
 		const controller = Dependency<CartController>()
 		controller.toggleDeathScreen(true)
 		this.toggleFriction(false)
@@ -512,6 +513,38 @@ export class CartClientComponent
 		if (steepness > math.rad(3)) {
 			return false
 		}
+
+		// also send 4 raycasts from the bounding box corners to the ground and check if any of them are hitting the ground within 10 studs
+		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
+		if (!root) {
+			this.cleanupRide("Cart root not found (checkCheckpointAvailability)")
+			return false
+		}
+		const size = root.Size
+		const dead_zone = 3
+		const corners = [
+			new Vector3(size.X / 2 + dead_zone, 0, size.Z / 2 + dead_zone),
+			new Vector3(-size.X / 2 - dead_zone, 0, size.Z / 2 + dead_zone),
+			new Vector3(size.X / 2 + dead_zone, 0, -size.Z / 2 - dead_zone),
+			new Vector3(-size.X / 2 - dead_zone, 0, -size.Z / 2 - dead_zone)
+		]
+		const ray_info = new RaycastParams()
+		ray_info.FilterDescendantsInstances = [
+			this.instance,
+			this.rider?.Parent
+		].filterUndefined()
+		ray_info.FilterType = Enum.RaycastFilterType.Blacklist
+		for (const corner of corners) {
+			const ray = Workspace.Raycast(
+				root.Position.add(corner),
+				new Vector3(0, -1, 0).mul(10),
+				ray_info
+			)
+			if (!ray) {
+				return false
+			}
+		}
+
 		return true
 	}
 }

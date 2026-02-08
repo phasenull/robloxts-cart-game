@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from "@rbxts/react"
-import { UIHelper } from "shared/ui.helper"
+import { UIHelper } from "client/ui.helper"
 import { GUI_KEYS, PRIMARY, UIDIM } from "../../constants"
 import { A } from "shared/assets"
 import { capitalizeFirstLetter } from "shared/util.helper"

@@ -1,9 +1,13 @@
 import { Players, SoundService, TweenService } from "@rbxts/services"
 import { Environment } from "ui-labs"
-import { A } from "./assets"
+import { A } from "../shared/assets"
 import Signal from "@rbxts/signal"
+import { FadeGuiEvent } from "./ui/gui/main/fade-gui"
 
 export abstract class UIHelper {
+	static toggleFade(toggle: boolean) {
+		FadeGuiEvent.Fire(toggle)
+	}
 	static getSoundGroup(name: string) {
 		const existing = SoundService.FindFirstChild(name) as SoundGroup | undefined
 		if (existing) {
@@ -13,7 +17,6 @@ export abstract class UIHelper {
 		new_group.Name = name
 		new_group.Parent = SoundService
 		return new_group
-		
 	}
 	static playSound(soundId: string) {
 		const environment =
@@ -39,7 +42,7 @@ export abstract class UIHelper {
 		})
 		return sound
 	}
-	static bind(instance: ImageButton|TextButton, rotate: number = 0) {
+	static bind(instance: ImageButton | TextButton, rotate: number = 0) {
 		const original_size = instance.Size
 		this.events.set(instance, { connections: [], original_size })
 		this.signals.set(
