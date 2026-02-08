@@ -54,7 +54,6 @@ export function DeathGui() {
 		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
 		const local_player = Players.LocalPlayer
 		let char: Model | undefined = undefined
-		let job: thread | undefined = undefined
 		try {
 			char = Players.CreateHumanoidModelFromUserIdAsync(local_player.UserId)
 			char.GetDescendants().forEach((desc) => {
@@ -70,13 +69,7 @@ export function DeathGui() {
 			char.PrimaryPart!.Anchored = true
 			if (humanoid) {
 				// humanoid.SetStateEnabled(Enum.HumanoidStateType.None, false)
-				job = task.spawn(() => {
-					while (task.wait(0.1) && !humanoid.Sit) {
-						humanoid.ChangeState(Enum.HumanoidStateType.PlatformStanding)
-						print(`Humanoid state: ${humanoid.GetState()}`)
-						seat.Sit(humanoid)
-					}
-				})
+
 				const animator = humanoid.FindFirstChildOfClass("Animator")
 				const anim = new Instance("Animation", animator)
 				anim.AnimationId = "rbxassetid://100765437584509"
@@ -91,14 +84,12 @@ export function DeathGui() {
 		}
 
 		example_cart.PivotTo(spawnPoint)
-		task.delay(transition_duration, () => {
+		task.delay(transition_duration*2, () => {
 			example_cart.Parent = Workspace.CurrentCamera
 		})
 		return () => {
 			example_cart.Destroy()
-			if (job) {
-				task.cancel(job)
-			}
+
 		}
 	}, [spawnPoint])
 	const rotation = useAnimateValue({
@@ -151,8 +142,7 @@ export function DeathGui() {
 		)
 	})
 	const post_transparency = useAnimateValue({
-		initial_value: 1,
-		target_value: should_show ? 0 : 1,
+		target_value: should_show ? 1 : 0,
 		tween_info: new TweenInfo(
 			transition_duration,
 			Enum.EasingStyle.Quad,
@@ -167,7 +157,7 @@ export function DeathGui() {
 			<imagelabel
 				Size={UDim2.fromScale(0.2, 0.2)}
 				AnchorPoint={UIDIM.A_BOTTOM}
-				Position={UDim2.fromScale(0.5, 0.95 + post_transparency)}
+				Position={UDim2.fromScale(0.5, 0.95 + 1- post_transparency)}
 			>
 				<uiaspectratioconstraint AspectRatio={4} />
 				<uilistlayout
