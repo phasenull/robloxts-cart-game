@@ -1,27 +1,36 @@
 import React, { useEffect } from "@rbxts/react"
 
 import useAnimateValue from "../../hooks/useAnimateValue"
-import { UIDIM } from "client/ui/constants"
+import { GAMEPAD_BUTTONS, UIDIM } from "client/ui/constants"
 import { CartClientComponent } from "client/components/cart.client.component"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { useMutation } from "@rbxts/react-query"
 import { __IS_STUDIO__ } from "shared/config.helper"
 import { UIHelper } from "shared/ui.helper"
 import { A } from "shared/assets"
-import { Players, TweenService } from "@rbxts/services"
+import { Players, TweenService, UserInputService } from "@rbxts/services"
+import { useInputType } from "client/ui/hooks/useInputType"
+import { Icon } from "client/ui/components/icon"
+import { useInput } from "client/ui/hooks/useInput"
 export function CartButtons(props: {
 	__story?: {
 		cart_enabled: boolean
 		override_speed: number
 		override_brake: boolean
+		override_device: "Gamepad" | "Keyboard" | "Mobile"
 	}
 	cart: CartClientComponent | undefined
 }) {
 	const { cart } = props
-
+	const device = props.__story?.override_device ?? useInputType()
+	const brake_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.BRAKE)
+	const honk_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.HONK)
+	const flip_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.FLIP)
+	const reset_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.RESET)
 	const [braking, setBraking] = React.useState<boolean>(false)
 	const is_braking = props.__story?.override_brake || braking
-	const {mutate:resetChar}= useMutation({
+
+	const { mutate: mutateReset } = useMutation({
 		mutationFn: async () => {
 			const player = Players.LocalPlayer
 			const humanoid = player.Character?.FindFirstChildOfClass("Humanoid")
@@ -30,9 +39,9 @@ export function CartButtons(props: {
 			}
 			return true
 		},
-		queryKey:["reset-character"]
+		queryKey: ["reset-character"]
 	})
-	const { mutate } = useMutation({
+	const { mutate: mutateHonk } = useMutation({
 		queryKey: ["honk", is_braking],
 		mutationFn: async () => {
 			if (cart) {
@@ -45,7 +54,7 @@ export function CartButtons(props: {
 			return true
 		}
 	})
-	const { mutate:flipMutate } = useMutation({
+	const { mutate: mutateFlip } = useMutation({
 		queryKey: ["flip"],
 		mutationFn: async () => {
 			if (cart) {
@@ -55,6 +64,19 @@ export function CartButtons(props: {
 			return true
 		}
 	})
+	useInput(GAMEPAD_BUTTONS.BRAKE,(value)=>setBraking(value))
+	const is_gamepad_honking = useInput(GAMEPAD_BUTTONS.HONK)
+	const is_gamepad_flipping = useInput(GAMEPAD_BUTTONS.FLIP)
+	const is_gamepad_resetting = useInput(GAMEPAD_BUTTONS.RESET,value=>value && mutateReset())
+	useEffect(() => {
+		if (is_gamepad_honking) {
+			mutateHonk()
+		}
+		if (is_gamepad_flipping) {
+			mutateFlip()
+		}
+	}, [cart, is_gamepad_honking, is_gamepad_flipping])
+
 	const brake_shake = useAnimateValue({
 		target_value: is_braking ? 1 : 0,
 		initial_value: 0,
@@ -73,9 +95,19 @@ export function CartButtons(props: {
 			if (sound) {
 				sound.PlaybackSpeed = 1.5
 				sound.Volume = 0
-				TweenService.Create(sound, new TweenInfo(.5, Enum.EasingStyle.Linear,Enum.EasingDirection.InOut,0,true), {
-					Volume: 1
-				}).Play()
+				TweenService.Create(
+					sound,
+					new TweenInfo(
+						0.5,
+						Enum.EasingStyle.Linear,
+						Enum.EasingDirection.InOut,
+						0,
+						true
+					),
+					{
+						Volume: 1
+					}
+				).Play()
 			}
 		}
 		if (!cart) {
@@ -83,8 +115,8 @@ export function CartButtons(props: {
 		}
 		cart.toggleBrake(braking)
 		return
-		
 	}, [cart, braking])
+
 	useEffect(() => {
 		if (!cart) {
 			return
@@ -128,8 +160,20 @@ export function CartButtons(props: {
 				Ratio={1.2}
 				Text="HONK"
 				Color={new Color3(0.95, 0.86, 0.11)}
-				onDown={(val)=>val && mutate()}
-			/>
+				mockMouseDown={is_gamepad_honking ? true : undefined}
+				onDown={(val) => val && mutateHonk()}
+			>
+				{device === "Gamepad" && (
+					<Icon
+						Size={new UDim2(0.5, 0, 0.5, 0)}
+						Image={honk_icon}
+						AnchorPoint={UIDIM.A_CENTER}
+						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
+						Color3={new Color3(0.36, 0.66, 1)}
+						Transparency={0.1}
+					/>
+				)}
+			</RottenButton>
 			<frame
 				Size={UIDIM.ONE}
 				AnchorPoint={UIDIM.A_CENTER}
@@ -146,7 +190,18 @@ export function CartButtons(props: {
 					Color={new Color3(1, 0.02, 0.02)}
 					onDown={(is_down) => setBraking(is_down)}
 					mockMouseDown={is_braking === true ? true : undefined}
-				/>
+				>
+					{device === "Gamepad" && (
+						<Icon
+							Size={new UDim2(0.5, 0, 0.5, 0)}
+							Image={brake_icon}
+							AnchorPoint={UIDIM.A_CENTER}
+							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
+							Color3={new Color3(0.36, 0.66, 1)}
+							Transparency={0.1}
+						/>
+					)}
+				</RottenButton>
 			</frame>
 			<frame BackgroundTransparency={1} Size={UIDIM.ONE}>
 				<uiaspectratioconstraint AspectRatio={0.8} />
@@ -161,16 +216,40 @@ export function CartButtons(props: {
 					Size={UIDIM.ONE}
 					Ratio={2}
 					Text="FLIP"
-					onClick={flipMutate}
+					onClick={mutateFlip}
+					mockMouseDown={is_gamepad_flipping ? true : undefined}
 					Color={new Color3(0.11, 0.75, 0.95)}
-				/>
+				>
+					{device === "Gamepad" && (
+						<Icon
+							Size={new UDim2(0.8, 0, 0.8, 0)}
+							Image={flip_icon}
+							AnchorPoint={UIDIM.A_LEFT}
+							Position={UIDIM.RIGHT.add(new UDim2(0.1, 0, 0, 0))}
+							Color3={new Color3(0.36, 0.66, 1)}
+							Transparency={0.1}
+						/>
+					)}
+				</RottenButton>
 				<RottenButton
-					onClick={resetChar}
+					onClick={mutateReset}
 					Size={UIDIM.ONE}
 					Ratio={2}
+					mockMouseDown={is_gamepad_resetting ? true : undefined}
 					Text="RESET"
 					Color={new Color3(0.69, 0.02, 1)}
-				/>
+				>
+					{device === "Gamepad" && (
+						<Icon
+							Size={new UDim2(0.8, 0, 0.8, 0)}
+							Image={reset_icon}
+							AnchorPoint={UIDIM.A_LEFT}
+							Position={UIDIM.RIGHT.add(new UDim2(0.1, 0, 0, 0))}
+							Color3={new Color3(0.36, 0.66, 1)}
+							Transparency={0.1}
+						/>
+					)}
+				</RottenButton>
 			</frame>
 		</frame>
 	)

@@ -1,6 +1,7 @@
 import { BaseComponent, Component } from "@flamework/components"
 import { OnPhysics, OnStart } from "@flamework/core"
 import { sphere } from "@rbxts/better-gizmos"
+import { copy } from "@rbxts/object-utils"
 import { Players, Workspace } from "@rbxts/services"
 import Signal from "@rbxts/signal"
 import StringUtils from "@rbxts/string-utils"
@@ -24,13 +25,16 @@ export class CartClientComponent
 	extends BaseComponent<{}, ICart>
 	implements OnPhysics, OnStart
 {
+	private readonly cart_lever_animation_id = 130142658472079
+	private readonly cart_spawn_animation_id = 130142615868904
+	private readonly cart_idle_animation_id = 100765437584509
 	private rider: Humanoid | undefined
 	resolvePlayer(): Player | undefined {
 		const rider_character = this.rider?.Parent
 		if (!rider_character) return undefined
 		return Players.GetPlayerFromCharacter(rider_character)
 	}
-	private wheel_hitboxes: Part[] = []
+	private wheel_hitboxes: BasePart[] = []
 	private power: number = 170
 	private max_velocity = 25
 	honk(): void {
@@ -41,16 +45,27 @@ export class CartClientComponent
 	private descriptor: string = "Cart"
 	setDescriptor(new_descriptor: string): void {
 		this.descriptor = new_descriptor
-		this.logger.log(`Cart descriptor set to ${new_descriptor}`)
+		// this.logger.log(`Cart descriptor set to ${new_descriptor}`)
 	}
 	overrideConfig(args: {
 		power: number
 		friction: number
 		max_velocity: number
 	}): void {
+		this.logger.log(
+			`Overriding cart config: power=${args.power}, friction=${args.friction}, max_velocity=${args.max_velocity}`
+		)
 		this.power = args.power
 		this.wheel_friction = args.friction
 		this.max_velocity = args.max_velocity
+		this.logger.log("total wheel hitboxes: " + this.wheel_hitboxes.size())
+		this.wheel_hitboxes.forEach((hitbox) => {
+			this.logger.log(
+				`Setting wheel friction to ${args.friction} for hitbox ${hitbox.Name}`
+			)
+			const new_pp = new PhysicalProperties(1, 1, 0)
+			hitbox.CustomPhysicalProperties = new_pp
+		})
 	}
 
 	getMaxVelocity(): number {
@@ -63,17 +78,21 @@ export class CartClientComponent
 		return this.wheel_friction
 	}
 	setWheelFriction(new_friction: number): void {
-		this.wheel_hitboxes.forEach((hitbox) => {
-			hitbox.CustomPhysicalProperties = new PhysicalProperties(
-				0.7,
-				new_friction,
-				0.2
-			)
-		})
+		// this.wheel_hitboxes.forEach((hitbox) => {
+		// 	hitbox.CustomPhysicalProperties = new PhysicalProperties(
+		// 		0.7,
+		// 		new_friction,
+		// 		0.2
+		// 	)
+		// })
 		this.wheel_friction = new_friction
 	}
 	private getSteepAngle() {
-		const root = this.instance.Root
+		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
+		if (!root) {
+			this.cleanupRide("Cart root not found (getSteepAngle)")
+			return 0
+		}
 		const up_vector = new CFrame().UpVector.Dot(root.CFrame.UpVector)
 		return math.acos(up_vector)
 	}
@@ -103,6 +122,8 @@ export class CartClientComponent
 		if (this.rider !== humanoid) {
 			return
 		}
+		if (!this.instance.FindFirstChild("Root"))
+			return this.cleanupRide("Cart root not found")
 		const velocity = this.instance.Root.AssemblyLinearVelocity
 		const h = this.getHeight()
 		const is_in_air = h > 5
@@ -156,13 +177,16 @@ export class CartClientComponent
 			this.toggleBrake(false)
 		}
 	}
-	constructor(
-		private logger: Logger,
-		private AnimationController: AnimationController
-	) {
+	private logger: Logger
+	constructor(private AnimationController: AnimationController) {
 		super()
-		this.setDescriptor(this.instance.Name)
+
+		const instance_name = this.instance.Name
+		const cart_name = instance_name.split("_")[0]
+		this.logger = new Logger(`CartClientComponent::${cart_name}`)
+		this.setDescriptor(this.instance.Name.split("_")[0])
 	}
+	private brake_animation_track: AnimationTrack | undefined
 	private wheel_friction = 2
 	getPower(): number {
 		return this.power
@@ -173,25 +197,30 @@ export class CartClientComponent
 
 	toggleFriction(enabled: boolean) {
 		if (enabled) {
-			this.wheel_hitboxes.forEach((hitbox) => {
-				const new_pp = new PhysicalProperties(1, this.wheel_friction, 0)
-				hitbox.CustomPhysicalProperties = new_pp
-			})
+			// this.wheel_hitboxes.forEach((hitbox) => {
+			// 	const new_pp = new PhysicalProperties(1, this.wheel_friction, 0)
+			// 	hitbox.CustomPhysicalProperties = new_pp
+			// })
 		} else {
-			this.wheel_hitboxes.forEach((hitbox) => {
-				hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7, 0, 0.2)
-			})
+			// this.wheel_hitboxes.forEach((hitbox) => {
+			// 	hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7, 0, 0.2)
+			// })
 		}
 		const wheel_constraints = this.instance
 			.GetDescendants()
 			.filter((descendant) =>
 				descendant.IsA("BallSocketConstraint")
 			) as BallSocketConstraint[]
+		wheel_constraints.forEach((constraint) => {
+			constraint.MaxFrictionTorque = enabled ? this.wheel_friction : 5
+		})
 	}
 	private brake = false
-	private readonly cart_spawn_animation_id = 130142615868904
-	private readonly cart_idle_animation_id = 100765437584509
 	onRide(): void {
+		if (!this.instance.WaitForChild("VehicleSeat", 1)) {
+			this.cleanupRide("no vehicle seat found at onride")
+			return
+		}
 		const player = Players.LocalPlayer
 		const character = player.Character
 		const my_hunanoid = character?.FindFirstChildOfClass("Humanoid")
@@ -224,6 +253,11 @@ export class CartClientComponent
 			seat_weld.C0 = new CFrame(0, 0.6, 0)
 			seat_weld.C1 = new CFrame(0, 0, 0)
 		}
+
+		this.brake_animation_track = this.AnimationController.preload({
+			key: "cart_lever",
+			animationId: this.cart_lever_animation_id
+		})
 		this.rider.JumpHeight = 0
 		const humanoid = this.rider
 		const conn = this.rider.GetPropertyChangedSignal("Jump").Connect(() => {
@@ -238,10 +272,15 @@ export class CartClientComponent
 				this.toggleBrake(false)
 			}
 		})
+
 		CartLisener.Fire(this)
 	}
 	getHeight(): number {
-		const root = this.instance.Root
+		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
+		if (!root) {
+			this.cleanupRide("Cart root not found (getHeight)")
+			return 0
+		}
 		const ray_info = new RaycastParams()
 		ray_info.FilterDescendantsInstances = [
 			this.instance,
@@ -259,6 +298,11 @@ export class CartClientComponent
 		return math.huge
 	}
 	toggleBrake(enable: boolean): void {
+		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
+		if (!root) {
+			this.cleanupRide("Cart root not found (toggleBrake)")
+			return
+		}
 		if (this.instance.Root.AssemblyLinearVelocity.Magnitude > 1 && enable) {
 			for (const brake of this.brakes) {
 				brake.Enabled = true
@@ -279,6 +323,15 @@ export class CartClientComponent
 		this.brakeListener.Fire(enable)
 		this.toggleFriction(enable)
 		this.brake = enable
+		const anim = this.brake_animation_track
+		if (anim) {
+			if (enable) {
+				anim.Looped = true
+				anim.Play()
+			} else {
+				anim.Stop()
+			}
+		}
 	}
 	private __last_flip_time = 0
 	flipCart(): void {
@@ -310,9 +363,9 @@ export class CartClientComponent
 		print("Current Y orientation: " + y_orientation)
 		// make the cart look at the direction of its root
 
-		const rotated_cframe = new CFrame((this.instance.Root.Position).add(new Vector3(0, 5, 0))).mul(
-			CFrame.Angles(math.rad(180), 0, math.rad(y_orientation))
-		)
+		const rotated_cframe = new CFrame(
+			this.instance.Root.Position.add(new Vector3(0, 5, 0))
+		).mul(CFrame.Angles(math.rad(180), 0, math.rad(y_orientation)))
 		const lookat_pos = rotated_cframe.Position.add(
 			rotated_cframe.LookVector.mul(5)
 		)
@@ -327,16 +380,57 @@ export class CartClientComponent
 		})
 	}
 	cleanupRide(reason: string): void {
-		this.logger.log(`Cleaning up ride: ${reason}`)
+		if (this.resolvePlayer() === Players.LocalPlayer) {
+			this.logger.log(`${this.getDescriptor()} Cleaning up ride: ${reason}`)
+		}
 		this.toggleFriction(false)
 		this.setPower(0)
-		CartLisener.Fire(undefined)
 		if (!this.rider) {
 			return
 		}
-		this.rider.JumpHeight = 7.2
+		const player = Players.LocalPlayer
+		const char = player.Character
+		const humanoid = char?.FindFirstChildOfClass("Humanoid")
+		if (this.rider && this.rider === humanoid) {
+			CartLisener.Fire(undefined)
+			this.rider.JumpHeight = 7.2
+			if (this.rider.Seated) {
+				this.rider.Sit = false
+			}
+		}
 	}
-	async onStart() {
+	onStart(): void {
+		this.bootstrap()
+	}
+	triggetOccupantChanged(): void {
+		const seat = this.instance.FindFirstChild("VehicleSeat") as Seat | undefined
+		if (!seat) {
+			this.cleanupRide("Vehicle seat not found")
+			return
+		}
+		const new_rider = seat.Occupant as Humanoid | undefined
+		const player = Players.LocalPlayer
+		const char = player.Character
+		const humanoid = char?.FindFirstChildOfClass("Humanoid")
+		if (new_rider === undefined && this.rider === humanoid) {
+			// local player just got off
+			this.rider = undefined
+			this.logger.log("!!!Local player got off the cart")
+			this.cleanupRide("Local player got off the cart")
+			return
+		}
+		if (new_rider === humanoid) {
+			// local player just got on
+			this.rider = humanoid
+			this.logger.log("!!!Local player got on the cart")
+			this.onRide()
+			return
+		}
+	}
+	private __is_bootstrapped = false
+	async bootstrap() {
+		if (this.__is_bootstrapped) return
+		this.__is_bootstrapped = true
 		const brake_original = this.instance.Brake
 		this.instance.WaitForChild("Root", 10)?.Destroying.Once(() => {
 			this.cleanupRide("Root destroyed")
@@ -351,10 +445,10 @@ export class CartClientComponent
 			}
 			assert(config, "Failed to get config from server")
 			cart_config = config.find((entry) => entry.name === this.descriptor)
-			assert(
-				cart_config,
-				`Could not find cart config for descriptor ${this.descriptor}`
-			)
+			if (!cart_config) {
+				this.cleanupRide("Failed to get config from server")
+				return
+			}
 		} catch (e) {
 			this.logger.warn("Error while getting config from server: " + tostring(e))
 		}
@@ -370,16 +464,12 @@ export class CartClientComponent
 			.forEach((child) => {
 				if (child.IsA("BasePart")) {
 					const brake = brake_original.Clone()
+					this.wheel_hitboxes.push(child as BasePart)
 					brake.Parent = child
 					brake.Enabled = false
 					this.brakes.push(brake)
 				}
 			})
-		this.instance.Wheels.GetChildren().forEach((_) => {
-			if (!_.IsA("Model")) return
-			const model = _ as IWheel
-			this.wheel_hitboxes.push(model.BALL)
-		})
 		this.AnimationController.preload({
 			key: "cart_spawn",
 			animationId: this.cart_spawn_animation_id
@@ -388,26 +478,18 @@ export class CartClientComponent
 			key: "cart_idle",
 			animationId: this.cart_idle_animation_id
 		})
+		if (!this.instance.WaitForChild("VehicleSeat", 1)) {
+			this.cleanupRide("no vehicle seat found at bootstrap")
+			return
+		}
 		const seat = this.instance.VehicleSeat
-		const player = Players.LocalPlayer
+		if (!this.rider && seat.Occupant) {
+			// handle case where player is already sitting in the cart before component initializes
+			this.triggetOccupantChanged()
+		}
+
 		seat.GetPropertyChangedSignal("Occupant").Connect(() => {
-			const new_rider = seat.Occupant as Humanoid | undefined
-			const char = player.Character
-			const humanoid = char?.FindFirstChildOfClass("Humanoid")
-			if (new_rider === undefined && this.rider === humanoid) {
-				// local player just got off
-				this.rider = undefined
-				this.logger.log("!!!Local player got off the cart")
-				this.cleanupRide("Local player got off the cart")
-				return
-			}
-			if (new_rider === humanoid) {
-				// local player just got on
-				this.rider = humanoid
-				this.logger.log("!!!Local player got on the cart")
-				this.onRide()
-				return
-			}
+			this.triggetOccupantChanged()
 		})
 	}
 }

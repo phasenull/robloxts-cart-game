@@ -2,6 +2,7 @@ import { BaseComponent, Component } from "@flamework/components"
 import { OnStart } from "@flamework/core"
 import { Players, TweenService } from "@rbxts/services"
 import Signal from "@rbxts/signal"
+import { Logger } from "shared/logger"
 import { ButtonModel } from "shared/type.helper"
 
 @Component({ tag: "ButtonComponent" })
@@ -17,7 +18,7 @@ export class ButtonComponent
 	private readonly available_color: Color3
 	private readonly touch: BasePart
 	private readonly spawn_platform: CFrame
-	constructor() {
+	constructor(private logger: Logger) {
 		super()
 		this.instance["Spawn Button"].WaitForChild("Part",9999999)
 		const touch = this.instance["Spawn Button"]

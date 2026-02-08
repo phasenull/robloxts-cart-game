@@ -1,4 +1,11 @@
 import { Environment } from "@rbxts/ui-labs"
+
+export const GAMEPAD_BUTTONS = {
+	"BRAKE": Enum.KeyCode.ButtonA,
+	"HONK": Enum.KeyCode.ButtonB,
+	"FLIP": Enum.KeyCode.ButtonY,
+	"RESET": Enum.KeyCode.ButtonX
+}
 export const TESTING_USERS = [
 	{
 		Name: "Captide",

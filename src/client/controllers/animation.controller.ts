@@ -72,7 +72,7 @@ export class AnimationController implements OnStart {
 
         const animationTrack = this.animator.LoadAnimation(animation);
         this.preloadedAnimations.set(options.key, animationTrack);
-        this.logger.log(`preloaded: ${options.key}, id: ${options.animationId}`)
+        // this.logger.log(`preloaded: ${options.key}, id: ${options.animationId}`)
         return animationTrack;
     }
 
@@ -127,7 +127,7 @@ export class AnimationController implements OnStart {
                 this.playingAnimations.delete(options.key);
             }
         });
-        this.logger.log(`playing: ${options.key}, id: ${options.animationId}`)
+        // this.logger.log(`playing: ${options.key}, id: ${options.animationId}`)
 
         return animationTrack;
     }

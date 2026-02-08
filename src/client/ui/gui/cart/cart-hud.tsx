@@ -10,6 +10,7 @@ export function CartHud(props: {
 		cart_enabled: boolean
 		override_speed: number
 		override_brake: boolean
+		override_device: "Gamepad" | "Keyboard" | "Mobile"
 	}
 }) {
 	const [cart, setCart] = React.useState<CartClientComponent | undefined>(

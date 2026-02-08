@@ -43,7 +43,7 @@ export class CartServerComponent
 	constructor(private logger: Logger) {
 		super()
 		const visuals = this.instance.FindFirstChild("Visuals") as Model
-		logger.log(`Initializing cart: ${this.instance.GetFullName()}`)
+		// logger.log(`Initializing cart: ${this.instance.GetFullName()}`)
 
 		// build required parts
 		const wheels = this.instance.Wheels
@@ -85,7 +85,7 @@ export class CartServerComponent
 			ball.Shape = Enum.PartType.Ball
 			ball.CFrame = model.GetPivot()
 			ball.CanCollide = true
-			logger.log(`Built ball for wheel: ${model.GetFullName()}`)
+			// logger.log(`Built ball for wheel: ${model.GetFullName()}`)
 		})
 		this.instance.PrimaryPart = root_part
 		// cart physics and stuff

@@ -115,6 +115,7 @@ export function RottenButton(props: {
 				BorderSizePixel={0}
 				key={"inner_shadow_bottom"}
 			/>
+			{props.children}
 		</imagebutton>
 	)
 }

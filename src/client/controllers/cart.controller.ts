@@ -8,24 +8,19 @@ import { ButtonModel } from "shared/type.helper"
 
 @Controller({loadOrder: 5})
 export class CartController implements OnStart {
-	private readonly spawners : Model[] = Workspace.FindFirstChild("CartSpawners")?.GetChildren() as Model[] || []
 	constructor(
 		private logger: Logger
 	) {}
 	onStart(): void {
-		task.wait(3)
 		const components = Dependency<Components>()
-		this.logger.log(`Found ${this.spawners.size()} cart spawners`)
-		this.spawners.forEach((_) => {
-			const spawner = _ as ButtonModel
-			const component = components.getComponent<ButtonComponent>(spawner)
-			if (!component) {
+		components.onComponentAdded<ButtonComponent>((component) => {
+			const instance = component.instance
+			if (!instance.IsDescendantOf(Workspace.FindFirstChild("CartSpawners")!)) {
 				return
 			}
 			component.onPressed.Connect((player) => {
-				this.logger.log(`Player ${player.Name} pressed cart spawner ${spawner.Name}`)
 				if (player !== Players.LocalPlayer) return
-				ClientEvents.CartService.spawnCart.fire(spawner)
+				ClientEvents.CartService.spawnCart.fire(instance)
 			})
 		})
 	}
