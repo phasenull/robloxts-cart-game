@@ -13,7 +13,7 @@ interface DeathButtonsProps {
 	spawnPoint: CFrame | undefined
 	shouldShow: boolean
 	transparency: number
-	onConfirmReset: (spawnPoint: CFrame | undefined) => void
+	onConfirmReset: () => void
 }
 
 export function DeathButtons({
@@ -25,7 +25,8 @@ export function DeathButtons({
 	const device = useInputType()
 
 	const is_revive_down = useInput(GAMEPAD_BUTTONS.REVIVE, (value) => {
-		if (!(shouldShow && value)) {
+		print(`Revive button input: value: ${value}, shouldShow: ${shouldShow}`)
+		if (!value) {
 			return false
 		}
 		const controller = Dependency<CartController>()
@@ -35,7 +36,13 @@ export function DeathButtons({
 
 	const is_confirm_reset_down = useInput(
 		GAMEPAD_BUTTONS.CONFIRM_RESET,
-		(value) => (shouldShow && value ? onConfirmReset(spawnPoint) : undefined)
+		(value) => {
+			if (!value) {
+				return false
+			}
+			onConfirmReset()
+			return true
+		}
 	)
 
 	return (
@@ -54,9 +61,7 @@ export function DeathButtons({
 			/>
 			<RottenButton
 				Size={UIDIM.ONE}
-				onClick={async () => {
-					onConfirmReset(spawnPoint)
-				}}
+				onClick={async () => onConfirmReset()}
 				mockMouseDown={is_confirm_reset_down}
 				Text="RESET"
 			>
@@ -70,7 +75,9 @@ export function DeathButtons({
 				{device === "Gamepad" && (
 					<Icon
 						Size={new UDim2(0.5, 0, 0.5, 0)}
-						Image={UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.CONFIRM_RESET)}
+						Image={UserInputService.GetImageForKeyCode(
+							GAMEPAD_BUTTONS.CONFIRM_RESET
+						)}
 						AnchorPoint={UIDIM.A_CENTER}
 						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
 						Color3={new Color3(0.36, 0.66, 1)}

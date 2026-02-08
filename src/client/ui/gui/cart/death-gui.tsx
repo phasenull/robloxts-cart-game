@@ -13,8 +13,7 @@ export function DeathGui() {
 	useDeathPreview({ spawnPoint })
 	useDeathCamera({ spawnPoint, shouldShow })
 
-	const handleConfirmReset = (spawnPoint: CFrame | undefined) => {
-		print(`Confirming reset...: spawnPoint: ${spawnPoint}`)
+	const handleConfirmReset = () => {
 		UIHelper.toggleFade(true)
 		task.wait(0.5)
 		ClientFunctions.CartService.respawn
@@ -43,15 +42,12 @@ export function DeathGui() {
 	if (post_transparency === 1 && !shouldShow) {
 		return undefined
 	}
-
 	return (
-		<Fragment>
-			<DeathButtons
-				spawnPoint={spawnPoint}
-				shouldShow={shouldShow}
-				transparency={post_transparency}
-				onConfirmReset={handleConfirmReset}
-			/>
-		</Fragment>
+		<DeathButtons
+			spawnPoint={spawnPoint}
+			shouldShow={shouldShow}
+			transparency={post_transparency}
+			onConfirmReset={handleConfirmReset}
+		/>
 	)
 }

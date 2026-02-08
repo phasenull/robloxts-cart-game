@@ -62,22 +62,26 @@ export function CartButtons(props: {
 			return true
 		}
 	})
+	const is_showing = cart || props.__story?.cart_enabled
 	useInput(GAMEPAD_BUTTONS.BRAKE, (value) => setBraking(value))
 	const is_gamepad_honking = useInput(GAMEPAD_BUTTONS.HONK)
 	const is_gamepad_flipping = useInput(GAMEPAD_BUTTONS.FLIP)
 	const is_gamepad_resetting = useInput(GAMEPAD_BUTTONS.RESET)
 	useEffect(() => {
-		if (!cart) {
+		if (!is_showing) {
 			return
 		}
 		if (is_gamepad_honking) {
 			mutateHonk()
+			return
 		}
 		if (is_gamepad_flipping) {
 			mutateFlip()
+			return
 		}
 		if (is_gamepad_resetting) {
 			mutateReset()
+			return
 		}
 	}, [cart, is_gamepad_honking, is_gamepad_flipping,is_gamepad_resetting])
 
@@ -133,7 +137,7 @@ export function CartButtons(props: {
 		}
 	}, [cart])
 	const value = useAnimateValue({
-		target_value: cart || props.__story?.cart_enabled ? 1 : 0,
+		target_value: is_showing ? 1 : 0,
 		tween_info: new TweenInfo(
 			0.7,
 			Enum.EasingStyle.Quint,
