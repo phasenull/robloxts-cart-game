@@ -10,28 +10,33 @@ import { useInput } from "client/ui/hooks/useInput"
 import { useInputType } from "client/ui/hooks/useInputType"
 
 interface DeathButtonsProps {
-	spawnPoint: CFrame | undefined
 	shouldShow: boolean
 	transparency: number
 	onConfirmReset: () => void
+	onRevive: () => void
 }
 
 export function DeathButtons({
 	shouldShow,
 	transparency,
-	onConfirmReset
+	onConfirmReset,
+	onRevive
 }: DeathButtonsProps) {
 	const device = useInputType()
+
+	const handleRevive = () => {
+		const controller = Dependency<CartController>()
+		controller.promptRevive()
+		onRevive()
+	}
 
 	const is_revive_down = useInput({
 		key: GAMEPAD_BUTTONS.REVIVE,
 		handler: (value) => {
-			print(`Revive button input: value: ${value}, shouldShow: ${shouldShow}`)
 			if (!value) {
 				return false
 			}
-			const controller = Dependency<CartController>()
-			controller.promptRevive()
+			handleRevive()
 			return true
 		},
 		enabled: shouldShow
@@ -90,10 +95,7 @@ export function DeathButtons({
 				)}
 			</RottenButton>
 			<RottenButton
-				onClick={() => {
-					const controller = Dependency<CartController>()
-					controller.promptRevive()
-				}}
+				onClick={handleRevive}
 				mockMouseDown={is_revive_down}
 				Color={new Color3(0.09, 0.86, 0.09)}
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}

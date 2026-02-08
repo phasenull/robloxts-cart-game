@@ -10,7 +10,6 @@ import { AnimationController } from "client/controllers/animation.controller"
 import { CartController } from "client/controllers/cart.controller"
 import { UIHelper } from "client/ui.helper"
 import { __STUDIO__ } from "client/ui/constants"
-import { CartLisener } from "client/ui/gui/cart/cart-hud"
 import { Logger } from "shared/logger"
 import { ClientFunctions } from "shared/network.helper"
 import { ICart, ICartEntry, IWheel } from "shared/type.helper"
@@ -281,8 +280,6 @@ export class CartClientComponent
 				this.toggleBrake(false)
 			}
 		})
-
-		CartLisener.Fire(this)
 	}
 	getHeight(): number {
 		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
@@ -413,7 +410,6 @@ export class CartClientComponent
 		const char = player.Character
 		const humanoid = char?.FindFirstChildOfClass("Humanoid")
 		if (this.rider && this.rider === humanoid) {
-			CartLisener.Fire(undefined)
 			this.rider.JumpHeight = 7.2
 			if (this.rider.Seated) {
 				this.rider.Sit = false

@@ -1,0 +1,118 @@
+import { Components } from "@flamework/components"
+import { Dependency } from "@flamework/core"
+import React, { createContext, useContext, useEffect, useState } from "@rbxts/react"
+import { Players } from "@rbxts/services"
+import { CartClientComponent } from "client/components/cart.client.component"
+import { CartController } from "client/controllers/cart.controller"
+import { __IS_EDIT__ } from "shared/config.helper"
+import { Logger } from "shared/logger"
+
+const logger = new Logger("CartContext")
+
+export type CartState = "none" | "alive" | "revive_prompted" | "reviving"
+
+interface CartContextValue {
+	cart: CartClientComponent | undefined
+	state: CartState
+	spawnPoint: CFrame | undefined
+	setReviving: () => void
+	confirmReset: () => void
+}
+
+const CartContext = createContext<CartContextValue | undefined>(undefined)
+
+export function CartProvider(props: { children: React.ReactNode }) {
+	const [cart, setCart] = useState<CartClientComponent | undefined>(undefined)
+	const [state, setState] = useState<CartState>("none")
+	const [spawnPoint, setSpawnPoint] = useState<CFrame | undefined>(undefined)
+
+	// Listen for cart changes
+	useEffect(() => {
+		if (__IS_EDIT__) {
+			return
+		}
+
+		const components = Dependency<Components>()
+		const cart_controller = Dependency<CartController>()
+
+		// Check for existing cart
+		const checkCart = () => {
+			const all_carts = components.getAllComponents<CartClientComponent>()
+			const my_cart = all_carts.find(
+				(c) => c.resolvePlayer() === Players.LocalPlayer
+			)
+			if (my_cart && my_cart !== cart) {
+				logger.log(`Found cart: ${my_cart.instance.GetFullName()}`)
+				setCart(my_cart)
+				setState("alive")
+			} else if (!my_cart && cart) {
+				logger.log("Lost cart")
+				setCart(undefined)
+				setState("none")
+			}
+		}
+
+		checkCart()
+		
+		let running = true
+		task.spawn(() => {
+			while (running) {
+				task.wait(1)
+				checkCart()
+			}
+		})
+
+		// Listen for death screen
+		const deathConnection = cart_controller.toggleOnDeathScreen.Connect(
+			(spawn_point) => {
+				logger.log(`Death screen toggled: ${spawn_point !== undefined}`)
+				setSpawnPoint(spawn_point)
+				if (spawn_point) {
+					setState("revive_prompted")
+				}
+			}
+		)
+
+		return () => {
+			running = false
+			deathConnection.Disconnect()
+		}
+	}, [cart])
+
+	// Anchor character when death screen is active
+	useEffect(() => {
+		const my_char = Players.LocalPlayer.Character
+		if (my_char && my_char.PrimaryPart) {
+			my_char.PrimaryPart.Anchored = !!spawnPoint
+		}
+	}, [spawnPoint])
+
+	const setReviving = () => {
+		logger.log("Setting state to reviving")
+		setState("reviving")
+	}
+
+	const confirmReset = () => {
+		logger.log("Confirming reset")
+		setSpawnPoint(undefined)
+		setState("none")
+	}
+
+	const value: CartContextValue = {
+		cart,
+		state,
+		spawnPoint,
+		setReviving,
+		confirmReset
+	}
+
+	return <CartContext.Provider value={value}>{props.children}</CartContext.Provider>
+}
+
+export function useCart() {
+	const context = useContext(CartContext)
+	if (context === undefined) {
+		throw "useCart must be used within a CartProvider"
+	}
+	return context
+}

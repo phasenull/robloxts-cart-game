@@ -1,30 +1,33 @@
-import React, { Fragment } from "@rbxts/react"
+import React from "@rbxts/react"
 import { UIHelper } from "client/ui.helper"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
+import { useCart } from "client/ui/contexts/cart.context"
 import { ClientFunctions } from "shared/network.helper"
 import { DeathButtons } from "./components/DeathButtons"
 import { useDeathCamera } from "./hooks/useDeathCamera"
 import { useDeathPreview } from "./hooks/useDeathPreview"
-import { useDeathScreen } from "./hooks/useDeathScreen"
 
 export function DeathGui() {
-	const { spawnPoint, setSpawnPoint, shouldShow } = useDeathScreen()
+	const { spawnPoint, state, confirmReset, setReviving } = useCart()
+	const shouldShow = state === "revive_prompted" || state === "reviving"
 
 	useDeathPreview({ spawnPoint })
 	useDeathCamera({ spawnPoint, shouldShow })
+
 	const [lock, setLock] = React.useState(false)
+
 	const handleConfirmReset = () => {
 		if (lock) {
 			return
 		}
-		setLock(true)
 		if (!spawnPoint) {
 			warn("No spawn point set for death screen")
 			return
 		}
+		setLock(true)
 		UIHelper.toggleFade(true)
 		task.wait(0.5)
-		setSpawnPoint(undefined)
+		confirmReset()
 		ClientFunctions.CartService.respawn
 			.invokeWithTimeout(5000)
 			.then(() => {
@@ -51,12 +54,13 @@ export function DeathGui() {
 	if (post_transparency === 1 && !shouldShow) {
 		return undefined
 	}
+
 	return (
 		<DeathButtons
-			spawnPoint={spawnPoint}
 			shouldShow={shouldShow}
 			transparency={post_transparency}
 			onConfirmReset={handleConfirmReset}
+			onRevive={setReviving}
 		/>
 	)
 }

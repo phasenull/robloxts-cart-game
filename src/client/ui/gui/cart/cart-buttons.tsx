@@ -13,6 +13,8 @@ import { useInputType } from "client/ui/hooks/useInputType"
 import { Icon } from "client/ui/components/icon"
 import { useInput } from "client/ui/hooks/useInput"
 import { UIHelper } from "client/ui.helper"
+import { CartState } from "client/ui/contexts/cart.context"
+
 export function CartButtons(props: {
 	__story?: {
 		cart_enabled: boolean
@@ -21,6 +23,7 @@ export function CartButtons(props: {
 		override_device: "Gamepad" | "Keyboard" | "Mobile"
 	}
 	cart: CartClientComponent | undefined
+	state: CartState
 }) {
 	const { cart } = props
 	const device = props.__story?.override_device ?? useInputType()
@@ -63,10 +66,11 @@ export function CartButtons(props: {
 		}
 	})
 	const is_showing = !!(cart || props.__story?.cart_enabled)
-	useInput({key: GAMEPAD_BUTTONS.BRAKE, handler: (value) => setBraking(value), enabled: is_showing})
-	const is_gamepad_honking = useInput({key:GAMEPAD_BUTTONS.HONK,enabled: is_showing})
-	const is_gamepad_flipping = useInput({key:GAMEPAD_BUTTONS.FLIP, enabled: is_showing})
-	const is_gamepad_resetting = useInput({key:GAMEPAD_BUTTONS.RESET, enabled: is_showing})
+	const is_alive = props.state === "alive" || !!props.__story?.cart_enabled
+	useInput({key: GAMEPAD_BUTTONS.BRAKE, handler: (value) => setBraking(value), enabled: is_showing && is_alive})
+	const is_gamepad_honking = useInput({key:GAMEPAD_BUTTONS.HONK,enabled: is_showing && is_alive})
+	const is_gamepad_flipping = useInput({key:GAMEPAD_BUTTONS.FLIP, enabled: is_showing && is_alive})
+	const is_gamepad_resetting = useInput({key:GAMEPAD_BUTTONS.RESET, enabled: is_showing && is_alive})
 	useEffect(() => {
 		if (!is_showing) {
 			return

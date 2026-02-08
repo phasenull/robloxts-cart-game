@@ -1,50 +1,37 @@
-import { Components } from "@flamework/components"
-import { Dependency } from "@flamework/core"
 import React, { useEffect, useState } from "@rbxts/react"
-import { useMutation, useQuery } from "@rbxts/react-query"
-import { Players } from "@rbxts/services"
-import { CartClientComponent } from "client/components/cart.client.component"
+import { useMutation } from "@rbxts/react-query"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { LoadingIndicator } from "client/ui/components/loading-indicator"
 import { PRIMARY, UIDIM } from "client/ui/constants"
+import { useCart } from "client/ui/contexts/cart.context"
 import { useErrorPage } from "client/ui/contexts/error.context"
 import { useNavigator } from "client/ui/hooks/useNavigator"
 import { A } from "shared/assets"
-import { __IS_EDIT__ } from "shared/config.helper"
+
 export function CartGui() {
 	const { showError } = useErrorPage()
 	const navigator = useNavigator()
-	const { data, err, isLoading, refetch } = useQuery({
-		queryKey: "cartData",
-		queryFn: async () => {
-			let my_cart: CartClientComponent | undefined
-			if (!__IS_EDIT__) {
-				const components = Dependency<Components>()
-				const all_carts = components.getAllComponents<CartClientComponent>()
-				my_cart = all_carts.find(
-					(cart) => cart.resolvePlayer() === Players.LocalPlayer
-				)
-			}
-			if (!my_cart) {
-				showError({
-					message: "You are not currently in a cart.",
-					title: "No Cart Found",
-					onClose: () => {
-						navigator.closeAll()
-					}
-				})
-			}
-			return my_cart
+	const { cart, state } = useCart()
+
+	useEffect(() => {
+		if (!cart && state === "none") {
+			showError({
+				message: "You are not currently in a cart.",
+				title: "No Cart Found",
+				onClose: () => {
+					navigator.closeAll()
+				}
+			})
 		}
-	})
+	}, [cart, state])
 	const {mutate} = useMutation({
 		queryKey: "updateCartStats",
 		mutationFn: async (params: { power?: number; friction?: number }) => {
-			if (!data) return true
-			data.overrideConfig({
-				power: params.power ?? data.getPower(),
-				friction: params.friction ?? data.getWheelFriction(),
-				max_velocity: data.getMaxVelocity()
+			if (!cart) return true
+			cart.overrideConfig({
+				power: params.power ?? cart.getPower(),
+				friction: params.friction ?? cart.getWheelFriction(),
+				max_velocity: cart.getMaxVelocity()
 			})
 			return true
 		}
@@ -54,6 +41,9 @@ export function CartGui() {
 	useEffect(() => {
 		mutate({ power, friction })
 	}, [friction, power])
+	
+	const isLoading = state === "none" && !cart
+
 	return (
 		<imagelabel
 			Size={UIDIM.ONE}
@@ -66,7 +56,7 @@ export function CartGui() {
 		>
 			{isLoading ? <LoadingIndicator /> : undefined}
 			<uicorner CornerRadius={new UDim(0.1, 0)} />
-			{data ? (
+			{cart ? (
 				<frame Size={new UDim2(0.3, 0, 1, 0)} BackgroundTransparency={0.5}>
 					<GoofyText
 						Text={"my plot"}
@@ -79,7 +69,7 @@ export function CartGui() {
 				<uilistlayout />
 				<GoofyText Text={"Set Power"} />
 				<textbox
-					Text={`${data?.getPower()}`}
+					Text={`${cart?.getPower()}`}
 					Event={{
 						InputEnded: (txt) => {
 							set_power(tonumber(txt.Text || "0") || 0)
@@ -89,7 +79,7 @@ export function CartGui() {
 				></textbox>
 				<GoofyText Text={"Set Friction"} />
 				<textbox
-					Text={`${data?.getWheelFriction()}`}
+					Text={`${cart?.getWheelFriction()}`}
 					Event={{
 						InputEnded: (txt) => {
 							set_friction(tonumber(txt.Text || "0") || 0)
