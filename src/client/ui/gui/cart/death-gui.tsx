@@ -12,20 +12,29 @@ export function DeathGui() {
 
 	useDeathPreview({ spawnPoint })
 	useDeathCamera({ spawnPoint, shouldShow })
-
+	const [lock, setLock] = React.useState(false)
 	const handleConfirmReset = () => {
+		if (lock) {
+			return
+		}
+		setLock(true)
+		if (!spawnPoint) {
+			warn("No spawn point set for death screen")
+			return
+		}
 		UIHelper.toggleFade(true)
 		task.wait(0.5)
+		setSpawnPoint(undefined)
 		ClientFunctions.CartService.respawn
 			.invokeWithTimeout(5000)
 			.then(() => {
 				UIHelper.toggleFade(false)
-				setSpawnPoint(undefined)
+				setLock(false)
 			})
 			.catch((err) => {
 				warn(`Failed to respawn player: ${err}`)
 				UIHelper.toggleFade(false)
-				setSpawnPoint(undefined)
+				setLock(false)
 			})
 	}
 

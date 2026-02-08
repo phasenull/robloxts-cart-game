@@ -62,11 +62,11 @@ export function CartButtons(props: {
 			return true
 		}
 	})
-	const is_showing = cart || props.__story?.cart_enabled
-	useInput(GAMEPAD_BUTTONS.BRAKE, (value) => setBraking(value))
-	const is_gamepad_honking = useInput(GAMEPAD_BUTTONS.HONK)
-	const is_gamepad_flipping = useInput(GAMEPAD_BUTTONS.FLIP)
-	const is_gamepad_resetting = useInput(GAMEPAD_BUTTONS.RESET)
+	const is_showing = !!(cart || props.__story?.cart_enabled)
+	useInput({key: GAMEPAD_BUTTONS.BRAKE, handler: (value) => setBraking(value), enabled: is_showing})
+	const is_gamepad_honking = useInput({key:GAMEPAD_BUTTONS.HONK,enabled: is_showing})
+	const is_gamepad_flipping = useInput({key:GAMEPAD_BUTTONS.FLIP, enabled: is_showing})
+	const is_gamepad_resetting = useInput({key:GAMEPAD_BUTTONS.RESET, enabled: is_showing})
 	useEffect(() => {
 		if (!is_showing) {
 			return

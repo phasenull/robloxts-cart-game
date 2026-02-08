@@ -17,33 +17,37 @@ interface DeathButtonsProps {
 }
 
 export function DeathButtons({
-	spawnPoint,
 	shouldShow,
 	transparency,
 	onConfirmReset
 }: DeathButtonsProps) {
 	const device = useInputType()
 
-	const is_revive_down = useInput(GAMEPAD_BUTTONS.REVIVE, (value) => {
-		print(`Revive button input: value: ${value}, shouldShow: ${shouldShow}`)
-		if (!value) {
-			return false
-		}
-		const controller = Dependency<CartController>()
-		controller.promptRevive()
-		return true
+	const is_revive_down = useInput({
+		key: GAMEPAD_BUTTONS.REVIVE,
+		handler: (value) => {
+			print(`Revive button input: value: ${value}, shouldShow: ${shouldShow}`)
+			if (!value) {
+				return false
+			}
+			const controller = Dependency<CartController>()
+			controller.promptRevive()
+			return true
+		},
+		enabled: shouldShow
 	})
 
-	const is_confirm_reset_down = useInput(
-		GAMEPAD_BUTTONS.CONFIRM_RESET,
-		(value) => {
+	const is_confirm_reset_down = useInput({
+		key: GAMEPAD_BUTTONS.CONFIRM_RESET,
+		handler: (value) => {
 			if (!value) {
 				return false
 			}
 			onConfirmReset()
 			return true
-		}
-	)
+		},
+		enabled: shouldShow
+	})
 
 	return (
 		<imagelabel
