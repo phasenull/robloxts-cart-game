@@ -98,25 +98,25 @@ export function CartButtons(props: {
 	const is_showing = !!(cart || props.__story?.cart_enabled)
 	const is_alive = props.state === "alive" || !!props.__story?.cart_enabled
 
-	useInput({
+	const is_brake_down = useInput({
 		key: GAMEPAD_BUTTONS.BRAKE,
 		handler: (value) => mutateBrake(value),
 		enabled: is_showing && is_alive
 	})
 
-	useInput({
+	const is_honk_down = useInput({
 		key: GAMEPAD_BUTTONS.HONK,
 		handler: (value) => value && mutateHonk(),
 		enabled: is_showing && is_alive
 	})
 
-	useInput({
+	const is_flip_down = useInput({
 		key: GAMEPAD_BUTTONS.FLIP,
 		handler: (value) => value && mutateFlip(),
 		enabled: is_showing && is_alive
 	})
 
-	useInput({
+	const is_reset_down = useInput({
 		key: GAMEPAD_BUTTONS.RESET,
 		handler: (value) => value && mutateReset(),
 		enabled: is_showing && is_alive
@@ -179,6 +179,7 @@ export function CartButtons(props: {
 				Text="HONK"
 				Color={new Color3(0.95, 0.86, 0.11)}
 				onDown={(val) => val && mutateHonk()}
+				mockMouseDown={is_honk_down}
 			>
 				{device === "Gamepad" && (
 					<Icon
@@ -206,6 +207,7 @@ export function CartButtons(props: {
 					Text="BRAKE"
 					Color={new Color3(1, 0.02, 0.02)}
 					onDown={(is_down) => mutateBrake(is_down)}
+					mockMouseDown={is_brake_down}
 				>
 					{device === "Gamepad" && (
 						<Icon
@@ -234,6 +236,7 @@ export function CartButtons(props: {
 					Text="FLIP"
 					onDown={(val) => val && mutateFlip()}
 					Color={new Color3(0.11, 0.75, 0.95)}
+					mockMouseDown={is_flip_down}
 				>
 					{device === "Gamepad" && (
 						<Icon
@@ -252,6 +255,7 @@ export function CartButtons(props: {
 					Ratio={2}
 					Text="RESET"
 					Color={new Color3(0.69, 0.02, 1)}
+					mockMouseDown={is_reset_down}
 				>
 					{device === "Gamepad" && (
 						<Icon

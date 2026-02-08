@@ -83,10 +83,6 @@ export function CartProvider(props: { children: React.ReactNode }) {
 		}
 	}, [spawnPoint])
 
-	const setReviving = () => {
-		logger.log("STATE-> REVIVING")
-		setState("reviving")
-	}
 	const changeState = (new_state: CartState) => {
 		logger.log(`STATE-> ${new_state}`)
 		setState(new_state)
@@ -104,7 +100,18 @@ export function CartProvider(props: { children: React.ReactNode }) {
 		changeState,
 		confirmReset
 	}
-
+	useEffect(() => {
+		const cart_controller = Dependency<CartController>()
+		cart_controller.onCartChange.Connect((new_cart) => {
+			logger.log(`Cart changed: ${new_cart?.instance.GetFullName()}`)
+			setCart(new_cart)
+			if (new_cart) {
+				changeState("alive")
+			} else {
+				changeState("none")
+			}
+		})
+	}, [])
 	return (
 		<CartContext.Provider value={value}>{props.children}</CartContext.Provider>
 	)

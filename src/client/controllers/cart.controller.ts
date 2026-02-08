@@ -29,6 +29,7 @@ export class CartController implements OnStart {
 			new_handle.adornmentLine.Destroy()
 		})
 	}
+	public onCartChange = new Signal<(cart: CartClientComponent | undefined) => void>()
 	public toggleOnDeathScreen = new Signal<(spawn_point: CFrame | undefined) => void>()
 	toggleDeathScreen(enabled: boolean) {
 		if (enabled && this.__last_checkpoint) {

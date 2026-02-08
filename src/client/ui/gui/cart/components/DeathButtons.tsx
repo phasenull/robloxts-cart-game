@@ -45,13 +45,13 @@ export function DeathButtons({
 		}
 	})
 
-	useInput({
+	const is_revive_down = useInput({
 		key: GAMEPAD_BUTTONS.REVIVE,
 		handler: (value) => value && mutateRevive(),
 		enabled: shouldShow
 	})
 
-	useInput({
+	const is_confirm_reset_down = useInput({
 		key: GAMEPAD_BUTTONS.CONFIRM_RESET,
 		handler: (value) => value && mutateReset(),
 		enabled: shouldShow && !isResetPending
@@ -75,6 +75,7 @@ export function DeathButtons({
 				Size={UIDIM.ONE}
 				onDown={(val) => val && mutateReset()}
 				Text="RESET"
+				mockMouseDown={is_confirm_reset_down}
 			>
 				<GoofyText
 					MinTextSize={1}
@@ -102,6 +103,7 @@ export function DeathButtons({
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
 				Text="REVIVE"
 				Ratio={1.5}
+				mockMouseDown={is_revive_down}
 			>
 				{device === "Gamepad" && (
 					<Icon

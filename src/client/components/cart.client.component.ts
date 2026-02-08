@@ -280,6 +280,8 @@ export class CartClientComponent
 				this.toggleBrake(false)
 			}
 		})
+		const cart_controller = Dependency<CartController>()
+		cart_controller.onCartChange.Fire(this)
 	}
 	getHeight(): number {
 		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
@@ -391,6 +393,8 @@ export class CartClientComponent
 		if (this.resolvePlayer() !== Players.LocalPlayer) {
 			return
 		}
+		const cart_controller = Dependency<CartController>()
+		cart_controller.onCartChange.Fire(undefined)
 		this.__is_cleaned_up = true
 		this.AnimationController.stop("cart_idle", 0)
 		task.spawn(() => {
