@@ -12,6 +12,7 @@ import { AnimationController } from "client/controllers/animation.controller"
 import { CartController } from "client/controllers/cart.controller"
 import { __IS_EDIT__ } from "shared/config.helper"
 import { Logger } from "shared/logger"
+import { ClientEvents } from "shared/network.helper"
 
 const logger = new Logger("CartContext")
 
@@ -104,6 +105,7 @@ export function CartProvider(props: {
 		setState(new_state)
 	}
 	const confirmHardReset = () => {
+		ClientEvents.CheckpointService.processPlayerDeath.fire()
 		logger.log("STATE-> RESETING")
 		setSpawnPoint(undefined)
 		changeState("none")
@@ -122,6 +124,10 @@ export function CartProvider(props: {
 		}
 		const cart_controller = Dependency<CartController>()
 		cart_controller.onCartChange.Connect((new_cart) => {
+			const my_card = cart_controller.getMyCart()
+			if (my_card) {
+				new_cart = my_card
+			}
 			logger.log(`Cart changed: ${new_cart?.instance.GetFullName()}`)
 			setCart(new_cart)
 			if (new_cart) {

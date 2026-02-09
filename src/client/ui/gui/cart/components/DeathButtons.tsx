@@ -8,7 +8,7 @@ import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { Icon } from "client/ui/components/icon"
 import { RadialProgress } from "client/ui/components/radial-progress"
-import { GAMEPAD_BUTTONS, UIDIM } from "client/ui/constants"
+import { GAMEPAD_BUTTONS, REVIVE_TIME, UIDIM } from "client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useInput } from "client/ui/hooks/useInput"
 import { useInputType } from "client/ui/hooks/useInputType"
@@ -49,7 +49,7 @@ export function DeathButtons({
 			changeState("none")
 			confirmHardReset()
 			UIHelper.toggleFade(false)
-			if (__IS_STUDIO__) return
+			if (__IS_STUDIO__) return true
 			try {
 				await ClientFunctions.CartService.respawn.invokeWithTimeout(5000)
 				return true
@@ -76,7 +76,7 @@ export function DeathButtons({
 		if (!shouldShow) {
 			return
 		}
-		const job = task.delay(20, () => {
+		const job = task.delay(REVIVE_TIME, () => {
 			if (shouldShow) {
 				mutateReset()
 			}
@@ -138,7 +138,7 @@ export function DeathButtons({
 				mockMouseDown={is_revive_down}
 			>
 				<RadialProgress
-					degrees_per_second={360 / 20}
+					degrees_per_second={360 / REVIVE_TIME}
 					progress={1}
 					initial_progress={0}
 					Color={new Color3(1, 0.36, 0.36)}

@@ -12,6 +12,7 @@ import { ButtonModel } from "shared/type.helper"
 export class CartService implements OnStart {
 	constructor(private logger: Logger) {}
 	private readonly PLAYER_CARTS = new Map<Player, Model>()
+	private readonly DEBOUNCE_TABLE = new Map<Player,number>()
 	onStart(): void {
 		ServerEvents.CartService.spawnCart.connect((player, button) => {
 			this.logger.log(`Spawning cart for player ${player.Name}`)
@@ -84,6 +85,14 @@ export class CartService implements OnStart {
 		return cart_model
 	}
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
+		if (this.DEBOUNCE_TABLE.has(player)) {
+			const last_time = this.DEBOUNCE_TABLE.get(player)!
+			if (tick() - last_time < 1) {
+				this.logger.warn(`Debouncing cart spawn for player ${player.Name}`)
+				return this.PLAYER_CARTS.get(player)!
+			}
+		}
+		this.DEBOUNCE_TABLE.set(player, tick())
 		const existing = this.PLAYER_CARTS.get(player)
 		existing?.Destroy()
 		const cart_skin = this.getPlayerSkin(player)

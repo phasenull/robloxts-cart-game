@@ -10,6 +10,7 @@ export const GAMEPAD_BUTTONS = {
 	"REVIVE": Enum.KeyCode.ButtonA,
 	"CONFIRM_RESET": Enum.KeyCode.ButtonY
 }
+export const REVIVE_TIME = 8
 export const TESTING_USERS = [
 	{
 		Name: "Captide",

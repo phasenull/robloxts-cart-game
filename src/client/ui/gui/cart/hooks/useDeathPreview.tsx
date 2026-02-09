@@ -56,6 +56,7 @@ export function useDeathPreview({ spawnPoint }: UseDeathPreviewProps) {
 
 			// Play animation
 			if (humanoid) {
+				humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 				const animator = humanoid.FindFirstChildOfClass("Animator")
 				const anim = new Instance("Animation", animator)
 				anim.AnimationId = "rbxassetid://100765437584509"

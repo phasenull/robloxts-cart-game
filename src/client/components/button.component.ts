@@ -3,6 +3,7 @@ import { OnStart } from "@flamework/core"
 import { Players, TweenService } from "@rbxts/services"
 import Signal from "@rbxts/signal"
 import { Logger } from "shared/logger"
+import { ClientEvents } from "shared/network.helper"
 import { ButtonModel } from "shared/type.helper"
 
 @Component({ tag: "ButtonComponent" })
@@ -12,7 +13,7 @@ export class ButtonComponent
 {
 	private is_pressed: boolean = false
 	private __cooldown: number = 0
-	private readonly duration = .5
+	private readonly duration = 0.5
 	private readonly default_h: number
 	private readonly pressed_color = new Color3(1, 0, 0)
 	private readonly available_color: Color3
@@ -20,7 +21,7 @@ export class ButtonComponent
 	private readonly spawn_platform: CFrame
 	constructor(private logger: Logger) {
 		super()
-		this.instance["Spawn Button"].WaitForChild("Part",9999999)
+		this.instance["Spawn Button"].WaitForChild("Part", 2)
 		const touch = this.instance["Spawn Button"]
 			.GetChildren()
 			.find(
@@ -50,7 +51,6 @@ export class ButtonComponent
 		touch.Name = "ButtonTouch"
 	}
 	onStart(): void {
-		this.setPressed(true)
 		this.touch.Touched.Connect((hit) => {
 			const char = hit.Parent
 			if (!char || !char.FindFirstChild("Humanoid")) {
@@ -79,7 +79,7 @@ export class ButtonComponent
 			{
 				Position: new Vector3(
 					this.touch.Position.X,
-					new_pressed ? this.default_h-.4 : this.default_h,
+					new_pressed ? this.default_h - 0.4 : this.default_h,
 					this.touch.Position.Z
 				),
 				Color: new_pressed ? this.pressed_color : this.available_color
@@ -87,6 +87,9 @@ export class ButtonComponent
 		).Play()
 		if (new_pressed && player) {
 			this.onPressed.Fire(player)
+		}
+		if (this.instance.FindFirstAncestorOfClass("Folder")?.Name === "CartSpawners") {
+			ClientEvents.CartService.spawnCart.fire(this.instance)
 		}
 		task.delay(this.duration, () => {
 			this.setPressed(false)

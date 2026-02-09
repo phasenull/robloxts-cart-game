@@ -17,17 +17,6 @@ export class CartController implements OnStart {
 	private arrow = arrow
 	saveCheckpoint(cframe: CFrame) {
 		this.__last_checkpoint = cframe
-		const new_handle = this.arrow.draw(
-			cframe.Position,
-			cframe.Position.add(cframe.LookVector.mul(1))
-		)
-		task.delay(1.5, () => {
-			if (this.__last_checkpoint === cframe) {
-				return
-			}
-			new_handle.adornmentCone.Destroy()
-			new_handle.adornmentLine.Destroy()
-		})
 	}
 	public onCartChange = new Signal<(cart: CartClientComponent | undefined) => void>()
 	public toggleOnDeathScreen = new Signal<(spawn_point: CFrame | undefined) => void>()
@@ -43,6 +32,7 @@ export class CartController implements OnStart {
 		if (!this.__last_checkpoint) {
 			return
 		}
+		const cache = this.__last_checkpoint
 		MarketplaceService.PromptProductPurchase(
 			Players.LocalPlayer,
 			this.revive_product_id
@@ -53,13 +43,12 @@ export class CartController implements OnStart {
 				if (assetId !== this.revive_product_id) return
 				if (!wasPurchased) return
 				connection.Disconnect()
-				this.revivePlayer()
+				this.revivePlayer(cache)
 			}
 		)
 	}
-	revivePlayer() {
+	revivePlayer(target: CFrame) {
 		this.logger.log("Reviving player...")
-		const target = this.__last_checkpoint
 		this.__last_checkpoint = undefined
 		if (!target) {
 			return
@@ -90,15 +79,5 @@ export class CartController implements OnStart {
 	}
 	onStart(): void {
 		const components = Dependency<Components>()
-		components.onComponentAdded<ButtonComponent>((component) => {
-			const instance = component.instance
-			if (!instance.IsDescendantOf(Workspace.FindFirstChild("CartSpawners")!)) {
-				return
-			}
-			component.onPressed.Connect((player) => {
-				if (player !== Players.LocalPlayer) return
-				ClientEvents.CartService.spawnCart.fire(instance)
-			})
-		})
 	}
 }
