@@ -59,11 +59,11 @@ export class CartClientComponent
 		this.power = args.power
 		this.wheel_friction = args.friction
 		this.max_velocity = args.max_velocity
-		this.logger.log("total wheel hitboxes: " + this.wheel_hitboxes.size())
+		// this.logger.log("total wheel hitboxes: " + this.wheel_hitboxes.size())
 		this.wheel_hitboxes.forEach((hitbox) => {
-			this.logger.log(
-				`Setting wheel friction to ${args.friction} for hitbox ${hitbox.Name}`
-			)
+			// this.logger.log(
+			// 	`Setting wheel friction to ${args.friction} for hitbox ${hitbox.Name}`
+			// )
 			const new_pp = new PhysicalProperties(1, 1, 0)
 			hitbox.CustomPhysicalProperties = new_pp
 		})

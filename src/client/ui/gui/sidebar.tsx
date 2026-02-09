@@ -38,12 +38,12 @@ export default function Sidebar() {
 			>
 				<uiaspectratioconstraint AspectRatio={1} />
 			</uigridlayout>
-			<SidebarButton shine BackgroundColor3={new Color3(0.96,0.78,0)} ZIndex={2} ui_key="shop" icon={A.icons.cart}>
+			{/* <SidebarButton shine BackgroundColor3={new Color3(0.96,0.78,0)} ZIndex={2} ui_key="shop" icon={A.icons.cart}>
 				<Badge ratio={2.5}  text="NEW!" />
 			</SidebarButton>
 			<SidebarButton ui_key="gift" icon={A.icons.gift} />
 			<SidebarButton ui_key="items" icon={A.icons.backpack} />
-			<SidebarButton ui_key="settings" icon={A.icons.settings} />
+			<SidebarButton ui_key="settings" icon={A.icons.settings} /> */}
 			<SidebarButton ui_key="cart" icon={A.icons.cart} />
 		</frame>
 	);

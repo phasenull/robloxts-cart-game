@@ -73,6 +73,7 @@ export namespace A {
 		pizza_scream:"rbxassetid://154157563",
 		tom_scream:"rbxassetid://139694892021582",
 		drift:"rbxassetid://71308996451354",
+		party:"rbxassetid://5759274072"
 	}
 }
 export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {
