@@ -12,6 +12,7 @@ import { GAMEPAD_BUTTONS, UIDIM } from "client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useInput } from "client/ui/hooks/useInput"
 import { useInputType } from "client/ui/hooks/useInputType"
+import { __IS_STUDIO__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
 
 interface DeathButtonsProps {
@@ -47,13 +48,13 @@ export function DeathButtons({
 			task.wait(0.5)
 			changeState("none")
 			confirmHardReset()
+			UIHelper.toggleFade(false)
+			if (__IS_STUDIO__) return
 			try {
 				await ClientFunctions.CartService.respawn.invokeWithTimeout(5000)
-				UIHelper.toggleFade(false)
 				return true
 			} catch (err) {
 				warn(`Failed to respawn player: ${err}`)
-				UIHelper.toggleFade(false)
 
 				return false
 			}
