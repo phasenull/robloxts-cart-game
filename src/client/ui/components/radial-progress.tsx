@@ -23,7 +23,6 @@ export function RadialProgress(props: {
 		enabled: true
 	})
 	const progress_degrees = value * 360
-	print(`Progress: ${props.progress}, Value: ${value}, Degrees: ${progress_degrees}`)
 	const Circle = (props: { rotation: number; visible?: boolean; color?: Color3 }) => (
 		<frame Size={UIDIM.ONE} AnchorPoint={UIDIM.A_CENTER} Rotation={props.rotation} BackgroundTransparency={1} Position={UIDIM.CENTER}>
 			<uiaspectratioconstraint AspectRatio={1} />

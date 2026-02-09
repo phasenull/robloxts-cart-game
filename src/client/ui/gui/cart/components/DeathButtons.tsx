@@ -3,6 +3,7 @@ import React, { useEffect } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
 import { UserInputService } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
+import { UIHelper } from "client/ui.helper"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { Icon } from "client/ui/components/icon"
@@ -11,40 +12,51 @@ import { GAMEPAD_BUTTONS, UIDIM } from "client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useInput } from "client/ui/hooks/useInput"
 import { useInputType } from "client/ui/hooks/useInputType"
+import { ClientFunctions } from "shared/network.helper"
 
 interface DeathButtonsProps {
 	transparency: number
-	onConfirmReset: () => void
-	onRevive: () => void
-	isResetPending?: boolean
 }
 
 export function DeathButtons({
 	// shouldShow,
-	transparency,
-	onConfirmReset,
-	onRevive,
-	isResetPending
+	transparency
 }: DeathButtonsProps) {
 	const device = useInputType()
-	const cart = useCart()
-	const shouldShow =
-		cart?.state === "death_screen" || cart?.state === "reviving"
+	const { cart, changeState, confirmHardReset, spawnPoint, state } = useCart()
+	const shouldShow = state === "death_screen" || state === "reviving"
 	const { mutate: mutateRevive } = useMutation({
 		queryKey: ["death-revive"],
 		mutationFn: async () => {
 			const controller = Dependency<CartController>()
 			controller.promptRevive()
-			onRevive()
+			changeState("reviving")
 			return true
 		}
 	})
 
 	const { mutate: mutateReset } = useMutation({
 		queryKey: ["death-reset"],
+
 		mutationFn: async () => {
-			onConfirmReset()
-			return true
+			if (!spawnPoint) {
+				warn("No spawn point set for death screen")
+				return false
+			}
+			UIHelper.toggleFade(true)
+			task.wait(0.5)
+			changeState("none")
+			confirmHardReset()
+			try {
+				await ClientFunctions.CartService.respawn.invokeWithTimeout(5000)
+				UIHelper.toggleFade(false)
+				return true
+			} catch (err) {
+				warn(`Failed to respawn player: ${err}`)
+				UIHelper.toggleFade(false)
+
+				return false
+			}
 		}
 	})
 
@@ -57,20 +69,23 @@ export function DeathButtons({
 	const is_confirm_reset_down = useInput({
 		key: GAMEPAD_BUTTONS.CONFIRM_RESET,
 		handler: (value) => value && mutateReset(),
-		enabled: shouldShow && !isResetPending
+		enabled: shouldShow
 	})
 	useEffect(() => {
 		if (!shouldShow) {
 			return
 		}
-		task.delay(20, () => {
+		const job = task.delay(20, () => {
 			if (shouldShow) {
 				mutateReset()
 			}
 		})
+		return () => {
+			task.cancel(job)
+		}
 	}, [shouldShow])
 	if (!shouldShow) {
-		return 
+		return
 	}
 	return (
 		<imagelabel
@@ -100,17 +115,6 @@ export function DeathButtons({
 					AnchorPoint={UIDIM.A_TOP.add(new Vector2(0, 0.1))}
 					Text={"(last checkpoint)"}
 				></GoofyText>
-				<RadialProgress
-					degrees_per_second={360 / 20}
-					progress={1}
-					initial_progress={0}
-					Color={new Color3(1, 0.36, 0.36)}
-					Size={UDim2.fromScale(.5, .5)}
-					Position={UDim2.fromScale(1, 0)}
-					AnchorPoint={UIDIM.A_CENTER}
-					
-					// initial_progress={1}
-				/>
 				{device === "Gamepad" && (
 					<Icon
 						Size={new UDim2(0.5, 0, 0.5, 0)}
@@ -132,6 +136,17 @@ export function DeathButtons({
 				Ratio={1.5}
 				mockMouseDown={is_revive_down}
 			>
+				<RadialProgress
+					degrees_per_second={360 / 20}
+					progress={1}
+					initial_progress={0}
+					Color={new Color3(1, 0.36, 0.36)}
+					Size={UDim2.fromScale(0.5, 0.5)}
+					Position={UDim2.fromScale(1, 0)}
+					AnchorPoint={UIDIM.A_CENTER}
+
+					// initial_progress={1}
+				/>
 				{device === "Gamepad" && (
 					<Icon
 						Size={new UDim2(0.5, 0, 0.5, 0)}
