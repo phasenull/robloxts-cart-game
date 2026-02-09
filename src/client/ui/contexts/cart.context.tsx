@@ -8,6 +8,7 @@ import React, {
 } from "@rbxts/react"
 import { Players } from "@rbxts/services"
 import { CartClientComponent } from "client/components/cart.client.component"
+import { AnimationController } from "client/controllers/animation.controller"
 import { CartController } from "client/controllers/cart.controller"
 import { __IS_EDIT__ } from "shared/config.helper"
 import { Logger } from "shared/logger"
@@ -27,7 +28,7 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined)
 
 export function CartProvider(props: { children: React.ReactNode }) {
-	const [cart, setCart] = useState<CartClientComponent | undefined>(undefined)
+	const [cart, setCart] = useState<CartClientComponent | undefined>()
 	const [state, setState] = useState<CartState>("none")
 	const [spawnPoint, setSpawnPoint] = useState<CFrame | undefined>(undefined)
 
@@ -101,6 +102,9 @@ export function CartProvider(props: { children: React.ReactNode }) {
 		confirmHardReset
 	}
 	useEffect(() => {
+		if (__IS_EDIT__) {
+			return
+		}
 		const cart_controller = Dependency<CartController>()
 		cart_controller.onCartChange.Connect((new_cart) => {
 			logger.log(`Cart changed: ${new_cart?.instance.GetFullName()}`)

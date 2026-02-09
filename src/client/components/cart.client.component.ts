@@ -1,6 +1,6 @@
 import { BaseComponent, Component } from "@flamework/components"
 import { Dependency, OnPhysics, OnStart } from "@flamework/core"
-import { sphere } from "@rbxts/better-gizmos"
+import { arrow, line, sphere } from "@rbxts/better-gizmos"
 import { copy } from "@rbxts/object-utils"
 import { Players, Workspace } from "@rbxts/services"
 import Signal from "@rbxts/signal"
@@ -88,6 +88,7 @@ export class CartClientComponent
 		// })
 		this.wheel_friction = new_friction
 	}
+	private anti_gravity_multiplier = 0
 	private getSteepAngle() {
 		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
 		if (!root) {
@@ -148,7 +149,13 @@ export class CartClientComponent
 		// 	}
 		// }
 		const force = this.instance.Root.VectorForce
-		force.Force = humanoid.MoveDirection.mul(this.power)
+		const mass = this.instance.FindFirstChild("Mass") as BasePart | undefined
+		if (!force || !mass) {
+			this.cleanupRide("Force or mass instance not found")
+			return
+		}
+		const root = this.instance.Root
+		force.Force = humanoid.MoveDirection.mul(this.power).add(new Vector3(0, root.AssemblyMass * Workspace.Gravity/2 * this.anti_gravity_multiplier, 0))
 		// wheel alignment
 		// const direction = humanoid.MoveDirection.Unit
 		// if (direction.Magnitude > 0) {
@@ -562,9 +569,14 @@ export class CartClientComponent
 			if (!ray) {
 				return false
 			}
-			const drawn = sphere.draw(ray.Position, 0.3)
+			if (ray.Instance.Name === "AntiRevive") {
+				this.logger.log("Checkpoint unavailable due to anti-revive zone")
+				return false
+			}
+			const drawn = arrow.draw(root.Position.add(corner), ray.Position)
 			task.delay(0.05, () => {
-				drawn.Destroy()
+				drawn.adornmentCone.Destroy()
+				drawn.adornmentLine.Destroy()
 			})
 		}
 
