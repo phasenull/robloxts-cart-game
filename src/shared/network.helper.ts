@@ -34,6 +34,10 @@ interface ClientToServerEvents {
 	CartService: {
 		spawnCart: (button: ButtonModel) => void;
 	};
+	CheckpointService: {
+		setCheckpoint: (index:number) => void;
+		processPlayerDeath: () => void;
+	}
 }
 
 /*

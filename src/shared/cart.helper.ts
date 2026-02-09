@@ -11,7 +11,7 @@ export function RigCartModel(cart_model: ICart) {
 	const [bounding_box, size] = cart_model.GetBoundingBox()
 	const mass_part = MasslessPart(cart_model, "Mass")
 	mass_part.Size = new Vector3(2.712, 1, 2.475)
-	mass_part.CFrame = bounding_box.mul(new CFrame(0,0, 0))
+	mass_part.CFrame = bounding_box.mul(new CFrame(0,-.5, 0))
 	mass_part.Massless = false
 	const hitbox = MasslessPart(cart_model, "Hitbox")
 	hitbox.Size = size.add(new Vector3(0, -2, 0))
