@@ -77,7 +77,8 @@ export namespace A {
 }
 export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {
 	log_base:log_base,
-	carts: Folder
+	carts: Folder,
+	CheckpointVisuals:Model & { checkpoint_visual: Part }
 }
 export const scriptables = Workspace.FindFirstChild("scriptables") as Folder
 export const runtime = scriptables?.FindFirstChild("runtime") as Folder

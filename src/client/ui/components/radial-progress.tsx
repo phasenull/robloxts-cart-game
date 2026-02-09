@@ -24,7 +24,7 @@ export function RadialProgress(props: {
 	})
 	const progress_degrees = value * 360
 	const Circle = (props: { rotation: number; visible?: boolean; color?: Color3 }) => (
-		<frame Size={UIDIM.ONE.add(props.color)} AnchorPoint={UIDIM.A_CENTER} Rotation={props.rotation} BackgroundTransparency={1} Position={UIDIM.CENTER}>
+		<frame Size={UIDIM.ONE} AnchorPoint={UIDIM.A_CENTER} Rotation={props.rotation} BackgroundTransparency={1} Position={UIDIM.CENTER}>
 			<uiaspectratioconstraint AspectRatio={1} />
 			<imagelabel
 				Image={A.ui.ellipse}
