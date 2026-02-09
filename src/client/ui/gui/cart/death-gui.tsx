@@ -65,7 +65,7 @@ export function DeathGui() {
 
 	return (
 		<DeathButtons
-			shouldShow={shouldShow}
+		
 			transparency={post_transparency}
 			onConfirmReset={() => mutateHardReset()}
 			onRevive={() => mutateRevive()}

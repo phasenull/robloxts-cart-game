@@ -14,7 +14,7 @@ export function RadialProgress(props: {
 }) {
 	const dps = props.degrees_per_second ?? 360
 	const value = useAnimateValue({
-		initial_value: props.initial_progress ||0,
+		// initial_value: 0,//props.initial_progress ||0,
 		target_value: props.progress,
 		tween_info: new TweenInfo(
 			(props.progress * 360) / dps,

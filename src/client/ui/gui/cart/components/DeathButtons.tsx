@@ -102,8 +102,8 @@ export function DeathButtons({
 				></GoofyText>
 				<RadialProgress
 					degrees_per_second={360 / 20}
-					progress={0}
-					initial_progress={1}
+					progress={1}
+					initial_progress={0}
 					Color={new Color3(1, 0.36, 0.36)}
 					Size={UDim2.fromScale(.5, .5)}
 					Position={UDim2.fromScale(1, 0)}

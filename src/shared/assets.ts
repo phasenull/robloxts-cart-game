@@ -58,7 +58,8 @@ export namespace A {
 		halftone_bottom_top: "rbxassetid://110100323318280",
 		halftone_circle: "rbxassetid://124284820217674",
 		tile:"rbxassetid://120250412681646",
-		inner_shadow:"rbxassetid://75600902046326"
+		inner_shadow:"rbxassetid://75600902046326",
+		ellipse:"rbxassetid://113978818477114"
 	}
 	export const sounds = {
 		click_hard: "rbxassetid://6324790483",
