@@ -88,7 +88,7 @@ export class CartClientComponent
 		// })
 		this.wheel_friction = new_friction
 	}
-	private anti_gravity_multiplier = 0
+	private anti_gravity_multiplier = 0.5
 	private getSteepAngle() {
 		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
 		if (!root) {
@@ -155,7 +155,14 @@ export class CartClientComponent
 			return
 		}
 		const root = this.instance.Root
-		force.Force = humanoid.MoveDirection.mul(this.power).add(new Vector3(0, root.AssemblyMass * Workspace.Gravity/2 * this.anti_gravity_multiplier, 0))
+		force.Force = humanoid.MoveDirection.mul(this.power).add(
+			new Vector3(
+				0,
+				((root.AssemblyMass * Workspace.Gravity) / 2) *
+					this.anti_gravity_multiplier,
+				0
+			)
+		)
 		// wheel alignment
 		// const direction = humanoid.MoveDirection.Unit
 		// if (direction.Magnitude > 0) {
@@ -187,6 +194,10 @@ export class CartClientComponent
 		const is_checkpoint_available = this.checkCheckpointAvailability()
 		if (is_checkpoint_available) {
 			this.CartController.saveCheckpoint(this.instance.GetPivot())
+		}
+		const y_positon = this.instance.Root.Position.Y
+		if (y_positon < -66) {
+			this.cleanupRide("Player fell off the map")
 		}
 	}
 	private logger: Logger
@@ -400,6 +411,7 @@ export class CartClientComponent
 		if (this.resolvePlayer() !== Players.LocalPlayer) {
 			return
 		}
+		this.logger.warn(`Cleaning up ride due to: ${reason}`)
 		const cart_controller = Dependency<CartController>()
 		cart_controller.onCartChange.Fire(undefined)
 		this.__is_cleaned_up = true
@@ -407,9 +419,9 @@ export class CartClientComponent
 		task.spawn(() => {
 			const controller = Dependency<CartController>()
 			UIHelper.toggleFade(true)
-			task.wait(.5)
+			task.wait(0.5)
 			controller.toggleDeathScreen(true)
-			task.wait(.2)
+			task.wait(0.2)
 			UIHelper.toggleFade(false)
 		})
 		this.toggleFriction(false)
@@ -480,7 +492,9 @@ export class CartClientComponent
 				)
 				cart_config = config.find((entry) => entry.name === "Cart")
 				if (!cart_config) {
-					this.logger.warn(`!!FATAL!! No cart config found for default cart, cleaning up ride ${this.descriptor}`)
+					this.logger.warn(
+						`!!FATAL!! No cart config found for default cart, cleaning up ride ${this.descriptor}`
+					)
 					this.cleanupRide("Failed to get config from server")
 					return
 				}
@@ -573,11 +587,6 @@ export class CartClientComponent
 				this.logger.log("Checkpoint unavailable due to anti-revive zone")
 				return false
 			}
-			const drawn = arrow.draw(root.Position.add(corner), ray.Position)
-			task.delay(0.05, () => {
-				drawn.adornmentCone.Destroy()
-				drawn.adornmentLine.Destroy()
-			})
 		}
 
 		return true

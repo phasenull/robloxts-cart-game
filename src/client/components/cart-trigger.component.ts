@@ -24,11 +24,17 @@ export class CartTriggerComponent<
 		const color_instance = new Instance("Color3Value", this.instance)
 		color_instance.Name = "Color"
 		this.color_instance = color_instance
-		this.color_instance.Value = this.instance.Trigger.FindFirstChildOfClass("Beam")?.Color.Keypoints[0].Value || new Color3(1,1,1)
+		const beam = this.instance.Trigger.FindFirstChildOfClass("Beam")
+		if (beam) {
+			const w = this.instance.Trigger.Size.X
+			beam.Width0 = w
+			beam.Width1 = w
+		}
+		this.color_instance.Value = beam?.Color.Keypoints[0].Value || new Color3(1,1,1)
 	}
 	private color_instance: Color3Value
 	setColor(color: Color3) {
-		const tween = TweenService.Create(this.color_instance, new TweenInfo(0.1), {
+		const tween = TweenService.Create(this.color_instance, new TweenInfo(0.2), {
 			Value: color
 		})
 		tween.Play()
