@@ -1,17 +1,18 @@
 import { Dependency } from "@flamework/core"
-import React from "@rbxts/react"
+import React, { useEffect } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
 import { UserInputService } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { Icon } from "client/ui/components/icon"
+import { RadialProgress } from "client/ui/components/radial-progress"
 import { GAMEPAD_BUTTONS, UIDIM } from "client/ui/constants"
+import { useCart } from "client/ui/contexts/cart.context"
 import { useInput } from "client/ui/hooks/useInput"
 import { useInputType } from "client/ui/hooks/useInputType"
 
 interface DeathButtonsProps {
-	shouldShow: boolean
 	transparency: number
 	onConfirmReset: () => void
 	onRevive: () => void
@@ -19,14 +20,16 @@ interface DeathButtonsProps {
 }
 
 export function DeathButtons({
-	shouldShow,
+	// shouldShow,
 	transparency,
 	onConfirmReset,
 	onRevive,
 	isResetPending
 }: DeathButtonsProps) {
 	const device = useInputType()
-
+	const cart = useCart()
+	const shouldShow =
+		cart?.state === "death_screen" || cart?.state === "reviving"
 	const { mutate: mutateRevive } = useMutation({
 		queryKey: ["death-revive"],
 		mutationFn: async () => {
@@ -56,7 +59,19 @@ export function DeathButtons({
 		handler: (value) => value && mutateReset(),
 		enabled: shouldShow && !isResetPending
 	})
-
+	useEffect(() => {
+		if (!shouldShow) {
+			return
+		}
+		task.delay(20, () => {
+			if (shouldShow) {
+				mutateReset()
+			}
+		})
+	}, [shouldShow])
+	if (!shouldShow) {
+		return 
+	}
 	return (
 		<imagelabel
 			Size={UDim2.fromScale(0.2, 0.2)}
@@ -85,6 +100,17 @@ export function DeathButtons({
 					AnchorPoint={UIDIM.A_TOP.add(new Vector2(0, 0.1))}
 					Text={"(last checkpoint)"}
 				></GoofyText>
+				<RadialProgress
+					degrees_per_second={360 / 20}
+					progress={0}
+					initial_progress={1}
+					Color={new Color3(1, 0.36, 0.36)}
+					Size={UDim2.fromScale(.5, .5)}
+					Position={UDim2.fromScale(1, 0)}
+					AnchorPoint={UIDIM.A_CENTER}
+					
+					// initial_progress={1}
+				/>
 				{device === "Gamepad" && (
 					<Icon
 						Size={new UDim2(0.5, 0, 0.5, 0)}

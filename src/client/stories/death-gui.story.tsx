@@ -7,6 +7,7 @@ import { CartProvider } from "client/ui/contexts/cart.context"
 import { DeathGui } from "client/ui/gui/cart/death-gui"
 
 const controls = {
+	mock_state: Choose(["none", "alive", "death_screen", "reviving"] as const)
 }
 
 const story = {
@@ -16,7 +17,7 @@ const story = {
 	story: (props: InferFusionProps<typeof controls>) => {
 		return (
 			<QueryClientProvider value={new QueryClient({})}>
-				<CartProvider>
+				<CartProvider __story={{ mock_state: props.controls.mock_state }}>
 					<DeathGui
 					/>
 				</CartProvider>

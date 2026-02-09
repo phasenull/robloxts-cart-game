@@ -27,11 +27,20 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
 
-export function CartProvider(props: { children: React.ReactNode }) {
+export function CartProvider(props: {
+	children: React.ReactNode
+	__story?: { mock_state: CartState }
+}) {
 	const [cart, setCart] = useState<CartClientComponent | undefined>()
 	const [state, setState] = useState<CartState>("none")
 	const [spawnPoint, setSpawnPoint] = useState<CFrame | undefined>(undefined)
-
+	useEffect(() => {
+		if (props.__story?.mock_state === undefined) { return }
+		if (props.__story.mock_state === "death_screen") {
+			setSpawnPoint(new CFrame())
+		}
+		changeState(props.__story.mock_state)
+	}, [props.__story?.mock_state])
 	// Listen for cart changes
 	useEffect(() => {
 		if (__IS_EDIT__) {
@@ -50,11 +59,11 @@ export function CartProvider(props: { children: React.ReactNode }) {
 			if (my_cart && my_cart !== cart) {
 				logger.log(`Found cart: ${my_cart.instance.GetFullName()}`)
 				setCart(my_cart)
-				setState("alive")
+				changeState("alive")
 			} else if (!my_cart && cart) {
 				logger.log("Lost cart")
 				setCart(undefined)
-				setState("none")
+				changeState("none")
 			}
 		}
 
@@ -66,7 +75,7 @@ export function CartProvider(props: { children: React.ReactNode }) {
 				logger.log(`Death screen toggled: ${spawn_point !== undefined}`)
 				setSpawnPoint(spawn_point)
 				if (spawn_point) {
-					setState("death_screen")
+					changeState("death_screen")
 				}
 			}
 		)
@@ -86,12 +95,18 @@ export function CartProvider(props: { children: React.ReactNode }) {
 
 	const changeState = (new_state: CartState) => {
 		logger.log(`STATE-> ${new_state}`)
+		switch (new_state) {
+			case "none" :{
+				setSpawnPoint(undefined)
+				setCart(undefined)
+			}
+		}
 		setState(new_state)
 	}
 	const confirmHardReset = () => {
 		logger.log("STATE-> RESETING")
 		setSpawnPoint(undefined)
-		setState("none")
+		changeState("none")
 	}
 
 	const value: CartContextValue = {
