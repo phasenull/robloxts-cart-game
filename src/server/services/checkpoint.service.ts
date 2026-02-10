@@ -50,29 +50,27 @@ export class CheckpointService implements OnStart {
 				math.random(1, multi_spawn.size()) - 1
 			] as BasePart
 			cframe = random_spawn.CFrame
+			let char = player.Character
+			if (!char) {
+				player.LoadCharacterAsync()
+				char = player.Character
+				if (!char) {
+					player.CharacterAdded.Wait()
+					char = player.Character
+				}
+			}
+			if (char) {
+				char.PivotTo(cframe ?? CFrame.identity)
+			}
 		} else {
-			warn(
-				`Checkpoint ${checkpoint_index} for player ${player.Name} has no valid spawn point`
-			)
+			// warn(
+			// 	`Checkpoint ${checkpoint_index} for player ${player.Name} has no valid spawn point`
+			// )
 		}
 		if (!cframe) {
 			cframe = (checkpoint.FindFirstChild("Trigger") as BasePart)?.CFrame
-		}
-		if (!cframe) {
 			const cart_service = Dependency<CartService>()
 			cart_service.spawnPlayerCartAtLocation(player, cframe ?? CFrame.identity)
-		}
-		let char = player.Character
-		if (!char) {
-			player.LoadCharacterAsync()
-			char = player.Character
-			if (!char) {
-				player.CharacterAdded.Wait()
-				char = player.Character
-			}
-		}
-		if (char) {
-			char.PivotTo(cframe ?? CFrame.identity)
 		}
 	}
 }
