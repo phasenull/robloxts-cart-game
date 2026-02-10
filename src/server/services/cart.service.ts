@@ -30,6 +30,14 @@ export class CartService implements OnStart {
 			this.logger.log(`Spawning cart for player ${player.Name}`)
 			this.spawnPlayerCart(player, button)
 		})
+		const damage_parts = Workspace.FindFirstChild("DamageParts") as Folder
+		assert(damage_parts, "DamageParts folder not found in workspace")
+		damage_parts.GetDescendants().forEach((descendant) => {
+			if (descendant.IsA("BasePart")) {
+				descendant.CollisionGroup = "Spike"
+				descendant.AddTag("DamageComponent")
+			}
+		})
 		ServerFunctions.CartService.useProduct.setCallback(
 			(player, product_key) => {
 				const profile = this.DataService.getProfile(player)
@@ -99,8 +107,11 @@ export class CartService implements OnStart {
 		})
 		const spike_group = PhysicsService.RegisterCollisionGroup("Spike")
 		const hitbox_group = PhysicsService.RegisterCollisionGroup("Hitbox")
+		const invincible_group = PhysicsService.RegisterCollisionGroup("Invincible")
 		PhysicsService.CollisionGroupSetCollidable("Spike", "Hitbox", false)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Hitbox", true)
+		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Invincible", false)
+		PhysicsService.CollisionGroupSetCollidable("Invincible", "Invincible", false)
 	}
 	destroyPlayerCart(player: Player) {}
 	getPlayerCart(player: Player): Model | undefined {
@@ -163,31 +174,93 @@ export class CartService implements OnStart {
 		})
 		return cart_model
 	}
-	private readonly PROTECTIONS = new Map<Model,number>()
-	addProtection(cart:Model, duration: number) {
-		const existing = this.PROTECTIONS.get(cart) || tick()
+	private readonly SHIELDS = new Map<Model, number>() // Tracks shield expiry time per cart
+	private readonly DROP_RATE_TRACKER = new Map<Model, { lastReset: number, droppedThisSecond: number }>()
+	private readonly MAX_PARTS_DROP_PER_SECOND = 30 // Configurable limit for dropped parts
+
+	/**
+	 * Adds a shield to a cart that prevents parts from dropping
+	 * @param cart The cart model to shield
+	 * @param duration Duration in seconds
+	 */
+	addShield(cart: Model, duration: number) {
+		const existing = this.SHIELDS.get(cart) || tick()
 		if (tick() < existing) {
-			this.PROTECTIONS.set(cart, existing + duration)
+			// Extend existing shield
+			this.SHIELDS.set(cart, existing + duration)
 			return
 		}
-		this.PROTECTIONS.set(cart, tick() + duration)
+		this.SHIELDS.set(cart, tick() + duration)
 	}
-	makePartsDrop(cart:Model, parts: BasePart[]) {
-		const entry = this.PROTECTIONS.get(cart) ||0
-		if (tick() < entry) {
+
+	/**
+	 * Check if a cart currently has shield protection
+	 * @param cart The cart model to check
+	 * @returns true if the cart is shielded
+	 */
+	hasShield(cart: Model): boolean {
+		const shieldExpiry = this.SHIELDS.get(cart) || 0
+		return tick() < shieldExpiry
+	}
+
+	/**
+	 * Makes parts drop from a cart with rate limiting and shield protection
+	 * @param cart The cart model
+	 * @param parts Array of parts to drop
+	 */
+	makePartsDrop(cart: Model, parts: BasePart[]) {
+		// Check if cart has shield protection
+		if (this.hasShield(cart)) {
 			return
 		}
-		this.addProtection(cart, 1)
-		parts.forEach((part) => {
+		// Get or initialize rate tracker
+		let tracker = this.DROP_RATE_TRACKER.get(cart)
+		const currentTime = tick()
+		
+		if (!tracker || currentTime - tracker.lastReset >= 1) {
+			// Reset tracker every second
+			tracker = { lastReset: currentTime, droppedThisSecond: 0 }
+			this.DROP_RATE_TRACKER.set(cart, tracker)
+		}
+		
+		// Calculate how many parts we can drop this second
+		const remainingAllowance = this.MAX_PARTS_DROP_PER_SECOND - tracker.droppedThisSecond
+		if (remainingAllowance <= 0) {
+			// Already dropped max parts this second
+			return
+		}
+		
+		// Drop only up to the remaining allowance
+		let droppedCount = 0
+		for (let i = 0; i < parts.size() && droppedCount < remainingAllowance; i++) {
+			const part = parts[i]
+			if (["WHEEL","BALL"].includes(part.Name)) {
+				const wheel = part.Parent?.FindFirstChild("WHEEL")
+				const ball = part.Parent?.FindFirstChild("BALL")
+				wheel?.Destroy()
+				ball?.Destroy()
+			}
 			const weld_constraints = part.FindFirstChildOfClass("WeldConstraint")
 			const weld = part.FindFirstChildOfClass("Weld")
+			const ball_socket = part.FindFirstChildOfClass("BallSocketConstraint")
+			const hinge = part.FindFirstChildOfClass("HingeConstraint")
+			if (ball_socket) {
+				ball_socket.Destroy()
+			}
+			if (hinge) {
+				hinge.Destroy()
+			}
 			if (weld_constraints) {
 				weld_constraints.Destroy()
 			}
 			if (weld) {
 				weld.Destroy()
 			}
-		})
+			droppedCount++
+		}
+		
+		// Update tracker
+		tracker.droppedThisSecond += droppedCount
 	}
 	getPlayerRevives(player: Player): number {
 		const profile = this.DataService.getProfile(player)

@@ -13,11 +13,11 @@ export class DamageComponent extends CartTouch {
 	onTouch(other_part: BasePart, cart_model: Model) {
 		const visuals = cart_model.FindFirstChild("Visuals")
 		assert(visuals, `Cart ${cart_model.GetFullName()} is missing Visuals part`)
-		const is_visuals = other_part.IsDescendantOf(visuals)
-		if (!is_visuals) return
-		this.logger.log(
-			`DamageComponent touched by ${other_part.GetFullName()} in cart ${cart_model.GetFullName()}`
-		)
+		// const is_visuals = other_part.IsDescendantOf(visuals)
+		// if (!is_visuals) return
+		if (["Root","Mass","VehicleSeat","Hitbox","IgnoreDestruction"].includes(other_part.Name)) {
+			return
+		}
 		const cart_service = Dependency<CartService>()
 		cart_service.makePartsDrop(cart_model,[other_part])
 	}

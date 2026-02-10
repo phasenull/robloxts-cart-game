@@ -18,6 +18,7 @@ export function RigCartModel(cart_model: ICart) {
 	hitbox.CFrame = bounding_box.mul(new CFrame(0, .5 , 0))
 	hitbox.CanCollide = true
 	hitbox.CollisionGroup = "Hitbox"
+	hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7,1,0.2)
 	const root_part = MasslessPart(cart_model, "Root")
 	root_part.CFrame = bounding_box
 	root_part.Color = new Color3(0, 0.9, 1)
