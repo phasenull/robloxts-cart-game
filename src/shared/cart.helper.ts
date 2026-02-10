@@ -15,7 +15,7 @@ export function RigCartModel(cart_model: ICart) {
 	mass_part.Massless = false
 	const hitbox = MasslessPart(cart_model, "Hitbox")
 	hitbox.Size = size.add(new Vector3(0, -2, 0))
-	hitbox.CFrame = bounding_box.mul(new CFrame(0, .5, 0))
+	hitbox.CFrame = bounding_box.mul(new CFrame(0, .5 , 0))
 	hitbox.CanCollide = true
 	hitbox.CollisionGroup = "Hitbox"
 	const root_part = MasslessPart(cart_model, "Root")

@@ -15,7 +15,7 @@ const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],
 	cash: 0,
 	playtime: 0,
-	
+	collected_checkpoints: [] as number[],
 	inventory: [],
 };
 type PurchaseHistoryEntry = {
