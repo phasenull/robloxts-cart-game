@@ -29,7 +29,7 @@ export type IPurchasable<T extends "gamepass" | "product"> = {
 	rewards: IReward<any>[];
 };
 
-export type IDescriptableReward = "cart";
+export type IDescriptableReward = "cart" | "lucky_block";
 export type IValuableReward = "cash" | "revives" | "flips";
 export type IRewardType = IDescriptableReward | IValuableReward | "custom";
 export type IReward<
