@@ -1,4 +1,5 @@
 import React, { useEffect } from "@rbxts/react"
+import { UIHelper } from "client/ui.helper"
 import { UIDIM } from "client/ui/constants"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
 import { useMouseEvents } from "client/ui/hooks/useMouseEvents"
@@ -43,7 +44,10 @@ export function RottenButton(props: {
 		<imagebutton
 			Rotation={props.Rotation ?? 0}
 			Event={{
-				MouseButton1Click: props.onClick
+				MouseButton1Click: () => {
+					UIHelper.playSound(A.sounds.click_hard)
+					props.onClick?.()
+				}
 			}}
 			LayoutOrder={props.LayoutOrder}
 			ZIndex={props.ZIndex}

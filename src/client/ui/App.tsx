@@ -9,18 +9,19 @@ import { SettingsProvider } from "./contexts/settings.context"
 import { CartProvider } from "./contexts/cart.context"
 import BlurGui from "./gui/blur-gui"
 import { SettingsGui } from "./gui/main/settings-gui"
-import Sidebar from "./gui/sidebar"
 import { ShopGui } from "./gui/main/shop-gui"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
 import { CartGui } from "./gui/main/cart-gui"
 import { CartHud } from "./gui/cart/cart-hud"
 import { DeathGui } from "./gui/cart/death-gui"
-import { __IS_STUDIO__ } from "shared/config.helper"
+import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { FadeGui } from "./gui/main/fade-gui"
 import { CheckpointProvider } from "./gui/cart/hooks/useCheckpoint"
+import { RightSidebar } from "./components/right-sidebar"
+import { TPGui } from "./gui/main/tp-gui"
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 	const [open_gui, set_open_gui] = useState<GUI_KEYS | undefined>(
-		__IS_STUDIO__ ? props.initial_gui : undefined
+		__IS_EDIT__ ? props.initial_gui : undefined
 	)
 	const { showError } = useErrorPage()
 	const query_client = new QueryClient({
@@ -61,7 +62,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 							<SettingsProvider>
 								<FadeGui />
 								<DeathGui />
-								{is_sidebar_open && <Sidebar />}
+								<RightSidebar />
 								<CartHud />
 								<ErrorPopup />
 								<BlurGui />
@@ -69,6 +70,13 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 									<SettingsGui />
 								</PopGui>
 
+								<PopGui
+									hide_title
+									disable_default_close
+									id={"teleport"}
+								>
+									<TPGui/>
+								</PopGui>
 								<PopGui id={"items"} />
 								<PopGui id={"gift"}>
 									<imagelabel

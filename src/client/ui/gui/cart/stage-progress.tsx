@@ -46,16 +46,7 @@ export function StageProgress() {
 		total_distance
 	)
 	const new_progress = 1 - math.clamp(current_distance / total_distance, 0, 1)
-	sphere.draw(checkpoint.GetPivot().Position, 5).Color3 = Color3.fromRGB(
-		0,
-		255,
-		0
-	)
-	sphere.draw(next_checkpoint.GetPivot().Position, 5).Color3 = Color3.fromRGB(
-		255,
-		0,
-		0
-	)
+
 	if (!cart) return
 	return (
 		<frame BackgroundTransparency={1} Position={new UDim2(.5,0,0.05,0)} AnchorPoint={UIDIM.A_TOP} Size={UIDIM.ONE}>

@@ -12,7 +12,7 @@ import { GAMEPAD_BUTTONS, REVIVE_TIME, UIDIM } from "client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useInput } from "client/ui/hooks/useInput"
 import { useInputType } from "client/ui/hooks/useInputType"
-import { __IS_STUDIO__ } from "shared/config.helper"
+import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
 
 interface DeathButtonsProps {
@@ -50,7 +50,7 @@ export function DeathButtons({
 			changeState("none")
 			confirmHardReset()
 			UIHelper.toggleFade(false)
-			if (__IS_STUDIO__) return true
+			if (__IS_EDIT__) return true
 			try {
 				await ClientFunctions.CartService.respawn.invokeWithTimeout(5000)
 				return true

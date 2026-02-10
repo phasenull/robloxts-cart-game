@@ -5,7 +5,7 @@ import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
 import { Logger } from "shared/logger"
 
-@Service()
+@Service({loadOrder:5})
 export class CheckpointService implements OnStart {
 	private checkpoint_states = new Map<number, number>()
 	constructor(private logger: Logger) {}
@@ -13,13 +13,15 @@ export class CheckpointService implements OnStart {
 		?.GetChildren()
 		.filter((child) => child.IsA("Model")) as Model[]
 	onStart(): void {
+		Players.PlayerAdded.Connect((player) => {
+			this.setCheckpointIndex(player, 0)
+			
+		})
 		ServerFunctions.CheckpointService.getCheckpointState.setCallback(
 			(player) => {
 				const checkpoint_index = this.getCheckpointIndex(player)
 				const collected_checkpoints = this.getPlayerCheckpoints(player)
-				this.logger.log(
-					`getCheckpointState called by ${player.Name}, returning checkpoint index ${checkpoint_index} and collected checkpoints ${collected_checkpoints}`
-				)
+
 				return [
 					{
 						current_checkpoint: checkpoint_index,
@@ -28,6 +30,20 @@ export class CheckpointService implements OnStart {
 				]
 			}
 		)
+		ServerFunctions.CheckpointService.tpMeToCheckpoint.setCallback((player, checkpoint_index) => {
+			if (typeOf(checkpoint_index) !== "number") {
+				return [false, "Invalid checkpoint index"]
+			}
+			if (0 > checkpoint_index) {
+				return [false, "Checkpoint index cannot be negative"]
+			}
+			if (checkpoint_index > (this.checkpoints?.size() || 0)) {
+				return [false, "Checkpoint index out of bounds"]
+			}
+			this.setCheckpointIndex(player, checkpoint_index)
+			player.LoadCharacterAsync()
+			return [true]
+		})
 		ServerEvents.CheckpointService.setCheckpoint.connect((player, index) => {
 			if (typeOf(index) !== "number") {
 				return
@@ -40,21 +56,17 @@ export class CheckpointService implements OnStart {
 			}
 			this.setCheckpointIndex(player, index)
 		})
-		Players.PlayerAdded.Connect((player) => {
-			this.logger.log("Player added:", player.Name)
-			this.setCheckpointIndex(player, 0)
-		})
 		ServerEvents.CheckpointService.processPlayerDeath.connect((player) => {
 			this.processPlayerDeath(player)
 		})
 	}
 	setCheckpointIndex(player: Player, index: number) {
-		this.logger.log(
-			"setting checkpoint index for player",
-			player.Name,
-			"to",
-			index
-		)
+		// this.logger.log(
+		// 	"setting checkpoint index for player",
+		// 	player.Name,
+		// 	"to",
+		// 	index
+		// )
 		this.checkpoint_states.set(player.UserId, index)
 		ServerEvents.CheckpointService.updateCheckpointState.fire(
 			player,
@@ -69,6 +81,7 @@ export class CheckpointService implements OnStart {
 		const profile_service = Dependency<DataService>()
 		const profile = profile_service.getProfile(player)
 		if (!profile) {
+			this.logger.warn(`Profile not found for player ${player.Name} when getting checkpoints`)
 			return []
 		}
 		return profile.Data.collected_checkpoints

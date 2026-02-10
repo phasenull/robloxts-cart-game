@@ -40,7 +40,9 @@ interface ClientToServerFunctions {
 		respawn: () => void
 		useProduct: (product_key: string) => ProperReturns<true>
 	}
+	
 	CheckpointService: {
+		tpMeToCheckpoint: (checkpoint_index: number) => ProperReturns<true>
 		getCheckpointState: () => ProperReturns<{
 			current_checkpoint: number,
 			collected_checkpoints: number[]

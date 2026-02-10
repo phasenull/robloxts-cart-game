@@ -17,7 +17,7 @@ const PROFILE_TEMPLATE = {
 	playtime: 0,
 	revives: 0,
 	flips: 1,
-	collected_checkpoints: [] as number[],
+	collected_checkpoints: [0] as number[],
 	inventory: [],
 };
 type PurchaseHistoryEntry = {

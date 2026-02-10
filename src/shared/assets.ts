@@ -61,6 +61,12 @@ export namespace A {
 		inner_shadow:"rbxassetid://75600902046326",
 		ellipse:"rbxassetid://113978818477114"
 	}
+	export const backgrounds = {
+		post_magma:"rbxassetid://89145592620126",
+		initial: "rbxassetid://115272068924901",
+		post_initial: "rbxassetid://122225957336369",
+		post_snowy: "rbxassetid://93762869405076"
+	}
 	export const sounds = {
 		click_hard: "rbxassetid://6324790483",
 		click_soft: "rbxassetid://15675059323",
