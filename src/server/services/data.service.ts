@@ -15,6 +15,8 @@ const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],
 	cash: 0,
 	playtime: 0,
+	revives: 0,
+	flips: 1,
 	collected_checkpoints: [] as number[],
 	inventory: [],
 };

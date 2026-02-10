@@ -2,7 +2,7 @@ import { BaseComponent, Component } from "@flamework/components"
 import { Dependency, OnPhysics, OnStart } from "@flamework/core"
 import { arrow, line, sphere } from "@rbxts/better-gizmos"
 import { copy } from "@rbxts/object-utils"
-import { Players, Workspace } from "@rbxts/services"
+import { MarketplaceService, Players, Workspace } from "@rbxts/services"
 import Signal from "@rbxts/signal"
 import StringUtils from "@rbxts/string-utils"
 import { t } from "@rbxts/t"
@@ -12,6 +12,7 @@ import { UIHelper } from "client/ui.helper"
 import { __STUDIO__ } from "client/ui/constants"
 import { Logger } from "shared/logger"
 import { ClientFunctions } from "shared/network.helper"
+import { PRODUCTS } from "shared/purchasables"
 import { ICart, ICartEntry, IWheel } from "shared/type.helper"
 import {
 	calculateSteepDiffFromHumanoid,
@@ -359,14 +360,43 @@ export class CartClientComponent
 			}
 		}
 	}
-	private __last_flip_time = 0
-	flipCart(): void {
-		if (!this.rider) return
-		const now = tick()
-		if (now - this.__last_flip_time < 3) {
-			return
+	private __is_flipping = false
+	async promptFlip(): Promise<boolean> {
+		if (this.__is_flipping) {
+			return false
 		}
-		this.__last_flip_time = now
+		this.__is_flipping = true
+		const [use_result, err] =
+			await ClientFunctions.CartService.useProduct.invokeWithTimeout(
+				5000,
+				"flips"
+			)
+		if (use_result) {
+			this.flipCart()
+			return true
+		}
+		MarketplaceService.PromptProductPurchase(
+			Players.LocalPlayer,
+			PRODUCTS.flips
+		)
+		const connection = MarketplaceService.PromptProductPurchaseFinished.Connect(
+			async (user_id, assetId, wasPurchased) => {
+				if (user_id !== Players.LocalPlayer.UserId) return
+				if (assetId !== PRODUCTS.flips) return
+				connection.Disconnect()
+				if (!wasPurchased) return
+				this.flipCart()
+				await ClientFunctions.CartService.useProduct.invokeWithTimeout(
+					5000,
+					"flips"
+				)
+			}
+		)
+		return true
+	}
+	flipCart() {
+		if (!this.rider) return false
+		const now = tick()
 		const attachment = this.instance.Root.FindFirstChild("Root") as Attachment
 		const align_position = new Instance("AlignPosition", this.instance.Root)
 
@@ -403,7 +433,11 @@ export class CartClientComponent
 		task.delay(1, () => {
 			align_orientation.Destroy()
 			align_position.Destroy()
+			task.delay(1, () => {
+				this.__is_flipping = false
+			})
 		})
+		return true
 	}
 	private __is_cleaned_up = false
 	cleanupRide(reason: string): void {

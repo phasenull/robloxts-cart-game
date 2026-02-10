@@ -24,7 +24,8 @@ export function DeathButtons({
 	transparency
 }: DeathButtonsProps) {
 	const device = useInputType()
-	const { cart, changeState, confirmHardReset, spawnPoint, state } = useCart()
+	const { changeState, confirmHardReset, spawnPoint, state, products } =
+		useCart()
 	const shouldShow = state === "death_screen" || state === "reviving"
 	const { mutate: mutateRevive } = useMutation({
 		queryKey: ["death-revive"],
@@ -133,7 +134,7 @@ export function DeathButtons({
 				onDown={(val) => val && mutateRevive()}
 				Color={new Color3(0.09, 0.86, 0.09)}
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
-				Text="REVIVE"
+				Text={`REVIVE (${products.get("revives") || 0}x)`}
 				Ratio={1.5}
 				mockMouseDown={is_revive_down}
 			>

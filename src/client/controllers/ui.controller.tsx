@@ -17,6 +17,7 @@ export class UIController implements OnStart {
 		screen_gui.Name = "root"
 		screen_gui.IgnoreGuiInset = true
 		screen_gui.Parent = player_gui
+		screen_gui.DisplayOrder = 5
 		root.render(<StrictMode>{createPortal(<App />, screen_gui)}</StrictMode>)
 		this.logger.log("UIController has started!")
 	}

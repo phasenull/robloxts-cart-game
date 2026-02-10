@@ -24,6 +24,7 @@ interface CartContextValue {
 	spawnPoint: CFrame | undefined
 	changeState: (state: CartState) => void
 	confirmHardReset: () => void
+	products: Map<string, number>
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
@@ -34,6 +35,7 @@ export function CartProvider(props: {
 }) {
 	const [cart, setCart] = useState<CartClientComponent | undefined>()
 	const [state, setState] = useState<CartState>("none")
+	const [products,setProducts] = useState<Map<string, number>>(new Map())
 	const [spawnPoint, setSpawnPoint] = useState<CFrame | undefined>(undefined)
 	useEffect(() => {
 		if (props.__story?.mock_state === undefined) { return }
@@ -116,12 +118,17 @@ export function CartProvider(props: {
 		state,
 		spawnPoint,
 		changeState,
-		confirmHardReset
+		confirmHardReset,
+		products
 	}
 	useEffect(() => {
 		if (__IS_EDIT__) {
 			return
 		}
+		ClientEvents.CartService.playerProductsUpdated.connect((data) => {
+			logger.log(`Received product update: ${data}`)
+			setProducts(data)
+		})
 		const cart_controller = Dependency<CartController>()
 		cart_controller.onCartChange.Connect((new_cart) => {
 			const my_card = cart_controller.getMyCart()

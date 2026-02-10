@@ -14,6 +14,7 @@ import { Icon } from "client/ui/components/icon"
 import { useInput } from "client/ui/hooks/useInput"
 import { UIHelper } from "client/ui.helper"
 import { CartState, useCart } from "client/ui/contexts/cart.context"
+import { ClientFunctions } from "shared/network.helper"
 
 export function CartButtons(props: {
 	__story?: {
@@ -23,7 +24,7 @@ export function CartButtons(props: {
 		override_device: "Gamepad" | "Keyboard" | "Mobile"
 	}
 }) {
-	const { cart, state, changeState } = useCart()
+	const { cart, state, changeState, products } = useCart()
 	const device = props.__story?.override_device ?? useInputType()
 	const brake_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.BRAKE)
 	const honk_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.HONK)
@@ -87,9 +88,9 @@ export function CartButtons(props: {
 	const { mutate: mutateFlip } = useMutation({
 		queryKey: ["flip", cartId],
 		mutationFn: async () => {
-			if (!cart) return true
-			cart.flipCart()
-			return true
+			if (!cart) return false
+			return await cart.promptFlip()
+
 		}
 	})
 
@@ -231,7 +232,7 @@ export function CartButtons(props: {
 				<RottenButton
 					Size={UIDIM.ONE}
 					Ratio={2}
-					Text="FLIP"
+					Text={`FLIP ${products.get("flips") || 0}x`}
 					onClick={() => mutateFlip()}
 					Color={new Color3(0.11, 0.75, 0.95)}
 					mockMouseDown={is_flip_down === true ? true : undefined}

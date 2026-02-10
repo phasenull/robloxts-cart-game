@@ -22,6 +22,9 @@ interface ServerToClientEvents {
 			new_checkpoint: number,
 			collected_checkpoints: number[]
 		) => void
+	},
+	CartService: {
+		playerProductsUpdated: (data:Map<string, number>) => void
 	}
 }
 
@@ -35,6 +38,7 @@ interface ClientToServerFunctions {
 	CartService: {
 		getConfig: () => ProperReturns<ICartConfig>
 		respawn: () => void
+		useProduct: (product_key: string) => ProperReturns<true>
 	}
 	CheckpointService: {
 		getCheckpointState: () => ProperReturns<{

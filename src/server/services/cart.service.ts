@@ -1,23 +1,89 @@
 import { Components } from "@flamework/components"
 import { Dependency, OnStart, Service } from "@flamework/core"
-import { PhysicsService, Workspace } from "@rbxts/services"
+import {
+	MarketplaceService,
+	PhysicsService,
+	Players,
+	Workspace
+} from "@rbxts/services"
 import { CartServerComponent } from "server/components/cart.server.component"
 import { assets } from "shared/assets"
 import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { ButtonModel } from "shared/type.helper"
+import { DataService } from "./data.service"
+import { PRODUCTS } from "shared/purchasables"
 
 @Service()
 export class CartService implements OnStart {
-	constructor(private logger: Logger) {}
+	constructor(
+		private logger: Logger,
+		private DataService: DataService
+	) {}
 	private readonly PLAYER_CARTS = new Map<Player, Model>()
-	private readonly DEBOUNCE_TABLE = new Map<Player,number>()
+	private readonly DEBOUNCE_TABLE = new Map<Player, number>()
+	private readonly revive_product_id = PRODUCTS.revives
+	private readonly flip_product_id = PRODUCTS.flips
 	onStart(): void {
 		ServerEvents.CartService.spawnCart.connect((player, button) => {
 			this.logger.log(`Spawning cart for player ${player.Name}`)
 			this.spawnPlayerCart(player, button)
 		})
+		ServerFunctions.CartService.useProduct.setCallback(
+			(player, product_key) => {
+				const profile = this.DataService.getProfile(player)
+				const available = ["revives", "flips"]
+				if (!profile) {
+					return [false, "Data not loaded"]
+				}
+				if (!available.includes(product_key)) {
+					return [false, "Invalid product key"]
+				}
+				switch (product_key) {
+					case "revives":
+						if ((profile.Data.revives || 0) <= 0) {
+							return [false, "Not enough revives"]
+						}
+						profile.Data.revives = (profile.Data.revives || 0) - 1
+						this.logger.log(
+							`Player ${player.Name} used a revive. Remaining: ${profile.Data.revives}`
+						)
+						this.refreshPlayerProducts(player)
+						return [true]
+					case "flips":
+						if ((profile.Data.flips || 0) <= 0) {
+							return [false, "Not enough flips"]
+						}
+						profile.Data.flips = (profile.Data.flips || 0) - 1
+						this.logger.log(
+							`Player ${player.Name} used a flip. Remaining: ${profile.Data.flips}`
+						)
+						this.refreshPlayerProducts(player)
+						return [true]
+					default:
+						this.refreshPlayerProducts(player)
+						return [false, "Unhandled product key"]
+				}
+			}
+		)
+		MarketplaceService.PromptProductPurchaseFinished.Connect(
+			(user_id, assetId, isPurchased) => {
+				const player = Players.GetPlayerByUserId(user_id)
+				if (!player) {
+					return
+				}
+				if (!isPurchased) return
+				switch (assetId) {
+					case this.revive_product_id:
+						this.incrementPlayerRevives(player)
+						break
+					case this.flip_product_id:
+						this.incrementPlayerFlips(player)
+						break
+				}
+			}
+		)
 		ServerFunctions.CartService.getConfig.setCallback(() => {
 			const config = getConfig()
 			return [config.CartConfig]
@@ -45,14 +111,28 @@ export class CartService implements OnStart {
 	reloadCharacter(player: Player) {
 		player.LoadCharacterAsync()
 	}
-	spawnPlayerCartAtLocation(player: Player, cframe: CFrame, cart_skin?: string): Model {
+	refreshPlayerProducts(player: Player) {
+		const profile = this.DataService.getProfile(player)
+		if (!profile) {
+			return
+		}
+		const products = new Map<string, number>()
+		products.set("revives", profile.Data.revives || 0)
+		products.set("flips", profile.Data.flips || 0)
+		ServerEvents.CartService.playerProductsUpdated(player, products)
+	}
+	spawnPlayerCartAtLocation(
+		player: Player,
+		cframe: CFrame,
+		cart_skin?: string
+	): Model {
+		this.refreshPlayerProducts(player)
 		const existing = this.PLAYER_CARTS.get(player)
 		existing?.Destroy()
 		const target_skin = cart_skin ?? this.getPlayerSkin(player)
 		const orig_cart = assets.carts.FindFirstChild(target_skin) as Model
 		assert(orig_cart, `Cart model ${target_skin} not found in assets`)
 		const cart_model = orig_cart.Clone()
-		
 
 		cart_model.PivotTo(
 			cframe
@@ -84,6 +164,32 @@ export class CartService implements OnStart {
 		})
 		return cart_model
 	}
+	getPlayerRevives(player: Player): number {
+		const profile = this.DataService.getProfile(player)
+		if (!profile) {
+			return 0
+		}
+		return profile.Data.revives || 0
+	}
+	makePlayerBuyProduct(player: Player, productId: number) {
+		MarketplaceService.PromptProductPurchase(player, productId)
+	}
+	incrementPlayerRevives(player: Player) {
+		const profile = this.DataService.getProfile(player)
+		if (!profile) {
+			return
+		}
+		this.logger.log(`Incrementing revives for player ${player.Name}`)
+		profile.Data.revives = (profile.Data.revives || 0) + 1
+	}
+	incrementPlayerFlips(player: Player) {
+		const profile = this.DataService.getProfile(player)
+		if (!profile) {
+			return
+		}
+		this.logger.log(`Incrementing flips for player ${player.Name}`)
+		profile.Data.flips = (profile.Data.flips || 0) + 1
+	}
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		if (this.DEBOUNCE_TABLE.has(player)) {
 			const last_time = this.DEBOUNCE_TABLE.get(player)!
@@ -93,6 +199,7 @@ export class CartService implements OnStart {
 			}
 		}
 		this.DEBOUNCE_TABLE.set(player, tick())
+		this.refreshPlayerProducts(player)
 		const existing = this.PLAYER_CARTS.get(player)
 		existing?.Destroy()
 		const cart_skin = this.getPlayerSkin(player)
