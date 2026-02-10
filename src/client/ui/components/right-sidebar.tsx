@@ -11,6 +11,7 @@ export function RightSidebar() {
 			Size={UDim2.fromScale(0.3, 0.3)}
 			Position={UIDIM.RIGHT}
 			AnchorPoint={UIDIM.A_RIGHT}
+			BackgroundTransparency={1}
 		>
 			<uilistlayout
 				FillDirection={Enum.FillDirection.Vertical}

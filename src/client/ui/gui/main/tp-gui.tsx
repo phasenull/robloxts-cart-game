@@ -26,7 +26,6 @@ export function TPGui() {
 			return await refresh()
 		},
 		enabled: !__IS_EDIT__
-
 	})
 	return (
 		<frame
@@ -37,7 +36,6 @@ export function TPGui() {
 			ClipsDescendants={false}
 			Position={new UDim2(0.5, 0, 0.5, 0)}
 			Size={new UDim2(1, 0, 1, 0)}
-			
 		>
 			<uiaspectratioconstraint AspectRatio={0.9} />
 			<uistroke Thickness={5} />
@@ -59,6 +57,44 @@ export function TPGui() {
 				Position={new UDim2(0, 0, 0, 0)}
 				Size={new UDim2(1, 0, 1, 0)}
 			/>
+			<scrollingframe
+				Active={true}
+				AutomaticCanvasSize={Enum.AutomaticSize.Y}
+				BackgroundTransparency={1}
+				CanvasSize={new UDim2(0, 0, 0, 0)}
+				Position={new UDim2(0.025, 0, 0.1, 0)}
+				ScrollBarImageColor3={Color3.fromRGB(0, 0, 0)}
+				ScrollBarThickness={8}
+				BorderSizePixel={0}
+				ScrollingDirection={Enum.ScrollingDirection.Y}
+				Size={new UDim2(0.95, 0, 0.9, 0)}
+			>
+				<uipadding
+					PaddingRight={new UDim(0, 14)}
+					PaddingLeft={new UDim(0, 5)}
+					PaddingTop={new UDim(0, 5)}
+					PaddingBottom={new UDim(0, 5)}
+				/>
+				{Object.keys(ISLAND_CONFIG).map((checkpoint_index) => (
+					<CheckpointEntry
+						key={`tp-${checkpoint_index}`}
+						checkpoint_index={tonumber(checkpoint_index) as number}
+						is_locked={
+							!collectedCheckpoints.includes(
+								tonumber(checkpoint_index) as number
+							)
+						}
+					/>
+				))}
+
+				<uigridlayout
+					CellPadding={new UDim2(0, 0, 0.05, 0)}
+					CellSize={new UDim2(1, 0, 1, 0)}
+					SortOrder={Enum.SortOrder.LayoutOrder}
+				>
+					<uiaspectratioconstraint AspectRatio={4} />
+				</uigridlayout>
+			</scrollingframe>
 			<frame
 				key="Top"
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
@@ -115,7 +151,9 @@ export function TPGui() {
 				<GoofyButton
 					AnchorPoint={new Vector2(0.5, 0.5)}
 					Position={new UDim2(0.96, 0, 0.5, 0)}
-					OnClick={() => {navigator.closeAll()}}
+					OnClick={() => {
+						navigator.closeAll()
+					}}
 					Size={new UDim2(1, 0, 1, 0)}
 					Text=""
 					DisablePopEffect
@@ -204,38 +242,6 @@ export function TPGui() {
 					TileSize={new UDim2(0, 50, 0, 50)}
 				/>
 			</frame>
-			<scrollingframe
-				Active={true}
-				AutomaticCanvasSize={Enum.AutomaticSize.Y}
-				BackgroundTransparency={1}
-				CanvasSize={new UDim2(0, 0, 0, 0)}
-				Position={new UDim2(0.025, 0, 0.15, 0)}
-				ScrollBarImageColor3={Color3.fromRGB(0, 0, 0)}
-				ScrollBarThickness={8}
-				BorderSizePixel={0}
-				ScrollingDirection={Enum.ScrollingDirection.Y}
-				Size={new UDim2(0.95, 0, 0.85, 0)}
-			>
-				{Object.keys(ISLAND_CONFIG).map((checkpoint_index) => (
-					<CheckpointEntry
-						key={`tp-${checkpoint_index}`}
-						checkpoint_index={tonumber(checkpoint_index) as number}
-						is_locked={
-							!collectedCheckpoints.includes(
-								tonumber(checkpoint_index) as number
-							)
-						}
-					/>
-				))}
-
-				<uigridlayout
-					CellPadding={new UDim2(0, 0, 0.05, 0)}
-					CellSize={new UDim2(1, 0, 1, 0)}
-					SortOrder={Enum.SortOrder.LayoutOrder}
-				>
-					<uiaspectratioconstraint AspectRatio={4} />
-				</uigridlayout>
-			</scrollingframe>
 		</frame>
 	)
 }
@@ -244,7 +250,8 @@ function CheckpointEntry(props: {
 	is_locked: boolean
 }) {
 	const config = getCheckpointDataFromIndex(props.checkpoint_index)
-	const {cart,changeState}= useCart()
+	const { cart, changeState } = useCart()
+	const navigator = useNavigator()
 	const { mutate, isLoading } = useMutation({
 		queryKey: [`tpToCheckpoint-${props.checkpoint_index}`],
 		mutationFn: async (checkpoint_index: number) => {
@@ -271,6 +278,7 @@ function CheckpointEntry(props: {
 						return
 					}
 					print(`Successfully tp to checkpoint ${checkpoint_index}`)
+					navigator.closeAll()
 				})
 				.catch((err) => {
 					print(`Error tp to checkpoint: ${err}`)
@@ -295,6 +303,55 @@ function CheckpointEntry(props: {
 				Size={UIDIM.ONE}
 				Text={props.is_locked ? "LOCKED" : "TP"}
 				AnchorPoint={new Vector2(0, 0)}
+			/>
+			<imagelabel
+				key="Shadow"
+				AnchorPoint={new Vector2(0.5, 0.5)}
+				BackgroundTransparency={1}
+				Image="rbxassetid://75600902046326"
+				ImageColor3={Color3.fromRGB(0, 0, 0)}
+				ImageTransparency={0.7000000000000001}
+				Position={new UDim2(0.5, 0, 0.5, 0)}
+				Size={new UDim2(1.0010000000000001, 0, 1.088, 0)}
+				ZIndex={0}
+			/>
+			<uistroke Thickness={5} />
+			<imagelabel
+				key="Tile"
+				AnchorPoint={new Vector2(0.5, 0.5)}
+				BackgroundTransparency={1}
+				Image="rbxassetid://120250412681646"
+				ImageTransparency={0.6}
+				Position={new UDim2(0.5, 0, 0.5, 0)}
+				ScaleType={Enum.ScaleType.Tile}
+				Size={new UDim2(1, 0, 1, 0)}
+				TileSize={new UDim2(0, 75, 0, 75)}
+				Visible={false}
+			/>
+			<imagelabel
+				AnchorPoint={new Vector2(0.5, 0.5)}
+				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
+				BorderSizePixel={0}
+				Image={config.image}
+				ImageColor3={props.is_locked ? new Color3(0.3, 0.3, 0.3) : Color3.fromRGB(255, 255, 255)}
+				Position={new UDim2(0.5, 0, 0.5, 0)}
+				ScaleType={Enum.ScaleType.Crop}
+				Size={new UDim2(1, 0, 1, 0)}
+			/>
+			<RottenButton
+				Position={UIDIM.BOTTOM_RIGHT}
+				Size={UDim2.fromScale(0.3, 0.5)}
+				Color={
+					props.is_locked
+						? new Color3(0.29, 0.29, 0.29)
+						: new Color3(0.01, 1, 0.34)
+				}
+				onClick={() => {
+					if (isLoading) return
+					mutate(props.checkpoint_index)
+				}}
+				Text={props.is_locked ? "LOCKED" : "TP"}
+				AnchorPoint={UIDIM.A_BOTTOM_RIGHT}
 			/>
 			<frame
 				key="Top"
@@ -328,54 +385,6 @@ function CheckpointEntry(props: {
 					<uistroke Thickness={3} />
 				</textlabel>
 			</frame>
-			<imagelabel
-				key="Shadow"
-				AnchorPoint={new Vector2(0.5, 0.5)}
-				BackgroundTransparency={1}
-				Image="rbxassetid://75600902046326"
-				ImageColor3={Color3.fromRGB(0, 0, 0)}
-				ImageTransparency={0.7000000000000001}
-				Position={new UDim2(0.5, 0, 0.5, 0)}
-				Size={new UDim2(1.0010000000000001, 0, 1.088, 0)}
-				ZIndex={0}
-			/>
-			<uistroke Thickness={5} />
-			<imagelabel
-				key="Tile"
-				AnchorPoint={new Vector2(0.5, 0.5)}
-				BackgroundTransparency={1}
-				Image="rbxassetid://120250412681646"
-				ImageTransparency={0.6}
-				Position={new UDim2(0.5, 0, 0.5, 0)}
-				ScaleType={Enum.ScaleType.Tile}
-				Size={new UDim2(1, 0, 1, 0)}
-				TileSize={new UDim2(0, 75, 0, 75)}
-				Visible={false}
-			/>
-			<imagelabel
-				AnchorPoint={new Vector2(0.5, 0.5)}
-				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
-				BorderSizePixel={0}
-				Image={config.image}
-				Position={new UDim2(0.5, 0, 0.5, 0)}
-				ScaleType={Enum.ScaleType.Crop}
-				Size={new UDim2(1, 0, 1, 0)}
-			/>
-			<RottenButton
-				Position={UIDIM.BOTTOM_RIGHT}
-				Size={UDim2.fromScale(0.3, 0.5)}
-				Color={
-					props.is_locked
-						? new Color3(0.29, 0.29, 0.29)
-						: new Color3(0.01, 1, 0.34)
-				}
-				onClick={() => {
-					if (isLoading) return
-					mutate(props.checkpoint_index)
-				}}
-				Text={props.is_locked ? "LOCKED" : "TP"}
-				AnchorPoint={UIDIM.A_BOTTOM_RIGHT}
-			/>
 		</frame>
 	)
 }

@@ -6,7 +6,6 @@ export function useNavigator() {
 	const openGui = useContext(GuiContext).open_gui
 	const setOpenGui = useContext(GuiContext).setOpenGui
 	const closeAll = () => {
-		print("Closing all GUIs")
 		clearErrors()
 		setOpenGui(undefined)
 	}

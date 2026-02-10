@@ -15,7 +15,9 @@ export class CheckpointService implements OnStart {
 	onStart(): void {
 		Players.PlayerAdded.Connect((player) => {
 			this.setCheckpointIndex(player, 0)
-			
+			player.CharacterAdded.Connect(() => {
+				this.processPlayerDeath(player)
+			})
 		})
 		ServerFunctions.CheckpointService.getCheckpointState.setCallback(
 			(player) => {
@@ -73,6 +75,7 @@ export class CheckpointService implements OnStart {
 			index,
 			this.getPlayerCheckpoints(player)
 		)
+		this.attemptToSaveCheckpoint(player, index)
 	}
 	getCheckpointIndex(player: Player): number {
 		return this.checkpoint_states.get(player.UserId) || 0

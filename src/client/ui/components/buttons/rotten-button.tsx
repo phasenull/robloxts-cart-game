@@ -86,7 +86,7 @@ export function RottenButton(props: {
 				ImageTransparency={0.7}
 			/>
 			<textlabel
-				Size={new UDim2(1, 0, 0.7, 0)}
+				Size={new UDim2(.9, 0, 0.7, 0)}
 				BackgroundTransparency={1}
 				FontFace={
 					new Font(buildFontAssetId("GothamSSm"), Enum.FontWeight.ExtraBold)
