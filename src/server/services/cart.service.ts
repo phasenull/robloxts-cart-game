@@ -58,6 +58,16 @@ export class CartService implements OnStart {
 							`Player ${player.Name} used a revive. Remaining: ${profile.Data.revives}`
 						)
 						this.refreshPlayerProducts(player)
+						task.spawn(() => {
+							let cart = this.getPlayerCart(player)
+							while (!cart) {
+								task.wait(0.1)
+								cart = this.getPlayerCart(player)
+							}
+							if (cart) {
+								this.addShield(cart, 10)
+							}
+						})
 						return [true]
 					case "flips":
 						if ((profile.Data.flips || 0) <= 0) {
@@ -67,6 +77,10 @@ export class CartService implements OnStart {
 						this.logger.log(
 							`Player ${player.Name} used a flip. Remaining: ${profile.Data.flips}`
 						)
+						const cart2 = this.getPlayerCart(player)
+						if (cart2) {
+							this.addShield(cart2, 10)
+						}
 						this.refreshPlayerProducts(player)
 						return [true]
 					default:
@@ -96,7 +110,7 @@ export class CartService implements OnStart {
 			const config = getConfig()
 			return [config.CartConfig]
 		})
-		
+
 		ServerFunctions.CartService.respawn.setCallback((player) => {
 			this.logger.log(`Respawning player ${player.Name}`)
 			this.reloadCharacter(player)
@@ -111,7 +125,12 @@ export class CartService implements OnStart {
 		PhysicsService.CollisionGroupSetCollidable("Spike", "Hitbox", false)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Hitbox", true)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Invincible", false)
-		PhysicsService.CollisionGroupSetCollidable("Invincible", "Invincible", false)
+		PhysicsService.CollisionGroupSetCollidable(
+			"Invincible",
+			"Invincible",
+			false
+		)
+		PhysicsService.CollisionGroupSetCollidable("Invincible", "Spike", false)
 	}
 	destroyPlayerCart(player: Player) {}
 	getPlayerCart(player: Player): Model | undefined {
@@ -175,8 +194,26 @@ export class CartService implements OnStart {
 		return cart_model
 	}
 	private readonly SHIELDS = new Map<Model, number>() // Tracks shield expiry time per cart
-	private readonly DROP_RATE_TRACKER = new Map<Model, { lastReset: number, droppedThisSecond: number }>()
+	private readonly SHIELD_TASKS = new Map<Model, thread>() // Tracks scheduled shield removal tasks
+	private readonly DROP_RATE_TRACKER = new Map<
+		Model,
+		{ lastReset: number; droppedThisSecond: number }
+	>()
 	private readonly MAX_PARTS_DROP_PER_SECOND = 30 // Configurable limit for dropped parts
+
+	/**
+	 * Sets the collision group for Hitbox and BALL parts in a cart
+	 */
+	private setCartCollisionGroup(cart: Model, group: string) {
+		cart.GetDescendants().forEach((descendant) => {
+			if (
+				descendant.IsA("BasePart") &&
+				(descendant.Name === "Hitbox" || descendant.Name === "BALL")
+			) {
+				descendant.CollisionGroup = group
+			}
+		})
+	}
 
 	/**
 	 * Adds a shield to a cart that prevents parts from dropping
@@ -185,12 +222,54 @@ export class CartService implements OnStart {
 	 */
 	addShield(cart: Model, duration: number) {
 		const existing = this.SHIELDS.get(cart) || tick()
-		if (tick() < existing) {
+		const wasShielded = tick() < existing
+
+		// Cancel existing scheduled removal task if any
+		const existingTask = this.SHIELD_TASKS.get(cart)
+		if (existingTask) {
+			task.cancel(existingTask)
+		}
+
+		if (wasShielded) {
 			// Extend existing shield
 			this.SHIELDS.set(cart, existing + duration)
+
+			// Schedule new removal for the extended time
+			const totalDuration = existing + duration - tick()
+			const removalTask = task.delay(totalDuration, () => {
+				this.SHIELD_TASKS.delete(cart) // Remove task before cleanup
+				this.removeShield(cart)
+			})
+			this.SHIELD_TASKS.set(cart, removalTask)
 			return
 		}
+
+		// New shield - change collision group to Invincible
 		this.SHIELDS.set(cart, tick() + duration)
+		this.setCartCollisionGroup(cart, "Invincible")
+
+		// Schedule automatic removal
+		const removalTask = task.delay(duration, () => {
+			this.SHIELD_TASKS.delete(cart) // Remove task before cleanup
+			this.removeShield(cart)
+		})
+		this.SHIELD_TASKS.set(cart, removalTask)
+	}
+
+	/**
+	 * Removes shield from a cart and restores collision group
+	 * @param cart The cart model to remove shield from
+	 */
+	removeShield(cart: Model) {
+		// Cancel scheduled removal task if any
+		const existingTask = this.SHIELD_TASKS.get(cart)
+		if (existingTask) {
+			task.cancel(existingTask)
+			this.SHIELD_TASKS.delete(cart)
+		}
+
+		this.SHIELDS.delete(cart)
+		this.setCartCollisionGroup(cart, "Hitbox")
 	}
 
 	/**
@@ -216,25 +295,30 @@ export class CartService implements OnStart {
 		// Get or initialize rate tracker
 		let tracker = this.DROP_RATE_TRACKER.get(cart)
 		const currentTime = tick()
-		
+
 		if (!tracker || currentTime - tracker.lastReset >= 1) {
 			// Reset tracker every second
 			tracker = { lastReset: currentTime, droppedThisSecond: 0 }
 			this.DROP_RATE_TRACKER.set(cart, tracker)
 		}
-		
+
 		// Calculate how many parts we can drop this second
-		const remainingAllowance = this.MAX_PARTS_DROP_PER_SECOND - tracker.droppedThisSecond
+		const remainingAllowance =
+			this.MAX_PARTS_DROP_PER_SECOND - tracker.droppedThisSecond
 		if (remainingAllowance <= 0) {
 			// Already dropped max parts this second
 			return
 		}
-		
+
 		// Drop only up to the remaining allowance
 		let droppedCount = 0
-		for (let i = 0; i < parts.size() && droppedCount < remainingAllowance; i++) {
+		for (
+			let i = 0;
+			i < parts.size() && droppedCount < remainingAllowance;
+			i++
+		) {
 			const part = parts[i]
-			if (["WHEEL","BALL"].includes(part.Name)) {
+			if (["WHEEL", "BALL"].includes(part.Name)) {
 				const wheel = part.Parent?.FindFirstChild("WHEEL")
 				const ball = part.Parent?.FindFirstChild("BALL")
 				wheel?.Destroy()
@@ -258,7 +342,7 @@ export class CartService implements OnStart {
 			}
 			droppedCount++
 		}
-		
+
 		// Update tracker
 		tracker.droppedThisSecond += droppedCount
 	}
