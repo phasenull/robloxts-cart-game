@@ -108,9 +108,11 @@ export class CheckpointComponent
 		this.instance.CheckpointContainer.Confetti.ParticleEmitter.Enabled = true
 		task.delay(2, () => {
 			this.instance.CheckpointContainer.Confetti.ParticleEmitter.Enabled = false
+			this.cleanup()
 		})
 		const name = this.instance.Name
 		ClientEvents.CheckpointService.setCheckpoint.fire(tonumber(name) || 0)
+		
 	}
 	public cleanup() {
 		this.is_collected = false

@@ -28,7 +28,6 @@ export function ProgressBarComponent(props: {
 					BackgroundTransparency={0.15}
 					BorderSizePixel={0}
 					Size={new UDim2(props.progress, 0, 1, 0)}
-					ZIndex={55}
 				>
 					<uigradient
 						Color={
@@ -69,6 +68,7 @@ export function ProgressBarComponent(props: {
 				TextScaled={true}
 				TextSize={14}
 				TextWrapped={true}
+				ZIndex={2}
 			>
 				<uistroke Thickness={3} />
 			</textlabel>

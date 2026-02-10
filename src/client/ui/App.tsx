@@ -17,6 +17,7 @@ import { CartHud } from "./gui/cart/cart-hud"
 import { DeathGui } from "./gui/cart/death-gui"
 import { __IS_STUDIO__ } from "shared/config.helper"
 import { FadeGui } from "./gui/main/fade-gui"
+import { CheckpointProvider } from "./gui/cart/hooks/useCheckpoint"
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 	const [open_gui, set_open_gui] = useState<GUI_KEYS | undefined>(
 		__IS_STUDIO__ ? props.initial_gui : undefined
@@ -48,47 +49,49 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 		<ErrorProvider>
 			<QueryClientProvider value={query_client}>
 				<CartProvider>
-					<GuiContext.Provider
-						value={{
-							is_sidebar_open,
-							setIsSidebarOpen: set_is_sidebar_open,
-							open_gui,
-							setOpenGui: set_open_gui
-						}}
-					>
-						<SettingsProvider>
-							<FadeGui />
-							<DeathGui />
-							{is_sidebar_open && <Sidebar />}
-							<CartHud />
-							<ErrorPopup />
-							<BlurGui />
-							<PopGui id={"settings"}>
-								<SettingsGui />
-							</PopGui>
+					<CheckpointProvider>
+						<GuiContext.Provider
+							value={{
+								is_sidebar_open,
+								setIsSidebarOpen: set_is_sidebar_open,
+								open_gui,
+								setOpenGui: set_open_gui
+							}}
+						>
+							<SettingsProvider>
+								<FadeGui />
+								<DeathGui />
+								{is_sidebar_open && <Sidebar />}
+								<CartHud />
+								<ErrorPopup />
+								<BlurGui />
+								<PopGui id={"settings"}>
+									<SettingsGui />
+								</PopGui>
 
-							<PopGui id={"items"} />
-							<PopGui id={"gift"}>
-								<imagelabel
-									Size={UIDIM.ONE}
-									AnchorPoint={UIDIM.A_CENTER}
-									Position={UIDIM.CENTER}
-									ScaleType={Enum.ScaleType.Crop}
-									Image={A.ui.waves4}
-									BackgroundColor3={PRIMARY}
-									ImageTransparency={0.6}
-								>
-									<uicorner CornerRadius={new UDim(0.1, 0)} />
-								</imagelabel>
-							</PopGui>
-							<PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
-								<ShopGui />
-							</PopGui>
-							<PopGui id={"cart"}>
-								<CartGui />
-							</PopGui>
-						</SettingsProvider>
-					</GuiContext.Provider>
+								<PopGui id={"items"} />
+								<PopGui id={"gift"}>
+									<imagelabel
+										Size={UIDIM.ONE}
+										AnchorPoint={UIDIM.A_CENTER}
+										Position={UIDIM.CENTER}
+										ScaleType={Enum.ScaleType.Crop}
+										Image={A.ui.waves4}
+										BackgroundColor3={PRIMARY}
+										ImageTransparency={0.6}
+									>
+										<uicorner CornerRadius={new UDim(0.1, 0)} />
+									</imagelabel>
+								</PopGui>
+								<PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
+									<ShopGui />
+								</PopGui>
+								<PopGui id={"cart"}>
+									<CartGui />
+								</PopGui>
+							</SettingsProvider>
+						</GuiContext.Provider>
+					</CheckpointProvider>
 				</CartProvider>
 			</QueryClientProvider>
 		</ErrorProvider>

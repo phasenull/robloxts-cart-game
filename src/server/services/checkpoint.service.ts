@@ -1,6 +1,6 @@
 import { Dependency, OnStart, Service } from "@flamework/core"
 import { Players, Workspace } from "@rbxts/services"
-import { ServerEvents } from "shared/network.helper"
+import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
 import { Logger } from "shared/logger"
@@ -13,6 +13,21 @@ export class CheckpointService implements OnStart {
 		?.GetChildren()
 		.filter((child) => child.IsA("Model")) as Model[]
 	onStart(): void {
+		ServerFunctions.CheckpointService.getCheckpointState.setCallback(
+			(player) => {
+				const checkpoint_index = this.getCheckpointIndex(player)
+				const collected_checkpoints = this.getPlayerCheckpoints(player)
+				this.logger.log(
+					`getCheckpointState called by ${player.Name}, returning checkpoint index ${checkpoint_index} and collected checkpoints ${collected_checkpoints}`
+				)
+				return [
+					{
+						current_checkpoint: checkpoint_index,
+						collected_checkpoints: collected_checkpoints
+					}
+				]
+			}
+		)
 		ServerEvents.CheckpointService.setCheckpoint.connect((player, index) => {
 			if (typeOf(index) !== "number") {
 				return
@@ -25,13 +40,27 @@ export class CheckpointService implements OnStart {
 			}
 			this.setCheckpointIndex(player, index)
 		})
+		Players.PlayerAdded.Connect((player) => {
+			this.logger.log("Player added:", player.Name)
+			this.setCheckpointIndex(player, 0)
+		})
 		ServerEvents.CheckpointService.processPlayerDeath.connect((player) => {
 			this.processPlayerDeath(player)
 		})
 	}
 	setCheckpointIndex(player: Player, index: number) {
+		this.logger.log(
+			"setting checkpoint index for player",
+			player.Name,
+			"to",
+			index
+		)
 		this.checkpoint_states.set(player.UserId, index)
-		ServerEvents.CheckpointService.updateCheckpointState(player, index, this.getPlayerCheckpoints(player))
+		ServerEvents.CheckpointService.updateCheckpointState.fire(
+			player,
+			index,
+			this.getPlayerCheckpoints(player)
+		)
 	}
 	getCheckpointIndex(player: Player): number {
 		return this.checkpoint_states.get(player.UserId) || 0

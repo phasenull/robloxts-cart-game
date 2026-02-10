@@ -143,7 +143,7 @@ export function DeathButtons({
 					initial_progress={0}
 					Color={new Color3(1, 0.36, 0.36)}
 					Size={UDim2.fromScale(0.5, 0.5)}
-					Position={UDim2.fromScale(1, 0)}
+					Position={UDim2.fromScale(0, 0)}
 					AnchorPoint={UIDIM.A_CENTER}
 
 					// initial_progress={1}
