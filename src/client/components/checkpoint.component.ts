@@ -93,6 +93,12 @@ export class CheckpointComponent
 	}
 	public collect() {
 		if (this.is_collected) return
+		const dependency = Dependency<Components>()
+		const all_checkpoints = dependency.getAllComponents(CheckpointComponent)
+		all_checkpoints.forEach((checkpoint) => {
+			if (checkpoint === this) return
+			checkpoint.cleanup()
+		})
 		this.is_collected = true
 		this.logger.log(`Checkpoint reached at ${this.instance.GetFullName()}`)
 		this.setColor(new Color3(0.15, 1, 0))

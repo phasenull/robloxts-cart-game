@@ -88,6 +88,7 @@ export class CartService implements OnStart {
 			const config = getConfig()
 			return [config.CartConfig]
 		})
+		
 		ServerFunctions.CartService.respawn.setCallback((player) => {
 			this.logger.log(`Respawning player ${player.Name}`)
 			this.reloadCharacter(player)
@@ -161,6 +162,32 @@ export class CartService implements OnStart {
 			}
 		})
 		return cart_model
+	}
+	private readonly PROTECTIONS = new Map<Model,number>()
+	addProtection(cart:Model, duration: number) {
+		const existing = this.PROTECTIONS.get(cart) || tick()
+		if (tick() < existing) {
+			this.PROTECTIONS.set(cart, existing + duration)
+			return
+		}
+		this.PROTECTIONS.set(cart, tick() + duration)
+	}
+	makePartsDrop(cart:Model, parts: BasePart[]) {
+		const entry = this.PROTECTIONS.get(cart) ||0
+		if (tick() < entry) {
+			return
+		}
+		this.addProtection(cart, 1)
+		parts.forEach((part) => {
+			const weld_constraints = part.FindFirstChildOfClass("WeldConstraint")
+			const weld = part.FindFirstChildOfClass("Weld")
+			if (weld_constraints) {
+				weld_constraints.Destroy()
+			}
+			if (weld) {
+				weld.Destroy()
+			}
+		})
 	}
 	getPlayerRevives(player: Player): number {
 		const profile = this.DataService.getProfile(player)
