@@ -27,9 +27,9 @@ export class CartClientComponent
 	extends BaseComponent<{}, ICart>
 	implements OnPhysics, OnStart
 {
-	private readonly cart_lever_animation_id = 130142658472079
-	private readonly cart_spawn_animation_id = 130142615868904
-	private readonly cart_idle_animation_id = 100765437584509
+	private readonly cart_lever_animation_id = 110707374829481
+	private readonly cart_spawn_animation_id = 95061387311577
+	private readonly cart_idle_animation_id = 126006910637391
 	private rider: Humanoid | undefined
 	resolvePlayer(): Player | undefined {
 		const rider_character = this.rider?.Parent
@@ -505,7 +505,7 @@ export class CartClientComponent
 	async bootstrap() {
 		if (this.__is_bootstrapped) return
 		this.__is_bootstrapped = true
-		const brake_original = this.instance.Brake
+		const brake_original = this.instance.WaitForChild("Brake",1) as ParticleEmitter | undefined
 		this.instance.WaitForChild("Root", 10)?.Destroying.Once(() => {
 			this.cleanupRide("Root destroyed")
 		})
@@ -547,7 +547,8 @@ export class CartClientComponent
 			.filter((child) => child.Name === "BALL")
 			.forEach((child) => {
 				if (child.IsA("BasePart")) {
-					const brake = brake_original.Clone()
+					const brake = brake_original?.Clone()
+					if (!brake) return
 					this.wheel_hitboxes.push(child as BasePart)
 					brake.Parent = child
 					brake.Enabled = false
