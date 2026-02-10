@@ -11,6 +11,7 @@ export class IslandComponent extends BaseComponent<{}, Model> {
 	constructor() {
 		super();
 		const root = MasslessPart(this.instance, "Root");
+        root.PivotTo(this.instance.GetPivot())
 		this.instance.GetDescendants().forEach((descendant) => {
 			if (descendant === root) {
 				return;
@@ -43,5 +44,8 @@ export class IslandComponent extends BaseComponent<{}, Model> {
 	private readonly h_seed = 3 + math.random(0, 3);
 	private readonly time_seed = math.random(5, 10);
 	private readonly root: BasePart;
-	onStart(): void {}
+    cleanup(): void {
+        this.tween.Cancel()
+        this.instance.Destroy()
+    }
 }
