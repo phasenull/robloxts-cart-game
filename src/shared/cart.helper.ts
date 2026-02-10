@@ -47,6 +47,13 @@ export function RigCartModel(cart_model: ICart) {
 		ball.Shape = Enum.PartType.Ball
 		ball.CFrame = model.GetPivot()
 		ball.CanCollide = true
+		const wheel = model.WHEEL
+		ball.Destroying.Once(() => {
+			wheel?.Destroy()
+		})
+		wheel.Destroying.Once(() => {
+			ball?.Destroy()
+		})
 		// logger.log(`Built ball for wheel: ${model.GetFullName()}`)
 	})
 	cart_model.PrimaryPart = root_part
