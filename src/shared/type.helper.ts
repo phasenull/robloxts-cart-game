@@ -1,72 +1,96 @@
-export type ProperReturns<T> = [T] | [false, string]
-export type MovementDirection = 1 | -1 | 0
+export type ProperReturns<T> = [T] | [false, string];
+export type MovementDirection = 1 | -1 | 0;
 export type log_base = Model & {
 	Hitbox: Part & {
-		left_char: Attachment
-		right_char: Attachment
-	}
-	Align: Model & {}
+		left_char: Attachment;
+		right_char: Attachment;
+	};
+	Align: Model & {};
 	// Visuals: Model
 	// Align:Part & {
 	// 	LeftSeat:Seat
 	// 	RightSeat:Seat
 	// }
-}
+};
 
 export type IConfig = {
-	CartConfig: ICartConfig
-}
-export type ICartConfig = ICartEntry[]
+	CartConfig: ICartConfig;
+	PurchasableConfig: IPurchasableConfig;
+};
+
+export type IPurchasableConfig = IPurchasable<"gamepass" | "product">[]
+
+
+export type IPurchasable<T extends "gamepass" | "product"> = {
+	descriptor:string,
+	gamepass_id: T extends "gamepass" ? number : never;
+	product_id: T extends "product" ? number : never;
+	type: T;
+	rewards: IReward<any>[];
+};
+
+export type IDescriptableReward = "cart";
+export type IValuableReward = "cash" | "revives" | "flips";
+export type IRewardType = IDescriptableReward | IValuableReward | "custom";
+export type IReward<
+	T extends IRewardType
+> = {
+	type: T;
+	descriptor: T extends IDescriptableReward ? string : never;
+	value: T extends IValuableReward ? number : never;
+	handler: T extends "custom" ? (player: Player) => void : undefined;
+};
+export type ICartConfig = ICartEntry[];
 export type ICartEntry = {
-	name: string,
-	friction: number,
-	max_velocity: number,
-	power: number
-} & ({gamepass_id:number} |{price:number})
+	name: string;
+	friction: number;
+	max_velocity: number;
+	power: number;
+} & ({ gamepass_id: number } | { price: number });
 export type Party = {
-	players: Array<Player>
-	owner: Player
-	guid: string
-	is_public: boolean
-	invites: Array<Player>
-	state: "lobby" | "playing"
-	max_players: number
-}
+	players: Array<Player>;
+	owner: Player;
+	guid: string;
+	is_public: boolean;
+	invites: Array<Player>;
+	state: "lobby" | "playing";
+	max_players: number;
+};
 export type ButtonModel = Model & {
-	["Spawn Button"]: Model
-	["SpawnPlatform"]: Model
-}
+	["Spawn Button"]: Model;
+	["SpawnPlatform"]: Model;
+};
 export type ICart = Model & {
 	VehicleSeat: Seat & {
-		WeldConstraint: WeldConstraint
-	}
+		WeldConstraint: WeldConstraint;
+	};
 	Root: Part & {
-		RL_ATT: Attachment
-		RR_ATT: Attachment
-		FR_ATT: Attachment
-		Root: Attachment
-		FL_ATT: Attachment
-		VectorForce: VectorForce
-	}
-	Brake:ParticleEmitter
-	Wheels : Model & {
-		FL: IWheel
-		FR: IWheel
-		RL: IWheel
-		RR: IWheel
-	}
-}
+		RL_ATT: Attachment;
+		RR_ATT: Attachment;
+		FR_ATT: Attachment;
+		Root: Attachment;
+		FL_ATT: Attachment;
+		VectorForce: VectorForce;
+	};
+	Brake: ParticleEmitter;
+	Wheels: Model & {
+		FL: IWheel;
+		FR: IWheel;
+		RL: IWheel;
+		RR: IWheel;
+	};
+};
 
 export type IWheel = Model & {
 	WHEEL: Part & {
-		WeldConstraint: WeldConstraint
-	}
+		WeldConstraint: WeldConstraint;
+	};
 	CONNECTION: Part & {
-		Attachment: Attachment
-		HingeConstraint: HingeConstraint
-	}
+		Attachment: Attachment;
+		HingeConstraint: HingeConstraint;
+	};
 	BALL: Part & {
-		BallSocketConstraint: BallSocketConstraint
-		Attachment: Attachment
-	}
-}
+		BallSocketConstraint: BallSocketConstraint;
+		Attachment: Attachment;
+	};
+};

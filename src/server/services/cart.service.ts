@@ -23,8 +23,31 @@ export class CartService implements OnStart {
 	) {}
 	private readonly PLAYER_CARTS = new Map<Player, Model>()
 	private readonly DEBOUNCE_TABLE = new Map<Player, number>()
-	private readonly revive_product_id = PRODUCTS.revives
-	private readonly flip_product_id = PRODUCTS.flips
+	getPlayerCarts(player:Player) {
+		const profile = this.DataService.getProfile(player)
+		if (!profile) {
+			return []
+		}
+		return profile.Data.vehicles || []
+	}
+	grantPlayerPermaCart(player: Player, cart_name: string) {
+		const profile = this.DataService.getProfile(player)
+		if (!profile) {
+			return
+		}
+		this.logger.log(`Granting player ${player.Name} permanent cart: ${cart_name}`)
+		const vehicles = profile.Data.vehicles || []
+		if (!vehicles.includes(cart_name)) {
+			vehicles.push(cart_name)
+			profile.Data.vehicles = vehicles
+		}
+
+	}
+	doesPlayerOwnCart(player: Player, cart_name: string): boolean {
+		const player_carts = this.getPlayerCarts(player)
+		return player_carts.includes(cart_name)
+	}
+	
 	onStart(): void {
 		ServerEvents.CartService.spawnCart.connect((player, button) => {
 			this.logger.log(`Spawning cart for player ${player.Name}`)
@@ -92,23 +115,7 @@ export class CartService implements OnStart {
 				}
 			}
 		)
-		MarketplaceService.PromptProductPurchaseFinished.Connect(
-			(user_id, assetId, isPurchased) => {
-				const player = Players.GetPlayerByUserId(user_id)
-				if (!player) {
-					return
-				}
-				if (!isPurchased) return
-				switch (assetId) {
-					case this.revive_product_id:
-						this.incrementPlayerRevives(player)
-						break
-					case this.flip_product_id:
-						this.incrementPlayerFlips(player)
-						break
-				}
-			}
-		)
+		
 		ServerFunctions.CartService.getConfig.setCallback(() => {
 			const config = getConfig()
 			return [config.CartConfig]
@@ -359,21 +366,21 @@ export class CartService implements OnStart {
 	makePlayerBuyProduct(player: Player, productId: number) {
 		MarketplaceService.PromptProductPurchase(player, productId)
 	}
-	incrementPlayerRevives(player: Player) {
+	incrementPlayerRevives(player: Player,amount=1) {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
 			return
 		}
 		this.logger.log(`Incrementing revives for player ${player.Name}`)
-		profile.Data.revives = (profile.Data.revives || 0) + 1
+		profile.Data.revives = (profile.Data.revives || 0) + amount
 	}
-	incrementPlayerFlips(player: Player) {
+	incrementPlayerFlips(player: Player,amount=1) {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
 			return
 		}
 		this.logger.log(`Incrementing flips for player ${player.Name}`)
-		profile.Data.flips = (profile.Data.flips || 0) + 1
+		profile.Data.flips = (profile.Data.flips || 0) + amount
 	}
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		if (this.DEBOUNCE_TABLE.has(player)) {

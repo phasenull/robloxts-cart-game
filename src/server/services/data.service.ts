@@ -18,7 +18,8 @@ const PROFILE_TEMPLATE = {
 	revives: 0,
 	flips: 1,
 	collected_checkpoints: [0] as number[],
-	inventory: [],
+	inventory: [] as string[],
+	vehicles: [] as string[],
 };
 type PurchaseHistoryEntry = {
 	purchase_type: "robux" | "cash";
@@ -78,7 +79,14 @@ export class DataService implements OnStart {
 	}
 
 	public grantPlayerCash(player: Player, amount: number, reason?: string, skipQuestProgress?: boolean) {
-
+		const profile = this.getProfile(player);
+		if (!profile) {
+			this.logger.warn(`Tried to grant cash to player ${player.Name} but their profile was not loaded`);
+			return;
+		}
+		const current = profile.Data.cash as number;
+		profile.Data.cash = (current + amount) as any;
+		this.logger.log(`Granted ${amount} cash to player ${player.Name}. Reason: ${reason || "N/A"}`);
 	}
 	public refreshLeaderboard(leaderboard: ScreenGui, stat: string) {
 	}
