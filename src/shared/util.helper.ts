@@ -1,3 +1,4 @@
+import { TweenService } from "@rbxts/services"
 import { __IS_STUDIO__ } from "./config.helper"
 
 export function formatDate(seconds: number, ignore_day = false): string {
@@ -75,7 +76,24 @@ export function BuildWeldConstraints(part0: BasePart, part1: BasePart) {
 	weld.Name = `${part0.Name}->${part1.Name}`
 	return weld
 }
-
+export function TweenValue(info: TweenInfo, callback: (alpha: number) => void) {
+	const new_value = new Instance("NumberValue")
+	new_value.Value = 0
+	const tween = TweenService.Create(
+		new_value,
+		info,
+		{ Value: 1 },
+	)
+	tween.Play()
+	const connection = new_value.Changed.Connect(() => {
+		callback(new_value.Value)
+	})
+	tween.Completed.Connect(() => {
+		connection.Disconnect()
+		new_value.Destroy()
+	})
+	return tween
+}
 export function BuildDeepWeldConstraints(part0: BasePart, part1: BasePart|Model) {
 	if (part1.IsA("BasePart")) {
 		BuildWeldConstraints(part0, part1)
