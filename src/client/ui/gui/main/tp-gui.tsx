@@ -35,7 +35,7 @@ export function TPGui() {
 			BorderSizePixel={0}
 			ClipsDescendants={false}
 			Position={new UDim2(0.5, 0, 0.5, 0)}
-			Size={new UDim2(1, 0, 1, 0)}
+			Size={new UDim2(1.3, 0, 1.3, 0)}
 		>
 			<uiaspectratioconstraint AspectRatio={0.9} />
 			<uistroke Thickness={5} />
@@ -148,6 +148,37 @@ export function TPGui() {
 						DominantAxis={Enum.DominantAxis.Height}
 					/>
 				</imagelabel>
+				<uigradient
+					Color={
+						new ColorSequence([
+							new ColorSequenceKeypoint(0, Color3.fromRGB(0, 128, 255)),
+							new ColorSequenceKeypoint(1, Color3.fromRGB(148, 215, 248))
+						])
+					}
+					Rotation={-90}
+				/>
+				<imagelabel
+					key="Shadow"
+					BackgroundTransparency={1}
+					Image="rbxassetid://75600902046326"
+					ImageColor3={Color3.fromRGB(0, 0, 0)}
+					ImageTransparency={0.84}
+					Position={new UDim2(-0.004, 0, -0.078, 0)}
+					Size={new UDim2(1.004, 0, 0.9520000000000001, 0)}
+					ZIndex={0}
+				/>
+				<imagelabel
+					key="Tile"
+					AnchorPoint={new Vector2(0.5, 0.5)}
+					BackgroundTransparency={1}
+					Image="rbxassetid://79972921327842"
+					ImageTransparency={0.5}
+					Position={new UDim2(0.506, 0, 0.446, 0)}
+					ScaleType={Enum.ScaleType.Tile}
+					Size={new UDim2(1, 0, 0.921, 0)}
+					SliceCenter={new Rect(256, 256, 256, 256)}
+					TileSize={new UDim2(0, 50, 0, 50)}
+				/>
 				<GoofyButton
 					AnchorPoint={new Vector2(0.5, 0.5)}
 					Position={new UDim2(0.96, 0, 0.5, 0)}
@@ -156,16 +187,9 @@ export function TPGui() {
 					}}
 					Size={new UDim2(1, 0, 1, 0)}
 					Text=""
+					rotate={0}
 					DisablePopEffect
 				>
-					<frame
-						key="Bottom"
-						BackgroundColor3={Color3.fromRGB(0, 0, 0)}
-						BackgroundTransparency={0.4}
-						BorderSizePixel={0}
-						Position={new UDim2(0, 0, 0.921, 0)}
-						Size={new UDim2(1, 0, 0.079, 0)}
-					/>
 					<uigradient
 						Color={
 							new ColorSequence([
@@ -210,37 +234,6 @@ export function TPGui() {
 					/>
 					<uiaspectratioconstraint />
 				</GoofyButton>
-				<uigradient
-					Color={
-						new ColorSequence([
-							new ColorSequenceKeypoint(0, Color3.fromRGB(0, 128, 255)),
-							new ColorSequenceKeypoint(1, Color3.fromRGB(148, 215, 248))
-						])
-					}
-					Rotation={-90}
-				/>
-				<imagelabel
-					key="Shadow"
-					BackgroundTransparency={1}
-					Image="rbxassetid://75600902046326"
-					ImageColor3={Color3.fromRGB(0, 0, 0)}
-					ImageTransparency={0.84}
-					Position={new UDim2(-0.004, 0, -0.078, 0)}
-					Size={new UDim2(1.004, 0, 0.9520000000000001, 0)}
-					ZIndex={0}
-				/>
-				<imagelabel
-					key="Tile"
-					AnchorPoint={new Vector2(0.5, 0.5)}
-					BackgroundTransparency={1}
-					Image="rbxassetid://79972921327842"
-					ImageTransparency={0.5}
-					Position={new UDim2(0.506, 0, 0.446, 0)}
-					ScaleType={Enum.ScaleType.Tile}
-					Size={new UDim2(1, 0, 0.921, 0)}
-					SliceCenter={new Rect(256, 256, 256, 256)}
-					TileSize={new UDim2(0, 50, 0, 50)}
-				/>
 			</frame>
 		</frame>
 	)
@@ -333,7 +326,11 @@ function CheckpointEntry(props: {
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 				BorderSizePixel={0}
 				Image={config.image}
-				ImageColor3={props.is_locked ? new Color3(0.3, 0.3, 0.3) : Color3.fromRGB(255, 255, 255)}
+				ImageColor3={
+					props.is_locked
+						? new Color3(0.3, 0.3, 0.3)
+						: Color3.fromRGB(255, 255, 255)
+				}
 				Position={new UDim2(0.5, 0, 0.5, 0)}
 				ScaleType={Enum.ScaleType.Crop}
 				Size={new UDim2(1, 0, 1, 0)}
