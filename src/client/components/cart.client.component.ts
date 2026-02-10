@@ -489,14 +489,14 @@ export class CartClientComponent
 		if (new_rider === undefined && this.rider === humanoid) {
 			// local player just got off
 			this.rider = undefined
-			this.logger.log("!!!Local player got off the cart")
+			this.logger.log("Local player got off the cart")
 			this.cleanupRide("Local player got off the cart")
 			return
 		}
 		if (new_rider === humanoid) {
 			// local player just got on
 			this.rider = humanoid
-			this.logger.log("!!!Local player got on the cart")
+			this.logger.log("Local player got on the cart")
 			this.onRide()
 			return
 		}

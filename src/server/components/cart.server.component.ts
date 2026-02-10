@@ -6,11 +6,6 @@ import { RigCartModel } from "shared/cart.helper"
 import { __IS_STUDIO__ } from "shared/config.helper"
 import { Logger } from "shared/logger"
 import { ICart, IWheel } from "shared/type.helper"
-import {
-	BuildDeepWeldConstraints,
-	BuildWeldConstraints,
-	MasslessPart
-} from "shared/util.helper"
 
 @Component({ tag: "CartComponent", instanceGuard: t.instanceOf("Model") })
 export class CartServerComponent

@@ -39,18 +39,15 @@ export function SpeedometerHud(props: {
 	const speed_keypoints = [0, 10, 20, 30, 40, 50, 60, 70]
 	useEffect(() => {
 		if (!cart) {
-			logger.log("No cart available, skipping speedometer setup")
 			return
 		}
 		const part = cart.instance.Root
-		logger.log(`Setting up speedometer connection: ${part.GetFullName()}`)
 		const connection = RunService.Heartbeat.Connect(() => {
 			const velocity = part.AssemblyLinearVelocity
 			const current_speed = velocity.Magnitude
 			set_speed(current_speed)
 		})
 		return () => {
-			logger.log("Cleaning up speedometer connection")
 			connection?.Disconnect()
 		}
 	}, [cart])

@@ -151,10 +151,8 @@ export class CartService implements OnStart {
 			component.instance.Destroying.Once(() => {
 				this.PLAYER_CARTS.delete(player)
 			})
-			this.logger.log("component added to cart, sitting player")
 			const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
 			if (vehicle_seat) {
-				this.logger.log(`Sitting player ${player.Name} in cart`)
 				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
 			} else {
 				this.logger.warn(
@@ -229,7 +227,6 @@ export class CartService implements OnStart {
 			component.instance.Destroying.Once(() => {
 				this.PLAYER_CARTS.delete(player)
 			})
-			this.logger.log("component added to cart, sitting player")
 			const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
 			if (vehicle_seat) {
 				this.logger.log(`Sitting player ${player.Name} in cart`)

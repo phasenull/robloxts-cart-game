@@ -37,9 +37,9 @@ export class InteractableComponent extends BaseComponent<
 		this.setRange(10) // for mini boosts, 10 is fine
 		// for checkpoints, set it to 30
 		part.Touched.Connect((part) => this.onTouch(part))
-		logger.log(
-			`Created InteractableComponent for ${this.instance.GetFullName()}`
-		)
+		// logger.log(
+		// 	`Created InteractableComponent for ${this.instance.GetFullName()}`
+		// )
 	}
 	private range = 0
 	setRange(range: number) {
@@ -50,10 +50,9 @@ export class InteractableComponent extends BaseComponent<
 		)
 		const model = this.checkpoint_visual
 		// const current_scale_factor = this.checkpoint_visual.checkpoint_visual.Size.X/model.GetScale()
-		const desired_scale_factor = (range)/model.checkpoint_visual.Size.X
+		const desired_scale_factor = range / model.checkpoint_visual.Size.X
 		// const scale_factor = desired_scale_factor/current_scale_factor
 		model.ScaleTo(desired_scale_factor)
-		
 	}
 	setColor(color: Color3) {
 		this.checkpoint_visual

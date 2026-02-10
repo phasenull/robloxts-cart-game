@@ -18,9 +18,9 @@ export class CartTriggerComponent<
 
 		// for checkpoints, set it to 30
 		this.instance.Trigger.Touched.Connect((part) => this.onTouch(part))
-		logger.log(
-			"Created CartTriggerComponent for " + this.instance.GetFullName()
-		)
+		// logger.log(
+		// 	"Created CartTriggerComponent for " + this.instance.GetFullName()
+		// )
 		const color_instance = new Instance("Color3Value", this.instance)
 		color_instance.Name = "Color"
 		this.color_instance = color_instance
