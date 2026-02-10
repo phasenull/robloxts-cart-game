@@ -60,9 +60,12 @@ export class CartService implements OnStart {
 						this.refreshPlayerProducts(player)
 						task.spawn(() => {
 							let cart = this.getPlayerCart(player)
-							while (!cart) {
+							for (let index = 0; index < 100; index++) {
 								task.wait(0.1)
 								cart = this.getPlayerCart(player)
+								if (cart) {
+									break
+								}
 							}
 							if (cart) {
 								this.addShield(cart, 10)
