@@ -59,7 +59,7 @@ export function CartButtons(props: {
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
 			await cart.cleanupRide("reset by player")
-			changeState("death_screen")
+			// Don't call changeState here - let CartController's death screen signal handle it
 			task.wait(0.5)
 			UIHelper.toggleFade(false)
 			return true

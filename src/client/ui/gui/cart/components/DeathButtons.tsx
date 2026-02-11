@@ -39,7 +39,6 @@ export function DeathButtons({
 			let startedPurchaseFlow = false
 
 			let revive_amount = products.get("revives") || 0
-			changeState("reviving")
 			print("revives:", revive_amount)
 			if (revive_amount <= 0) {
 				// Check if there's already a pending purchase
@@ -68,7 +67,12 @@ export function DeathButtons({
 								purchase_resulted.Fire(ip)
 							}
 						)
-					revive_amount += (await purchase_resulted.Wait()) ? 1 : 0
+					const purchased = await purchase_resulted.Wait()
+					if (!purchased) {
+						warn("Purchase was canceled by user")
+						return false
+					}
+					revive_amount += 1
 				} finally {
 					if (startedPurchaseFlow) {
 						controller.finishPurchaseFlow()
@@ -79,6 +83,9 @@ export function DeathButtons({
 				warn("No revives available, cannot revive")
 				return false
 			}
+			
+			// Only switch to reviving state after confirming we have revives
+			changeState("reviving")
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
 			const [result, err] = await controller.promptRevive(checkpoint)
@@ -89,7 +96,6 @@ export function DeathButtons({
 			return result
 		},
 		onError: (err) => {
-			changeState("none")
 			warn(`Failed to revive player: ${err}`)
 		}
 	})
