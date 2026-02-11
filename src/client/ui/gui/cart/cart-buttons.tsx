@@ -65,7 +65,7 @@ export function CartButtons(props: {
 		}
 	})
 
-	const { mutate: mutateConfirmReset } = useMutation({
+	const { mutate: mutateSwitchToResetScreen } = useMutation({
 		mutationFn: async () => {
 			if (!cart) return true
 			changeState("death_screen")
@@ -94,7 +94,7 @@ export function CartButtons(props: {
 		}
 	})
 
-	const is_alive = state === "alive" || !!props.__story?.cart_enabled
+	const is_alive = cart?.instance && state === "alive" || !!props.__story?.cart_enabled
 	const IS_VISIBLE = is_alive
 
 	const is_brake_down = useInput({
@@ -118,7 +118,7 @@ export function CartButtons(props: {
 
 	const is_reset_down = useInput({
 		key: GAMEPAD_BUTTONS.RESET,
-		handler: (value) => value && mutateConfirmReset(),
+		handler: (value) => value && mutateSwitchToResetScreen(),
 		enabled: IS_VISIBLE
 	})
 
@@ -249,7 +249,7 @@ export function CartButtons(props: {
 					)}
 				</RottenButton>
 				<RottenButton
-					onClick={() => mutateConfirmReset()}
+					onClick={() => mutateSwitchToResetScreen()}
 					Size={UIDIM.ONE}
 					Ratio={2}
 					Text="RESET"

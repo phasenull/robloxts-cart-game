@@ -12,7 +12,23 @@ export class CartServerComponent
 	extends BaseComponent<{}, ICart>
 	implements OnStart
 {
+	private __is_cleaning_up = false
+	private rider: Player | undefined
 	cleanup(): void {
+		if (this.__is_cleaning_up) {
+			return
+		}
+		this.__is_cleaning_up = true
+		this.setOwnership()
+		if (this.rider) {
+			const char = this.rider.Character as Model
+			const pp = char.PrimaryPart
+			if (this.rider && pp) {
+				this.logger.log("moving player")
+				pp.Anchored = true
+				pp.CFrame = this.instance.GetPivot().mul(new CFrame(0, -50, 0))
+			}
+		}
 		this.logger.log(`Cleaning up cart: ${this.instance.GetFullName()}`)
 		this.instance.Destroy()
 		this.destroy()
@@ -29,6 +45,7 @@ export class CartServerComponent
 			}
 			this.setOwnership(player)
 			const char = player.Character
+			this.rider = player
 			char?.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
 					descendant.Massless = true

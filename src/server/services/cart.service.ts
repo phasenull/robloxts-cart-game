@@ -15,6 +15,7 @@ import { ButtonModel } from "shared/type.helper"
 import { DataService } from "./data.service"
 import { PRODUCTS } from "shared/purchasables"
 import { CheckpointService } from "./checkpoint.service"
+import { arrow } from "@rbxts/better-gizmos"
 
 @Service()
 export class CartService implements OnStart {
@@ -55,6 +56,16 @@ export class CartService implements OnStart {
 			this.logger.log(`Spawning cart for player ${player.Name}`)
 			this.spawnPlayerCart(player, button)
 		})
+		Players.PlayerAdded.Connect((player) => {
+			player.CharacterAdded.Connect((char) => {
+				char.GetDescendants().forEach((descendant) => {
+					if (descendant.IsA("BasePart")) {
+						descendant.Massless = true
+					}
+				})
+			})
+		})
+
 		const damage_parts = Workspace.FindFirstChild("DamageParts") as Folder
 		assert(damage_parts, "DamageParts folder not found in workspace")
 		damage_parts.GetDescendants().forEach((descendant) => {
@@ -123,32 +134,44 @@ export class CartService implements OnStart {
 			return [config.CartConfig]
 		})
 
-		ServerFunctions.CartService.reviveSpawn.setCallback(
-			(player, target, stage) => {
-				this.logger.log(
-					`Revive-spawning cart for player ${player.Name} at stage ${stage}`
-				)
-				try {
-					const cart_skin = this.getPlayerSkin(player)
-					const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
-					const checkpoint_service = Dependency<CheckpointService>()
-					checkpoint_service.setCheckpointIndex(player, stage)
-					if (!cart) {
-						return [false, "Failed to spawn cart"] as [false, string]
-					}
-					return [true] as [true]
-				} catch (e) {
-					this.logger.warn(
-						`Failed to revive-spawn cart for ${player.Name}: ${e}`
-					)
-					return [false, `Failed to spawn cart: ${e}`] as [false, string]
-				}
-			}
-		)
+		ServerFunctions.CartService.revive.setCallback((player, target, stage) => {
+			this.logger.log(
+				`Revive-spawning cart for player ${player.Name} at stage ${stage}`
+			)
+			// arrow.draw(target.Position, target.Position.add(target.LookVector))
+			const cart_skin = this.getPlayerSkin(player)
+			const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
+			const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
 
-		ServerFunctions.CartService.respawn.setCallback((player) => {
+			const char = player.Character
+			const pp = char?.PrimaryPart
+			
+			if (vehicle_seat && pp && char) {
+				cart.PrimaryPart!.Anchored = true
+				pp.Anchored = false
+				pp.PivotTo(target)
+				task.wait(0.5) // Wait for the seat to be fully initialized
+				cart.PrimaryPart!.Anchored = false
+				// vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
+			}
+			const checkpoint_service = Dependency<CheckpointService>()
+			checkpoint_service.setCheckpointIndex(player, stage)
+			if (!cart) {
+				return [false, "Failed to spawn cart"] as [false, string]
+			}
+			return [true] as [true]
+		})
+
+		ServerFunctions.CartService.reset.setCallback((player) => {
 			this.logger.log(`Respawning player ${player.Name}`)
-			this.reloadCharacter(player)
+			const checkpoint_service = Dependency<CheckpointService>()
+			checkpoint_service.processPlayerDeath(player)
+		})
+		ServerEvents.CartService.cleanupCart.connect((player) => {
+			const cart = this.getPlayerCartComponent(player)
+			if (cart) {
+				cart.cleanup()
+			}
 		})
 		assets.carts.GetChildren().forEach((cart) => {
 			if (!cart.IsA("Model")) return
@@ -171,11 +194,17 @@ export class CartService implements OnStart {
 	getPlayerCart(player: Player): Model | undefined {
 		return this.PLAYER_CARTS.get(player)
 	}
+	getPlayerCartComponent(player: Player): CartServerComponent | undefined {
+		const cart = this.getPlayerCart(player)
+		if (!cart) {
+			return undefined
+		}
+		const dependecy = Dependency<Components>()
+		const component = dependecy.getComponent(cart, CartServerComponent)
+		return component
+	}
 	getPlayerSkin(player: Player): string {
 		return "Cart"
-	}
-	reloadCharacter(player: Player) {
-		player.LoadCharacterAsync()
 	}
 	refreshPlayerProducts(player: Player) {
 		const profile = this.DataService.getProfile(player)
@@ -201,26 +230,20 @@ export class CartService implements OnStart {
 		const cart_model = orig_cart.Clone()
 
 		cart_model.Parent = Workspace
-		cart_model.PivotTo(cframe)
+		cart_model.PivotTo(cframe.mul(new CFrame(0, 2, 0)))
 		this.PLAYER_CARTS.set(player, cart_model)
 		const dependecy = Dependency<Components>()
 		cart_model.Name = `${cart_model.Name}_${player.Name}`
+		const cart = dependecy.addComponent(cart_model, CartServerComponent)
 		task.spawn(async () => {
 			const component = await dependecy.waitForComponent(
 				cart_model,
 				CartServerComponent
 			)
 			component.instance.Destroying.Once(() => {
+				cart.cleanup()
 				this.PLAYER_CARTS.delete(player)
 			})
-			const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
-			if (vehicle_seat) {
-				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
-			} else {
-				this.logger.warn(
-					`Could not find vehicle seat for cart ${cart_model.GetFullName()}`
-				)
-			}
 		})
 		return cart_model
 	}

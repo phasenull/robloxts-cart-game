@@ -37,9 +37,9 @@ interface ServerToClientEvents {
 interface ClientToServerFunctions {
 	CartService: {
 		getConfig: () => ProperReturns<ICartConfig>
-		respawn: () => void
+		reset: () => void
 		useProduct: (product_key: string) => ProperReturns<true>
-		reviveSpawn: (target: CFrame, stage: number) => ProperReturns<true>
+		revive: (target: CFrame, stage: number) => ProperReturns<true>
 	}
 	
 	CheckpointService: {
@@ -52,7 +52,8 @@ interface ClientToServerFunctions {
 }
 interface ClientToServerEvents {
 	CartService: {
-		spawnCart: (button: ButtonModel) => void
+		spawnCart: (button: ButtonModel) => void,
+		cleanupCart: () => void
 	}
 	CheckpointService: {
 		setCheckpoint: (index: number) => void

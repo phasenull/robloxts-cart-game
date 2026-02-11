@@ -11,7 +11,7 @@ import { CartController } from "client/controllers/cart.controller"
 import { UIHelper } from "client/ui.helper"
 import { __STUDIO__ } from "client/ui/constants"
 import { Logger } from "shared/logger"
-import { ClientFunctions } from "shared/network.helper"
+import { ClientEvents, ClientFunctions } from "shared/network.helper"
 import { PRODUCTS } from "shared/purchasables"
 import { ICart, ICartEntry, IWheel } from "shared/type.helper"
 import {
@@ -445,6 +445,7 @@ export class CartClientComponent
 		if (this.resolvePlayer() !== Players.LocalPlayer) {
 			return
 		}
+		ClientEvents.CartService.cleanupCart.fire()
 		this.logger.warn(`Cleaning up ride due to: ${reason}`)
 		const cart_controller = Dependency<CartController>()
 		cart_controller.onCartChange.Fire(undefined)

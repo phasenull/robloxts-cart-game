@@ -5,7 +5,7 @@ import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
 import { Logger } from "shared/logger"
 
-@Service({loadOrder:5})
+@Service({ loadOrder: 5 })
 export class CheckpointService implements OnStart {
 	private checkpoint_states = new Map<number, number>()
 	constructor(private logger: Logger) {}
@@ -32,20 +32,22 @@ export class CheckpointService implements OnStart {
 				]
 			}
 		)
-		ServerFunctions.CheckpointService.tpMeToCheckpoint.setCallback((player, checkpoint_index) => {
-			if (typeOf(checkpoint_index) !== "number") {
-				return [false, "Invalid checkpoint index"]
+		ServerFunctions.CheckpointService.tpMeToCheckpoint.setCallback(
+			(player, checkpoint_index) => {
+				if (typeOf(checkpoint_index) !== "number") {
+					return [false, "Invalid checkpoint index"]
+				}
+				if (0 > checkpoint_index) {
+					return [false, "Checkpoint index cannot be negative"]
+				}
+				if (checkpoint_index > (this.checkpoints?.size() || 0)) {
+					return [false, "Checkpoint index out of bounds"]
+				}
+				this.setCheckpointIndex(player, checkpoint_index)
+				this.spawnPlayerAtTheirCheckpoint(player)
+				return [true]
 			}
-			if (0 > checkpoint_index) {
-				return [false, "Checkpoint index cannot be negative"]
-			}
-			if (checkpoint_index > (this.checkpoints?.size() || 0)) {
-				return [false, "Checkpoint index out of bounds"]
-			}
-			this.setCheckpointIndex(player, checkpoint_index)
-			player.LoadCharacterAsync()
-			return [true]
-		})
+		)
 		ServerEvents.CheckpointService.setCheckpoint.connect((player, index) => {
 			if (typeOf(index) !== "number") {
 				return
@@ -80,11 +82,47 @@ export class CheckpointService implements OnStart {
 	getCheckpointIndex(player: Player): number {
 		return this.checkpoint_states.get(player.UserId) || 0
 	}
+	spawnPlayerAtTheirCheckpoint(player: Player) {
+		const checkpoint_index = this.getCheckpointIndex(player)
+		const checkpoint = this.checkpoints?.find(
+			(checkpoint) => checkpoint.Name === tostring(checkpoint_index)
+		)
+		assert(
+			checkpoint,
+			`Checkpoint ${checkpoint_index} not found for player ${player.Name}`
+		)
+		let char = player.Character
+		assert(
+			char,
+			`Character not found for player ${player.Name} when spawning to checkpoint`
+		)
+		let cframe: CFrame | undefined
+
+		// BIG CHECKPOINT
+		const multi_spawn = checkpoint
+			.GetChildren()
+			.filter((child) => child.IsA("BasePart") && child.Name === "Spawn")
+		if (multi_spawn.size() > 0) {
+			const random_spawn = multi_spawn[
+				math.random(1, multi_spawn.size()) - 1
+			] as BasePart
+			cframe = random_spawn.CFrame
+			char.PivotTo(cframe)
+			return
+		}
+		// SMALL CHECKPOINT
+		cframe = (checkpoint.FindFirstChild("Trigger") as BasePart)?.CFrame
+		char.PivotTo(cframe)
+		const cart_service = Dependency<CartService>()
+		cart_service.spawnPlayerCartAtLocation(player,cframe)
+	}
 	getPlayerCheckpoints(player: Player): number[] {
 		const profile_service = Dependency<DataService>()
 		const profile = profile_service.getProfile(player)
 		if (!profile) {
-			this.logger.warn(`Profile not found for player ${player.Name} when getting checkpoints`)
+			this.logger.warn(
+				`Profile not found for player ${player.Name} when getting checkpoints`
+			)
 			return []
 		}
 		return profile.Data.collected_checkpoints
@@ -115,44 +153,6 @@ export class CheckpointService implements OnStart {
 		return !!model.FindFirstChild("Spawn")
 	}
 	processPlayerDeath(player: Player) {
-		const checkpoint_index = this.getCheckpointIndex(player)
-		const checkpoint = this.checkpoints?.find(
-			(checkpoint) => checkpoint.Name === tostring(checkpoint_index)
-		)
-		assert(
-			checkpoint,
-			`Checkpoint ${checkpoint_index} not found for player ${player.Name}`
-		)
-		let cframe: CFrame | undefined
-		const multi_spawn = checkpoint
-			.GetChildren()
-			.filter((child) => child.IsA("BasePart") && child.Name === "Spawn")
-		if (multi_spawn.size() > 0) {
-			const random_spawn = multi_spawn[
-				math.random(1, multi_spawn.size()) - 1
-			] as BasePart
-			cframe = random_spawn.CFrame
-			let char = player.Character
-			if (!char) {
-				player.LoadCharacterAsync()
-				char = player.Character
-				if (!char) {
-					player.CharacterAdded.Wait()
-					char = player.Character
-				}
-			}
-			if (char) {
-				char.PivotTo(cframe ?? CFrame.identity)
-			}
-		} else {
-			// warn(
-			// 	`Checkpoint ${checkpoint_index} for player ${player.Name} has no valid spawn point`
-			// )
-		}
-		if (!cframe) {
-			cframe = (checkpoint.FindFirstChild("Trigger") as BasePart)?.CFrame
-			const cart_service = Dependency<CartService>()
-			cart_service.spawnPlayerCartAtLocation(player, cframe ?? CFrame.identity)
-		}
+		return this.spawnPlayerAtTheirCheckpoint(player)
 	}
 }

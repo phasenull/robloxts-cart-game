@@ -1,5 +1,6 @@
 import { useEffect } from "@rbxts/react"
 import { Players, Workspace } from "@rbxts/services"
+import { useCart } from "client/ui/contexts/cart.context"
 import { assets } from "shared/assets"
 import { RigCartModel } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
@@ -9,11 +10,35 @@ interface UseDeathPreviewProps {
 }
 
 export function useDeathPreview({ spawnPoint }: UseDeathPreviewProps) {
+	const cart = useCart().cart
+	const player = Players.LocalPlayer
+	// const char = player.Character
+	// const pp = char?.PrimaryPart
+	// if (char && pp) {
+	// 	if (!cart && spawnPoint) {
+	// 		pp.Anchored = true
+	// 		pp.CFrame = spawnPoint.mul(new CFrame(0, -50, 0))
+	// 	}
+	// 	if (cart && spawnPoint) {
+	// 		pp.Anchored = true
+	// 		pp.CFrame = spawnPoint.mul(new CFrame(0, -50, 0))
+	// 	}
+	// 	if (cart && !spawnPoint) {
+	// 		pp.Anchored = false
+	// 		const humanoid = char.FindFirstChildOfClass("Humanoid")
+	// 		if (humanoid) {
+	// 			const is_sitting = humanoid.Sit
+	// 			if (!is_sitting) {
+	// 				pp.CFrame = cart.instance.GetPivot().mul(new CFrame(0, 0, 0))
+	// 			}
+	// 		}
+	// 	}
+
+	// }
 	useEffect(() => {
 		if (!spawnPoint) {
 			return
 		}
-
 		const example_cart = assets.carts.FindFirstChild("Cart")?.Clone() as ICart
 		if (!example_cart) {
 			return
@@ -43,6 +68,11 @@ export function useDeathPreview({ spawnPoint }: UseDeathPreviewProps) {
 				}
 			})
 			char.Parent = example_cart
+			example_cart.GetDescendants().forEach((desc) => {
+				if (desc.IsA("BasePart")) {
+					desc.CanCollide = false
+				}
+			})
 			char.PivotTo(example_cart.GetPivot())
 
 			const humanoid = char.FindFirstChildOfClass("Humanoid")

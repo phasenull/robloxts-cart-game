@@ -33,6 +33,7 @@ export function DeathButtons({
 		queryKey: ["death-revive"],
 		mutationFn: async () => {
 			const controller = Dependency<CartController>()
+			changeState("reviving")
 			const [result, err] = await controller.promptRevive(checkpoint)
 			if (!result || err) {
 				throw `${err}`
@@ -44,7 +45,7 @@ export function DeathButtons({
 		}
 	})
 
-	const { mutate: mutateReset } = useMutation({
+	const { mutate: mutateHardReset } = useMutation({
 		queryKey: ["death-reset"],
 
 		mutationFn: async () => {
@@ -59,7 +60,7 @@ export function DeathButtons({
 			UIHelper.toggleFade(false)
 			if (__IS_EDIT__) return true
 			try {
-				await ClientFunctions.CartService.respawn.invokeWithTimeout(5000)
+				await ClientFunctions.CartService.reset.invokeWithTimeout(5000)
 				return true
 			} catch (err) {
 				warn(`Failed to respawn player: ${err}`)
@@ -74,7 +75,7 @@ export function DeathButtons({
 		}
 		const job = task.delay(REVIVE_TIME, () => {
 			if (shouldShow) {
-				mutateReset()
+				mutateHardReset()
 			}
 		})
 		return () => {
@@ -101,7 +102,7 @@ export function DeathButtons({
 			/>
 			<RottenButton
 				Size={UIDIM.ONE}
-				onClick={mutateReset}
+				onClick={mutateHardReset}
 				Text="RESET"
 				bindKey={GAMEPAD_BUTTONS.CONFIRM_RESET}
 			>
