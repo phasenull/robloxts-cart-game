@@ -326,9 +326,9 @@ export class CartService implements OnStart {
 		}
 
 		// New shield - change collision group to Invincible
-		const root = cart.FindFirstChild("Root") as BasePart
+		const root = cart?.FindFirstChild("Root") as BasePart
 		if (root) {
-			const vfx = root.FindFirstChild("ShieldVFX") as Attachment
+			const vfx = root?.FindFirstChild("ShieldVFX") as Attachment
 			if (!vfx) {
 				const orig_vfx = assets.FindFirstChild("ShieldVFX") as Attachment
 				if (orig_vfx) {
