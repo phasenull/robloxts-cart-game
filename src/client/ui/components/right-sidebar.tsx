@@ -2,9 +2,11 @@ import React from "@rbxts/react"
 import { UIDIM } from "../constants"
 import { RottenButton } from "./buttons/rotten-button"
 import { useNavigator } from "../hooks/useNavigator"
+import { useCart } from "../contexts/cart.context"
 
 export function RightSidebar() {
 	const navigator = useNavigator()
+	const cart = useCart().cart
 	return (
 		<frame
 			key={"right-sidebar"}
@@ -22,7 +24,7 @@ export function RightSidebar() {
 			/>
 			<uipadding PaddingRight={new UDim(0.1,0)} />
 			<uiaspectratioconstraint AspectRatio={0.5} />
-			<RottenButton Color={new Color3(0,0.35,1)} Size={UIDIM.ONE} Text="Teleport" onClick={()=>navigator.setOpenGui("teleport")} />
+			{cart ? undefined : <RottenButton Color={new Color3(0,0.35,1)} Size={UIDIM.ONE} Text="Teleport" onClick={()=>navigator.setOpenGui("teleport")} />}
 		</frame>
 	)
 }

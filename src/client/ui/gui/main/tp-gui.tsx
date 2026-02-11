@@ -1,4 +1,4 @@
-import React from "@rbxts/react"
+import React, { useEffect } from "@rbxts/react"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { UIDIM } from "client/ui/constants"
 import { useCheckpoint } from "../cart/hooks/useCheckpoint"
@@ -17,16 +17,23 @@ import { useCart } from "client/ui/contexts/cart.context"
 export function TPGui() {
 	const { collectedCheckpoints, refresh } = useCheckpoint()
 	const navigator = useNavigator()
+	const  cart  = useCart().cart
 	useQuery({
 		queryKey: ["tpCheckpointState"],
 		queryFn: async () => {
 			if (__IS_EDIT__) {
-				return {}
+				return true
 			}
-			return await refresh()
+			await refresh()
+			return true
 		},
 		enabled: !__IS_EDIT__
 	})
+	useEffect(() => {
+		if (cart) {
+			navigator.closeAll()
+		}
+	},[cart])
 	return (
 		<frame
 			key="Teleport"
@@ -243,8 +250,8 @@ function CheckpointEntry(props: {
 	is_locked: boolean
 }) {
 	const config = getCheckpointDataFromIndex(props.checkpoint_index)
-	const { cart, changeState } = useCart()
 	const navigator = useNavigator()
+	const cart = useCart().cart
 	const { mutate, isLoading } = useMutation({
 		queryKey: [`tpToCheckpoint-${props.checkpoint_index}`],
 		mutationFn: async (checkpoint_index: number) => {
@@ -280,7 +287,6 @@ function CheckpointEntry(props: {
 		}
 	})
 	if (!config) return
-	if (cart) return
 	return (
 		<frame
 			key="CheckpointEntry"
