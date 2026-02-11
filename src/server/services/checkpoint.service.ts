@@ -4,6 +4,8 @@ import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
 import { Logger } from "shared/logger"
+import { getCheckpointModelByIndex, getPreviousBigCheckpoint } from "shared/cart.helper"
+import { sphere } from "@rbxts/better-gizmos"
 
 @Service({ loadOrder: 5 })
 export class CheckpointService implements OnStart {
@@ -19,6 +21,13 @@ export class CheckpointService implements OnStart {
 				this.processPlayerDeath(player)
 			})
 		})
+		ServerFunctions.CheckpointService.tpMeToBigCheckpoint.setCallback(
+			(player) => {
+				const result = this.spawnPlayerAtTheirBigCheckpoint(player)
+				this.logger.log(`CHOSEN_SPAWN: ${result?.GetFullName()}`)
+				return [true]
+			}
+		)
 		ServerFunctions.CheckpointService.getCheckpointState.setCallback(
 			(player) => {
 				const checkpoint_index = this.getCheckpointIndex(player)
@@ -65,12 +74,6 @@ export class CheckpointService implements OnStart {
 		})
 	}
 	setCheckpointIndex(player: Player, index: number) {
-		// this.logger.log(
-		// 	"setting checkpoint index for player",
-		// 	player.Name,
-		// 	"to",
-		// 	index
-		// )
 		this.checkpoint_states.set(player.UserId, index)
 		ServerEvents.CheckpointService.updateCheckpointState.fire(
 			player,
@@ -81,6 +84,27 @@ export class CheckpointService implements OnStart {
 	}
 	getCheckpointIndex(player: Player): number {
 		return this.checkpoint_states.get(player.UserId) || 0
+	}
+	spawnPlayerAtTheirBigCheckpoint(player: Player) {
+		const player_checkpoint = this.getCheckpointIndex(player)
+		const big_checkpoint_index = getPreviousBigCheckpoint(player_checkpoint)
+		const checkpoint = getCheckpointModelByIndex(big_checkpoint_index)
+		assert(checkpoint, `Checkpoint ${big_checkpoint_index} not found for player ${player.Name}`)
+		const multi_spawn = checkpoint
+		.GetChildren()
+		.filter((child) => child.IsA("BasePart") && child.Name === "Spawn")
+		let cframe
+		const char = player.Character
+		if (multi_spawn.size() > 0) {
+			const random_spawn = multi_spawn[
+				math.random(1, multi_spawn.size()) - 1
+			] as BasePart
+			cframe = random_spawn.CFrame
+			char?.PivotTo(cframe)
+			sphere.draw(cframe.Position,5)
+			sphere.color= new Color3(1,0,0)
+			return random_spawn
+		}
 	}
 	spawnPlayerAtTheirCheckpoint(player: Player) {
 		const checkpoint_index = this.getCheckpointIndex(player)

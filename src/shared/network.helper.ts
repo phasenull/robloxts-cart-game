@@ -43,6 +43,7 @@ interface ClientToServerFunctions {
 	}
 	
 	CheckpointService: {
+		tpMeToBigCheckpoint: () => ProperReturns<true>
 		tpMeToCheckpoint: (checkpoint_index: number) => ProperReturns<true>
 		getCheckpointState: () => ProperReturns<{
 			current_checkpoint: number,

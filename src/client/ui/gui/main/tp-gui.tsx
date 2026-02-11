@@ -13,6 +13,7 @@ import { UIHelper } from "client/ui.helper"
 import { Dependency } from "@flamework/core"
 import { CartController } from "client/controllers/cart.controller"
 import { useCart } from "client/ui/contexts/cart.context"
+import { getCheckpointDataFromIndex, ISLAND_CONFIG } from "shared/cart.helper"
 
 export function TPGui() {
 	const { collectedCheckpoints, refresh } = useCheckpoint()
@@ -391,29 +392,4 @@ function CheckpointEntry(props: {
 			</frame>
 		</frame>
 	)
-}
-const ISLAND_CONFIG = {
-	"0": {
-		name: "Sunny Island",
-		image: A.backgrounds.initial
-	},
-	"2": {
-		name: "Snowy Hills",
-		image: A.backgrounds.post_initial
-	},
-	"4": {
-		name: "Core",
-		image: A.backgrounds.post_snowy
-	},
-	"6": {
-		name: "Void",
-		image: A.backgrounds.post_magma
-	}
-}
-export function getCheckpointDataFromIndex(index: number) {
-	const config = ISLAND_CONFIG[`${index}` as keyof typeof ISLAND_CONFIG]
-	if (!config) {
-		return
-	}
-	return config
 }

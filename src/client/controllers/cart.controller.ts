@@ -50,8 +50,6 @@ export class CartController implements OnStart {
 		if (!cache) {
 			return [false, "No checkpoint to revive to"]
 		}
-		// UIHelper.toggleFade(true)
-		task.wait(0.5)
 		const local_player = Players.LocalPlayer
 		const char = local_player.Character
 		const [success, err] =
@@ -64,8 +62,6 @@ export class CartController implements OnStart {
 			this.logger.warn(`Failed to revive-spawn cart: ${err}`)
 			return [success, err]
 		}
-		this.toggleDeathScreen(false)
-		task.wait(0.5)
 		// UIHelper.toggleFade(false)
 		this.__is_reviving = false
 		return [true]

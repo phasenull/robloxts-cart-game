@@ -7,13 +7,7 @@ import { useRendering } from "client/ui/hooks/useRendering"
 import { sphere } from "@rbxts/better-gizmos"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { UIDIM } from "client/ui/constants"
-import { getCheckpointDataFromIndex } from "../main/tp-gui"
-function getCheckpointModelByIndex(index: number): Model | undefined {
-	const checkpoints = Workspace.FindFirstChild("Checkpoints") as Folder
-	return checkpoints
-		.GetChildren()
-		.find((child) => child.Name === tostring(index)) as Model | undefined
-}
+import { getCheckpointDataFromIndex, getCheckpointModelByIndex, getNextBigCheckpoint, getPreviousBigCheckpoint } from "shared/cart.helper"
 export function StageProgress() {
 	const { cart } = useCart()
 	const { currentCheckpoint } = useCheckpoint()
@@ -68,34 +62,4 @@ export function StageProgress() {
 			<GoofyText Size={UDim2.fromScale(.3,.2)} Text={`${getCheckpointDataFromIndex(tonumber(checkpoint.Name)||0)?.name}`}/>
 		</frame>
 	)
-}
-const getPreviousBigCheckpoint = (current: number) => {
-	let found
-	let i = current
-	while (!found && i > 0) {
-		const checkpoint = getCheckpointModelByIndex(i)
-		if (!checkpoint) {
-			return 0
-		}
-		if (checkpoint.FindFirstChild("Spawn")) {
-			found = i
-		}
-		i -= 1
-	}
-	return found ||0
-}
-const getNextBigCheckpoint = (current: number) => {
-	let found
-	let i = current
-	while (!found) {
-		i += 1
-		const checkpoint = getCheckpointModelByIndex(i)
-		if (!checkpoint) {
-			return current
-		}
-		if (checkpoint.FindFirstChild("Spawn")) {
-			found = i
-		}
-	}
-	return found
 }

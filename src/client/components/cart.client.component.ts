@@ -116,7 +116,7 @@ export class CartClientComponent
 			}
 		}
 	}
-	onPhysics(dt: number, time: number): void {
+	onPhysics(dt: number, time: number) {
 		const local_player = Players.LocalPlayer
 		const character = local_player.Character
 		if (!character) return
@@ -440,28 +440,9 @@ export class CartClientComponent
 		return true
 	}
 	private __is_cleaned_up = false
-	cleanupRide(reason: string): void {
+	async cleanupRide(reason: string): Promise<void> {
 		if (this.__is_cleaned_up) return
 		if (this.resolvePlayer() !== Players.LocalPlayer) {
-			return
-		}
-		ClientEvents.CartService.cleanupCart.fire()
-		this.logger.warn(`Cleaning up ride due to: ${reason}`)
-		const cart_controller = Dependency<CartController>()
-		cart_controller.onCartChange.Fire(undefined)
-		this.__is_cleaned_up = true
-		this.AnimationController.stop("cart_idle", 0)
-		task.spawn(() => {
-			const controller = Dependency<CartController>()
-			UIHelper.toggleFade(true)
-			task.wait(0.5)
-			controller.toggleDeathScreen(true)
-			task.wait(0.2)
-			UIHelper.toggleFade(false)
-		})
-		this.toggleFriction(false)
-		this.setPower(0)
-		if (!this.rider) {
 			return
 		}
 		const player = Players.LocalPlayer
@@ -473,6 +454,25 @@ export class CartClientComponent
 				this.rider.Sit = false
 			}
 		}
+		this.logger.warn(`Cleaning up ride due to: ${reason}`)
+		const cart_controller = Dependency<CartController>()
+		cart_controller.onCartChange.Fire(undefined)
+		this.__is_cleaned_up = true
+		this.AnimationController.stop("cart_idle", 0)
+		const controller = Dependency<CartController>()
+		// UIHelper.toggleFade(true)
+		// ClientEvents.CartService.cleanupCart.fire()
+		await ClientFunctions.CheckpointService.tpMeToBigCheckpoint.invokeWithTimeout(
+			5000
+		)
+		controller.toggleDeathScreen(true)
+		// UIHelper.toggleFade(false)
+
+		// this.toggleFriction(false)
+		// this.setPower(0)
+		// if (!this.rider) {
+		// 	return
+		// }
 	}
 	onStart(): void {
 		this.bootstrap()
@@ -506,7 +506,9 @@ export class CartClientComponent
 	async bootstrap() {
 		if (this.__is_bootstrapped) return
 		this.__is_bootstrapped = true
-		const brake_original = this.instance.WaitForChild("Brake",1) as ParticleEmitter | undefined
+		const brake_original = this.instance.WaitForChild("Brake", 1) as
+			| ParticleEmitter
+			| undefined
 		this.instance.WaitForChild("Root", 10)?.Destroying.Once(() => {
 			this.cleanupRide("Root destroyed")
 		})

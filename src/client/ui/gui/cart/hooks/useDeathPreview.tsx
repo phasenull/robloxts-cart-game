@@ -1,5 +1,6 @@
 import { useEffect } from "@rbxts/react"
 import { Players, Workspace } from "@rbxts/services"
+import { UIHelper } from "client/ui.helper"
 import { useCart } from "client/ui/contexts/cart.context"
 import { assets } from "shared/assets"
 import { RigCartModel } from "shared/cart.helper"
@@ -59,30 +60,36 @@ export function useDeathPreview({ spawnPoint }: UseDeathPreviewProps) {
 
 		// Create humanoid model
 		const local_player = Players.LocalPlayer
-		let char: Model | undefined = undefined
+		let preview_char: Model | undefined = undefined
 		try {
-			char = Players.CreateHumanoidModelFromUserIdAsync(local_player.UserId)
-			char.GetDescendants().forEach((desc) => {
-				if (["LocalScript", "Script", "ModuleScript"].includes(desc.ClassName)) {
+			preview_char = Players.CreateHumanoidModelFromUserIdAsync(
+				local_player.UserId
+			)
+			preview_char.GetDescendants().forEach((desc) => {
+				if (
+					["LocalScript", "Script", "ModuleScript"].includes(desc.ClassName)
+				) {
 					// desc.Destroy()
 				}
 			})
-			char.Parent = example_cart
 			example_cart.GetDescendants().forEach((desc) => {
 				if (desc.IsA("BasePart")) {
 					desc.CanCollide = false
 				}
 			})
-			char.PivotTo(example_cart.GetPivot())
-
-			const humanoid = char.FindFirstChildOfClass("Humanoid")
-			char.PrimaryPart!.Anchored = true
+			const humanoid = preview_char.FindFirstChildOfClass("Humanoid")
+			preview_char.PrimaryPart!.Anchored = true
+			preview_char.Parent = example_cart
+			humanoid?.ChangeState(Enum.HumanoidStateType.Physics)
+			preview_char.GetDescendants().forEach((desc) => {
+				if (desc.IsA("BasePart")) {
+					desc.CanCollide = false
+					desc.CollisionGroup = "Players"
+				}
+			})
+			preview_char.PivotTo(example_cart.GetPivot())
 
 			// Position player character off-screen
-			const my_char = Players.LocalPlayer.Character
-			if (my_char && my_char.PrimaryPart) {
-				my_char.PivotTo(spawnPoint.sub(new Vector3(0, 50, 0)))
-			}
 
 			// Play animation
 			if (humanoid) {

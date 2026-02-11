@@ -1,6 +1,12 @@
+import { Workspace } from "@rbxts/services"
+import { A } from "./assets"
 import { __IS_STUDIO__ } from "./config.helper"
 import { ICart, IWheel } from "./type.helper"
-import { BuildDeepWeldConstraints, BuildWeldConstraints, MasslessPart } from "./util.helper"
+import {
+	BuildDeepWeldConstraints,
+	BuildWeldConstraints,
+	MasslessPart
+} from "./util.helper"
 
 export function RigCartModel(cart_model: ICart) {
 	const visuals = cart_model.FindFirstChild("Visuals") as Model
@@ -11,14 +17,14 @@ export function RigCartModel(cart_model: ICart) {
 	const [bounding_box, size] = cart_model.GetBoundingBox()
 	const mass_part = MasslessPart(cart_model, "Mass")
 	mass_part.Size = new Vector3(2.712, 1, 2.475)
-	mass_part.CFrame = bounding_box.mul(new CFrame(0,-.5, 0))
+	mass_part.CFrame = bounding_box.mul(new CFrame(0, -0.5, 0))
 	mass_part.Massless = false
 	const hitbox = MasslessPart(cart_model, "Hitbox")
 	hitbox.Size = size.add(new Vector3(0, -2, 0))
-	hitbox.CFrame = bounding_box.mul(new CFrame(0, .5 , 0))
+	hitbox.CFrame = bounding_box.mul(new CFrame(0, 0.5, 0))
 	hitbox.CanCollide = true
 	hitbox.CollisionGroup = "Hitbox"
-	hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7,1,0.2)
+	hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7, 1, 0.2)
 	const root_part = MasslessPart(cart_model, "Root")
 	root_part.CFrame = bounding_box
 	root_part.Color = new Color3(0, 0.9, 1)
@@ -86,10 +92,7 @@ export function RigCartModel(cart_model: ICart) {
 		ball.Transparency = 0.3
 		attachment_ball.Name = "ball->connection"
 		attachment_connection.Name = "connection->ball"
-		const attachment_root_to_ball = new Instance(
-			"Attachment",
-			cart_model.Root
-		)
+		const attachment_root_to_ball = new Instance("Attachment", cart_model.Root)
 		attachment_root_to_ball.WorldPosition = connection.Position
 		attachment_root_to_ball.Orientation = new Vector3(0, 0, 90)
 		attachment_root_to_ball.Name = "root->ball"
@@ -143,4 +146,66 @@ export function RigCartModel(cart_model: ICart) {
 		// weld_mass.C0 = new CFrame(.3, 0, 0)
 		// 	.mul(CFrame.Angles(math.rad(90), 0, 0))
 	})
+}
+
+export const getPreviousBigCheckpoint = (current: number) => {
+	let found
+	let i = current
+	while (!found && i > 0) {
+		const checkpoint = getCheckpointModelByIndex(i)
+		if (!checkpoint) {
+			return 0
+		}
+		if (checkpoint.FindFirstChild("Spawn")) {
+			found = i
+		}
+		i -= 1
+	}
+	return found || 0
+}
+export function getCheckpointModelByIndex(index: number): Model | undefined {
+	const checkpoints = Workspace.FindFirstChild("Checkpoints") as Folder
+	return checkpoints
+		.GetChildren()
+		.find((child) => child.Name === tostring(index)) as Model | undefined
+}
+export const getNextBigCheckpoint = (current: number) => {
+	let found
+	let i = current
+	while (!found) {
+		i += 1
+		const checkpoint = getCheckpointModelByIndex(i)
+		if (!checkpoint) {
+			return current
+		}
+		if (checkpoint.FindFirstChild("Spawn")) {
+			found = i
+		}
+	}
+	return found
+}
+export function getCheckpointDataFromIndex(index: number) {
+	const config = ISLAND_CONFIG[`${index}` as keyof typeof ISLAND_CONFIG]
+	if (!config) {
+		return
+	}
+	return config
+}
+export const ISLAND_CONFIG = {
+	"0": {
+		name: "Sunny Island",
+		image: A.backgrounds.initial
+	},
+	"2": {
+		name: "Snowy Hills",
+		image: A.backgrounds.post_initial
+	},
+	"4": {
+		name: "Core",
+		image: A.backgrounds.post_snowy
+	},
+	"6": {
+		name: "Void",
+		image: A.backgrounds.post_magma
+	}
 }

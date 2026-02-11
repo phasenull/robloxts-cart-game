@@ -50,21 +50,22 @@ export class CartService implements OnStart {
 		const player_carts = this.getPlayerCarts(player)
 		return player_carts.includes(cart_name)
 	}
-
+	playerAdded(player: Player) {
+		player.CharacterAdded.Connect((char) => {
+			char.GetDescendants().forEach((descendant) => {
+				if (descendant.IsA("BasePart")) {
+					descendant.Massless = true
+					descendant.CollisionGroup = "Players"
+				}
+			})
+		})
+	}
 	onStart(): void {
 		ServerEvents.CartService.spawnCart.connect((player, button) => {
 			this.logger.log(`Spawning cart for player ${player.Name}`)
 			this.spawnPlayerCart(player, button)
 		})
-		Players.PlayerAdded.Connect((player) => {
-			player.CharacterAdded.Connect((char) => {
-				char.GetDescendants().forEach((descendant) => {
-					if (descendant.IsA("BasePart")) {
-						descendant.Massless = true
-					}
-				})
-			})
-		})
+		Players.PlayerAdded.Connect((player) => this.playerAdded(player))
 
 		const damage_parts = Workspace.FindFirstChild("DamageParts") as Folder
 		assert(damage_parts, "DamageParts folder not found in workspace")
@@ -135,6 +136,8 @@ export class CartService implements OnStart {
 		})
 
 		ServerFunctions.CartService.revive.setCallback((player, target, stage) => {
+			// this.logger.warn("REVIVE RF CALLED")
+			// return [true]
 			this.logger.log(
 				`Revive-spawning cart for player ${player.Name} at stage ${stage}`
 			)
@@ -145,14 +148,11 @@ export class CartService implements OnStart {
 
 			const char = player.Character
 			const pp = char?.PrimaryPart
-			
+
 			if (vehicle_seat && pp && char) {
-				cart.PrimaryPart!.Anchored = true
-				pp.Anchored = false
 				pp.PivotTo(target)
-				task.wait(0.5) // Wait for the seat to be fully initialized
-				cart.PrimaryPart!.Anchored = false
-				// vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
+				// task.wait(0.5) // Wait for the seat to be fully initialized
+				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
 			}
 			const checkpoint_service = Dependency<CheckpointService>()
 			checkpoint_service.setCheckpointIndex(player, stage)
@@ -180,6 +180,10 @@ export class CartService implements OnStart {
 		const spike_group = PhysicsService.RegisterCollisionGroup("Spike")
 		const hitbox_group = PhysicsService.RegisterCollisionGroup("Hitbox")
 		const invincible_group = PhysicsService.RegisterCollisionGroup("Invincible")
+		PhysicsService.RegisterCollisionGroup("Players")
+		PhysicsService.CollisionGroupSetCollidable("Spike", "Players", true)
+		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Players", false)
+		PhysicsService.CollisionGroupSetCollidable("Players", "Players", false)
 		PhysicsService.CollisionGroupSetCollidable("Spike", "Hitbox", false)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Hitbox", true)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Invincible", false)
