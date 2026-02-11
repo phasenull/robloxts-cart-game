@@ -56,10 +56,10 @@ export function DeathButtons({
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
 			const [result, err] = await controller.promptRevive(checkpoint)
+			UIHelper.toggleFade(false)
 			if (!result || err) {
 				throw `${err}`
 			}
-			UIHelper.toggleFade(false)
 			return result
 		},
 		onError: (err) => {

@@ -138,7 +138,6 @@ export function CartButtons(props: {
 		),
 		enabled: IS_BRAKING
 	})
-
 	useEffect(() => {
 		if (!cart) {
 			return
