@@ -13,8 +13,8 @@ interface UseDeathPreviewProps {
 }
 
 export function useDeathPreview() {
-	const { spawnPoint, state } = useCart()
-	const should_show = state === "death_screen"
+	const { cart, spawnPoint, state } = useCart()
+	const should_show = state === "death_screen" && !cart
 	// const char = player.Character
 	// const pp = char?.PrimaryPart
 	// if (char && pp) {

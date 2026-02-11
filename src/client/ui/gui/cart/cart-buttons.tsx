@@ -58,8 +58,8 @@ export function CartButtons(props: {
 			if (!cart) return true
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
-			changeState("death_screen")
 			await cart.cleanupRide("reset by player")
+			changeState("death_screen")
 			task.wait(0.5)
 			UIHelper.toggleFade(false)
 			return true
@@ -85,8 +85,7 @@ export function CartButtons(props: {
 		}
 	})
 
-	const is_alive =
-		(cart?.instance && state === "alive") || !!props.__story?.cart_enabled
+	const is_alive = !!cart?.instance || !!props.__story?.cart_enabled
 	const IS_VISIBLE = is_alive
 
 	const IS_BRAKING =

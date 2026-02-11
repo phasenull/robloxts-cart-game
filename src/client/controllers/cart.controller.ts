@@ -38,7 +38,21 @@ export class CartController implements OnStart {
 		}
 	}
 	private __is_reviving = false
+	private __pending_purchase = false
 	private __cached_stage = 0
+	
+	tryStartPurchaseFlow(): boolean {
+		if (this.__pending_purchase) {
+			return false
+		}
+		this.__pending_purchase = true
+		return true
+	}
+	
+	finishPurchaseFlow(): void {
+		this.__pending_purchase = false
+	}
+	
 	async promptRevive(current_stage: number): Promise<ProperReturns<true>> {
 		if (!this.__last_checkpoint) {
 			return [false, "No checkpoint to revive to"]

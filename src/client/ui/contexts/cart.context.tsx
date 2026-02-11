@@ -76,7 +76,7 @@ export function CartProvider(props: {
 			(spawn_point) => {
 				// logger.log(`Death screen toggled: ${spawn_point !== undefined}`)
 				setSpawnPoint(spawn_point)
-				if (spawn_point) {
+				if (spawn_point && !cart?.instance) {
 					changeState("death_screen")
 				}
 			}
@@ -89,6 +89,10 @@ export function CartProvider(props: {
 
 
 	const changeState = (new_state: CartState) => {
+		// Prevent changing to death/reviving states while cart still exists
+		if (cart?.instance && (new_state === "death_screen" || new_state === "reviving")) {
+			throw `attempt to change the cart state to "${new_state}" but cart still exists`
+		}
 		logger.log(`STATE-> ${new_state}`)
 		switch (new_state) {
 			case "none" :{

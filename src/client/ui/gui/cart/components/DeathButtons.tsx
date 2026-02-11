@@ -24,31 +24,61 @@ export function DeathButtons({
 	// shouldShow,
 	transparency
 }: DeathButtonsProps) {
-	const { changeState, confirmHardReset, spawnPoint, state, products } =
+	const { cart, changeState, confirmHardReset, spawnPoint, state, products } =
 		useCart()
-	const shouldShow = state === "death_screen" || state === "reviving"
+	const shouldShow = (state === "death_screen" || state === "reviving") && !cart
 	const checkpoint = useCheckpoint().currentCheckpoint
 	const { mutate: mutateRevive } = useMutation({
-		queryKey: [`death-revive-${Object.keys(products).map((e)=>`${e}-${products.get(e)}`).join("-")}`],
+		queryKey: [
+			`death-revive-${Object.keys(products)
+				.map((e) => `${e}-${products.get(e)}`)
+				.join("-")}`
+		],
 		mutationFn: async () => {
-			const revive_amount = products.get("revives") || 0
+			const controller = Dependency<CartController>()
+			let startedPurchaseFlow = false
+
+			let revive_amount = products.get("revives") || 0
+			changeState("reviving")
 			print("revives:", revive_amount)
 			if (revive_amount <= 0) {
-				const purchase_resulted = new Signal<(status:boolean)=>void>()
-				MarketplaceService.PromptProductPurchase(Players.LocalPlayer, PRODUCTS.revives)
-				const result = await MarketplaceService.PromptProductPurchaseFinished.Connect((uid,pid,ip)=>{
-					if (uid !== Players.LocalPlayer.UserId) {
-						return
+				// Check if there's already a pending purchase
+				if (!controller.tryStartPurchaseFlow()) {
+					warn("Purchase already in progress, ignoring duplicate request")
+					return false
+				}
+				startedPurchaseFlow = true
+
+				try {
+					const purchase_resulted = new Signal<(status: boolean) => void>()
+					MarketplaceService.PromptProductPurchase(
+						Players.LocalPlayer,
+						PRODUCTS.revives
+					)
+					const conn =
+						await MarketplaceService.PromptProductPurchaseFinished.Connect(
+							(uid, pid, ip) => {
+								if (uid !== Players.LocalPlayer.UserId) {
+									return
+								}
+								if (pid !== PRODUCTS.revives) {
+									return
+								}
+								conn.Disconnect()
+								purchase_resulted.Fire(ip)
+							}
+						)
+					revive_amount += (await purchase_resulted.Wait()) ? 1 : 0
+				} finally {
+					if (startedPurchaseFlow) {
+						controller.finishPurchaseFlow()
 					}
-					if (pid !== PRODUCTS.revives) {
-						return
-					}
-					purchase_resulted.Fire(ip)
-				})
-				purchase_resulted.Wait()
+				}
 			}
-			const controller = Dependency<CartController>()
-			changeState("reviving")
+			if (revive_amount <= 0) {
+				warn("No revives available, cannot revive")
+				return false
+			}
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
 			const [result, err] = await controller.promptRevive(checkpoint)
@@ -59,6 +89,7 @@ export function DeathButtons({
 			return result
 		},
 		onError: (err) => {
+			changeState("none")
 			warn(`Failed to revive player: ${err}`)
 		}
 	})
