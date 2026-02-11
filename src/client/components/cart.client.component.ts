@@ -117,6 +117,7 @@ export class CartClientComponent
 		}
 	}
 	onPhysics(dt: number, time: number) {
+		if (this.__is_cleaned_up) return
 		const local_player = Players.LocalPlayer
 		const character = local_player.Character
 		if (!character) return
@@ -179,10 +180,7 @@ export class CartClientComponent
 		// 			new Vector3(direction.X * 2, 0, direction.Z * 2)
 		// 		)
 		// 		// if (__STUDIO__) {
-		// 		const drawing = sphere.draw(lookat_pos, 0.3)
-		// 		task.delay(dt, () => {
-		// 			drawing.Destroy()
-		// 		})
+
 		// 		// }
 		// 		align_orientation.LookAtPosition = lookat_pos
 		// 	})
@@ -244,16 +242,16 @@ export class CartClientComponent
 	}
 	private brake = false
 	onRide(): void {
-		if (!this.instance.WaitForChild("VehicleSeat", 1)) {
-			this.cleanupRide("no vehicle seat found at onride")
-			return
-		}
 		const player = Players.LocalPlayer
 		const character = player.Character
 		const my_hunanoid = character?.FindFirstChildOfClass("Humanoid")
 		const model = this.rider?.Parent
 		if (model?.Name === "Player") return
 		if (my_hunanoid !== this.rider) {
+			return
+		}
+		if (!this.instance.WaitForChild("VehicleSeat", 1)) {
+			this.cleanupRide("no vehicle seat found at onride")
 			return
 		}
 		this.toggleBrake(false)
@@ -443,13 +441,18 @@ export class CartClientComponent
 	}
 	private __is_cleaned_up = false
 	async cleanupRide(reason: string): Promise<void> {
+		const player = Players.LocalPlayer
+		const character = player.Character
+		const humanoid = character?.FindFirstChildOfClass("Humanoid")
+		const model = this.rider?.Parent
+		if (model?.Name === "Player") return
+		if (humanoid !== this.rider) {
+			return
+		}
 		if (this.__is_cleaned_up) return
 		if (this.resolvePlayer() !== Players.LocalPlayer) {
 			return
 		}
-		const player = Players.LocalPlayer
-		const char = player.Character
-		const humanoid = char?.FindFirstChildOfClass("Humanoid")
 		if (this.rider && this.rider === humanoid) {
 			this.rider.JumpHeight = 7.2
 			if (this.rider.Seated) {
@@ -464,6 +467,9 @@ export class CartClientComponent
 		const controller = Dependency<CartController>()
 		// UIHelper.toggleFade(true)
 		// ClientEvents.CartService.cleanupCart.fire()
+		if (humanoid) {
+			humanoid.Sit = false
+		}
 		await ClientFunctions.CheckpointService.tpMeToBigCheckpoint.invokeWithTimeout(
 			5000
 		)

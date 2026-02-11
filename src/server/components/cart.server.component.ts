@@ -34,8 +34,14 @@ export class CartServerComponent
 				this.cleanup()
 				return
 			}
-			this.setOwnership(player)
+			const seat_weld = seat.FindFirstChildOfClass("Weld")
+			
 			const char = player.Character
+			if (seat_weld) {
+				seat_weld.C0 = new CFrame(0, 0.6, 0)
+				seat_weld.C1 = new CFrame(0, 0, 0)
+			}
+			this.setOwnership(player)
 			this.rider = player
 			char?.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
@@ -44,9 +50,15 @@ export class CartServerComponent
 			})
 		})
 	}
+	resolvePlayer(): Player | undefined {
+		return this.rider
+	}
 	constructor(private logger: Logger) {
 		super()
 		RigCartModel(this.instance)
+		this.instance.Destroying.Once(() => {
+			this.cleanup()
+		})
 	}
 	setOwnership(owner?: Player): void {
 		this.instance.GetDescendants().forEach((descendant) => {

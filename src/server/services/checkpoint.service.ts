@@ -86,6 +86,11 @@ export class CheckpointService implements OnStart {
 		return this.checkpoint_states.get(player.UserId) || 0
 	}
 	spawnPlayerAtTheirBigCheckpoint(player: Player) {
+		const cart_service = Dependency<CartService>()
+		const player_cart = cart_service.getPlayerCartComponent(player)
+		if (player_cart) {
+			player_cart.cleanup()
+		}
 		const player_checkpoint = this.getCheckpointIndex(player)
 		const big_checkpoint_index = getPreviousBigCheckpoint(player_checkpoint)
 		const checkpoint = getCheckpointModelByIndex(big_checkpoint_index)
@@ -95,14 +100,16 @@ export class CheckpointService implements OnStart {
 		.filter((child) => child.IsA("BasePart") && child.Name === "Spawn")
 		let cframe
 		const char = player.Character
+		const humanoid = char?.FindFirstChildWhichIsA("Humanoid")
+		if (humanoid) {
+			humanoid.Sit = false
+		}
 		if (multi_spawn.size() > 0) {
 			const random_spawn = multi_spawn[
 				math.random(1, multi_spawn.size()) - 1
 			] as BasePart
 			cframe = random_spawn.CFrame
 			char?.PivotTo(cframe)
-			sphere.draw(cframe.Position,5)
-			sphere.color= new Color3(1,0,0)
 			return random_spawn
 		}
 	}

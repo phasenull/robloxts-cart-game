@@ -88,8 +88,13 @@ export class ButtonComponent
 		if (new_pressed && player) {
 			this.onPressed.Fire(player)
 		}
-		if (this.instance.FindFirstAncestorOfClass("Folder")?.Name === "CartSpawners") {
-			ClientEvents.CartService.spawnCart.fire(this.instance)
+		if (player === Players.LocalPlayer){
+			if (
+				this.instance.FindFirstAncestorOfClass("Folder")?.Name ===
+				"CartSpawners"
+			) {
+				ClientEvents.CartService.spawnCart.fire(this.instance)
+			}
 		}
 		task.delay(this.duration, () => {
 			this.setPressed(false)

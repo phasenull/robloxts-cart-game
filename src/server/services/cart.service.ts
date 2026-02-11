@@ -62,7 +62,6 @@ export class CartService implements OnStart {
 	}
 	onStart(): void {
 		ServerEvents.CartService.spawnCart.connect((player, button) => {
-			this.logger.log(`Spawning cart for player ${player.Name}`)
 			this.spawnPlayerCart(player, button)
 		})
 		Players.PlayerAdded.Connect((player) => this.playerAdded(player))
@@ -95,19 +94,6 @@ export class CartService implements OnStart {
 							`Player ${player.Name} used a revive. Remaining: ${profile.Data.revives}`
 						)
 						this.refreshPlayerProducts(player)
-						task.spawn(() => {
-							let cart = this.getPlayerCart(player)
-							for (let index = 0; index < 100; index++) {
-								task.wait(0.1)
-								cart = this.getPlayerCart(player)
-								if (cart) {
-									break
-								}
-							}
-							if (cart) {
-								this.addShield(cart, 10)
-							}
-						})
 						return [true]
 					case "flips":
 						if ((profile.Data.flips || 0) <= 0) {
@@ -135,13 +121,16 @@ export class CartService implements OnStart {
 			return [config.CartConfig]
 		})
 
-		ServerFunctions.CartService.revive.setCallback((player, target, stage) => {
+		ServerFunctions.CartService.revive.setCallback(async (player, target, stage) => {
 			// this.logger.warn("REVIVE RF CALLED")
 			// return [true]
+			const [data,err] = await ServerFunctions.CartService.useProduct.predict(player, "revives")
+			if (!data || err) {
+				return [false, err || "Failed to use revive product"]
+			}
 			this.logger.log(
 				`Revive-spawning cart for player ${player.Name} at stage ${stage}`
 			)
-			// arrow.draw(target.Position, target.Position.add(target.LookVector))
 			const cart_skin = this.getPlayerSkin(player)
 			const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
 			const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
@@ -163,7 +152,7 @@ export class CartService implements OnStart {
 		})
 
 		ServerFunctions.CartService.reset.setCallback((player) => {
-			this.logger.log(`Respawning player ${player.Name}`)
+			// this.logger.log(`Respawning player ${player.Name}`)
 			const checkpoint_service = Dependency<CheckpointService>()
 			checkpoint_service.processPlayerDeath(player)
 		})
@@ -220,14 +209,25 @@ export class CartService implements OnStart {
 		products.set("flips", profile.Data.flips || 0)
 		ServerEvents.CartService.playerProductsUpdated(player, products)
 	}
+	destroyExistingCardsIfAny(player: Player) {
+		const existing = this.PLAYER_CARTS.get(player)
+		const dep = Dependency<Components>()
+		const all_carts = dep.getAllComponents<CartServerComponent>()
+		const my_cart = all_carts.filter((c) => c.resolvePlayer() === player)
+		if (existing) {
+			existing.Destroy()
+		}
+		my_cart.forEach((cart) => {
+			cart.cleanup()
+		})
+	}
 	spawnPlayerCartAtLocation(
 		player: Player,
 		cframe: CFrame,
 		cart_skin?: string
 	): Model {
 		this.refreshPlayerProducts(player)
-		const existing = this.PLAYER_CARTS.get(player)
-		existing?.Destroy()
+		this.destroyExistingCardsIfAny(player)
 		const target_skin = cart_skin ?? this.getPlayerSkin(player)
 		const orig_cart = assets.carts.FindFirstChild(target_skin) as Model
 		assert(orig_cart, `Cart model ${target_skin} not found in assets`)
@@ -433,8 +433,8 @@ export class CartService implements OnStart {
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		if (this.DEBOUNCE_TABLE.has(player)) {
 			const last_time = this.DEBOUNCE_TABLE.get(player)!
-			if (tick() - last_time < 1) {
-				this.logger.warn(`Debouncing cart spawn for player ${player.Name}`)
+			if (tick() - last_time < 2) {
+				// this.logger.warn(`Debouncing cart spawn for player ${player.Name}`)
 				return this.PLAYER_CARTS.get(player)!
 			}
 		}

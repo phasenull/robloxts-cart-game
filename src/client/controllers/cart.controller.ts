@@ -16,6 +16,13 @@ export class CartController implements OnStart {
 	private __last_checkpoint: CFrame | undefined
 	saveCheckpoint(cframe: CFrame) {
 		this.__last_checkpoint = cframe
+		const drawn = sphere.draw(cframe.Position, 1)
+		task.delay(0.05, () => {
+			if (this.__last_checkpoint === cframe) {
+				return
+			}
+			drawn.Destroy()
+		})
 	}
 	public onCartChange = new Signal<
 		(cart: CartClientComponent | undefined) => void
@@ -32,7 +39,7 @@ export class CartController implements OnStart {
 	}
 	private __is_reviving = false
 	private __cached_stage = 0
-	async promptRevive(current_stage: number) : Promise<ProperReturns<true>> {
+	async promptRevive(current_stage: number): Promise<ProperReturns<true>> {
 		if (!this.__last_checkpoint) {
 			return [false, "No checkpoint to revive to"]
 		}
@@ -43,27 +50,26 @@ export class CartController implements OnStart {
 
 		const cache = this.__last_checkpoint
 		this.__cached_stage = current_stage || 0
-		
+
 		this.__is_reviving = true
 		this.logger.log("Reviving player...")
-		this.__last_checkpoint = undefined
 		if (!cache) {
 			return [false, "No checkpoint to revive to"]
 		}
 		const local_player = Players.LocalPlayer
-		const char = local_player.Character
 		const [success, err] =
 			await ClientFunctions.CartService.revive.invokeWithTimeout(
 				5000,
 				cache,
 				this.__cached_stage
 			)
+		this.__is_reviving = false
 		if (!success) {
 			this.logger.warn(`Failed to revive-spawn cart: ${err}`)
 			return [success, err]
 		}
+		this.__last_checkpoint = undefined
 		// UIHelper.toggleFade(false)
-		this.__is_reviving = false
 		return [true]
 	}
 	getMyCart(): CartClientComponent | undefined {

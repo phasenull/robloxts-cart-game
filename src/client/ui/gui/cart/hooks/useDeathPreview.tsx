@@ -1,4 +1,5 @@
 import { useEffect } from "@rbxts/react"
+import { useQuery } from "@rbxts/react-query"
 import { Players, Workspace } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
 import { useCart } from "client/ui/contexts/cart.context"
@@ -11,10 +12,9 @@ interface UseDeathPreviewProps {
 	shouldShow: boolean
 }
 
-export function useDeathPreview({
-	shouldShow,
-	spawnPoint
-}: UseDeathPreviewProps) {
+export function useDeathPreview() {
+	const { spawnPoint, state } = useCart()
+	const should_show = state === "death_screen"
 	// const char = player.Character
 	// const pp = char?.PrimaryPart
 	// if (char && pp) {
@@ -38,15 +38,19 @@ export function useDeathPreview({
 	// 	}
 
 	// }
-	useEffect(() => {
-		if (!spawnPoint) {
-			return
+	const { data } = useQuery({
+		queryKey: [`death-preview-cart::${spawnPoint}`],
+		queryFn: async () => {
+			const cart = buildPreviewCart(spawnPoint!)
+			if (!cart) {throw `Failed to build preview cart for spawn point ${spawnPoint}`}
+			return cart
+		},
+		enabled: should_show && spawnPoint !== undefined,
+		onError: (err) => {
+			warn(`Failed to create death preview cart: ${err}`)
 		}
-		const cart = buildPreviewCart(spawnPoint)
-		return () => {
-			cart?.Destroy()
-		}
-	}, [shouldShow])
+	})
+	return { data }
 }
 function buildPreviewCart(spawnPoint: CFrame) {
 	const example_cart = assets.carts.FindFirstChild("Cart")?.Clone() as ICart

@@ -1,7 +1,7 @@
 import { Dependency } from "@flamework/core"
 import React, { useEffect } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
-import { UserInputService } from "@rbxts/services"
+import { MarketplaceService, Players, UserInputService } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
 import { UIHelper } from "client/ui.helper"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
@@ -15,6 +15,9 @@ import { useInputType } from "client/ui/hooks/useInputType"
 import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
 import { useCheckpoint } from "../hooks/useCheckpoint"
+import Object from "@rbxts/object-utils"
+import { PRODUCTS } from "shared/purchasables"
+import Signal from "@rbxts/signal"
 
 interface DeathButtonsProps {
 	transparency: number
@@ -30,14 +33,33 @@ export function DeathButtons({
 	const shouldShow = state === "death_screen" || state === "reviving"
 	const checkpoint = useCheckpoint().currentCheckpoint
 	const { mutate: mutateRevive } = useMutation({
-		queryKey: ["death-revive"],
+		queryKey: [`death-revive-${Object.keys(products).map((e)=>`${e}-${products.get(e)}`).join("-")}`],
 		mutationFn: async () => {
+			const revive_amount = products.get("revives") || 0
+			print("revives:", revive_amount)
+			if (revive_amount <= 0) {
+				const purchase_resulted = new Signal<(status:boolean)=>void>()
+				MarketplaceService.PromptProductPurchase(Players.LocalPlayer, PRODUCTS.revives)
+				const result = await MarketplaceService.PromptProductPurchaseFinished.Connect((uid,pid,ip)=>{
+					if (uid !== Players.LocalPlayer.UserId) {
+						return
+					}
+					if (pid !== PRODUCTS.revives) {
+						return
+					}
+					purchase_resulted.Fire(ip)
+				})
+				purchase_resulted.Wait()
+			}
 			const controller = Dependency<CartController>()
 			changeState("reviving")
+			UIHelper.toggleFade(true)
+			task.wait(0.5)
 			const [result, err] = await controller.promptRevive(checkpoint)
 			if (!result || err) {
 				throw `${err}`
 			}
+			UIHelper.toggleFade(false)
 			return result
 		},
 		onError: (err) => {

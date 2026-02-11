@@ -55,18 +55,18 @@ export function CartProvider(props: {
 
 		// Check for existing cart
 		const checkCart = () => {
-			const all_carts = components.getAllComponents<CartClientComponent>()
-			const my_cart = all_carts.find(
-				(c) => c.resolvePlayer() === Players.LocalPlayer
-			)
-			if (my_cart && my_cart !== cart) {
-				setCart(my_cart)
-				setSpawnPoint(undefined)
-				changeState("alive")
-			} else if (!my_cart && cart) {
-				setCart(undefined)
-				changeState("none")
-			}
+			// const all_carts = components.getAllComponents<CartClientComponent>()
+			// const my_cart = all_carts.find(
+			// 	(c) => c.resolvePlayer() === Players.LocalPlayer
+			// )
+			// if (my_cart && my_cart !== cart) {
+			// 	setCart(my_cart)
+			// 	setSpawnPoint(undefined)
+			// 	changeState("alive")
+			// } else if (!my_cart && cart) {
+			// 	setCart(undefined)
+			// 	changeState("none")
+			// }
 		}
 
 		checkCart()
@@ -74,7 +74,7 @@ export function CartProvider(props: {
 		// Listen for death screen
 		const deathConnection = cart_controller.toggleOnDeathScreen.Connect(
 			(spawn_point) => {
-				logger.log(`Death screen toggled: ${spawn_point !== undefined}`)
+				// logger.log(`Death screen toggled: ${spawn_point !== undefined}`)
 				setSpawnPoint(spawn_point)
 				if (spawn_point) {
 					changeState("death_screen")
@@ -100,7 +100,7 @@ export function CartProvider(props: {
 	}
 	const confirmHardReset = () => {
 		ClientEvents.CheckpointService.processPlayerDeath.fire()
-		logger.log("STATE-> RESETING")
+		// logger.log("STATE-> RESETING")
 		setSpawnPoint(undefined)
 		changeState("none")
 	}
@@ -122,15 +122,16 @@ export function CartProvider(props: {
 		})
 		const cart_controller = Dependency<CartController>()
 		cart_controller.onCartChange.Connect((new_cart) => {
-			const my_card = cart_controller.getMyCart()
-			if (my_card) {
-				new_cart = my_card
-			}
+			// const my_card = cart_controller.getMyCart()
+			// if (my_card) {
+			// 	new_cart = my_card
+			// }
 			logger.log(`Cart changed: ${new_cart?.instance.GetFullName()}`)
 			setCart(new_cart)
 			if (new_cart) {
 				changeState("alive")
-			} else {
+				setSpawnPoint(undefined)
+			} else if (state !== "death_screen") {
 				changeState("none")
 			}
 		})

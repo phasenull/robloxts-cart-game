@@ -68,8 +68,12 @@ export function CartButtons(props: {
 	const { mutate: mutateSwitchToResetScreen } = useMutation({
 		mutationFn: async () => {
 			if (!cart) return true
+			UIHelper.toggleFade(true)
+			task.wait(.5)
 			changeState("death_screen")
-			cart.cleanupRide("reset by player")
+			await cart.cleanupRide("reset by player")
+			task.wait(0.5)
+			UIHelper.toggleFade(false)
 			return true
 		},
 		queryKey: ["reset-character", cartId]
