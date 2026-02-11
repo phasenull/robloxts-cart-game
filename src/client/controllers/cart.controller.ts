@@ -34,7 +34,8 @@ export class CartController implements OnStart {
 	}
 	private readonly revive_product_id = 3532858318
 	private __is_reviving = false
-	async promptRevive() {
+	private __cached_stage = 0
+	async promptRevive(current_stage: number) {
 		if (!this.__last_checkpoint) {
 			return
 		}
@@ -44,6 +45,7 @@ export class CartController implements OnStart {
 		this.__is_reviving = true
 
 		const cache = this.__last_checkpoint
+		this.__cached_stage = current_stage || 0
 		const [use_result, err] =
 			await ClientFunctions.CartService.useProduct.invokeWithTimeout(
 				5000,
@@ -87,6 +89,7 @@ export class CartController implements OnStart {
 		task.wait(0.5)
 		this.toggleDeathScreen(false)
 		ClientEvents.CartService.spawnCart.fire(random_button.instance)
+		ClientEvents.CheckpointService.setCheckpoint.fire(this.__cached_stage)
 		task.wait(0.5)
 		const cart = this.getMyCart()
 		if (cart) {

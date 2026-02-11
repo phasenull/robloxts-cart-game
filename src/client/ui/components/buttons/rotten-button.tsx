@@ -3,6 +3,7 @@ import { UIHelper } from "client/ui.helper"
 import { UIDIM } from "client/ui/constants"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
 import { useMouseEvents } from "client/ui/hooks/useMouseEvents"
+import { useMouseHover } from "client/ui/hooks/useMouseHover"
 import { A } from "shared/assets"
 import { buildFontAssetId } from "shared/util.helper"
 
@@ -33,11 +34,11 @@ export function RottenButton(props: {
 			Enum.EasingDirection.Out
 		)
 	})
-	useEffect(() => {
-		if (props.onDown) {
-			props.onDown(isMouseDown)
+	useMouseHover(thisRef, (isHovering) => {
+		if (isHovering) {
+			UIHelper.playSound(A.sounds.click_kaan)
 		}
-	}, [isMouseDown])
+	})
 	const target_color = props.Color ?? new Color3(1, 0, 0)
 	const color_tinted = target_color.Lerp(new Color3(1, 1, 1), 0.6)
 	return (
@@ -86,7 +87,7 @@ export function RottenButton(props: {
 				ImageTransparency={0.7}
 			/>
 			<textlabel
-				Size={new UDim2(.9, 0, 0.7, 0)}
+				Size={new UDim2(0.9, 0, 0.7, 0)}
 				BackgroundTransparency={1}
 				FontFace={
 					new Font(buildFontAssetId("GothamSSm"), Enum.FontWeight.ExtraBold)

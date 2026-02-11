@@ -7,6 +7,7 @@ import { useRendering } from "client/ui/hooks/useRendering"
 import { sphere } from "@rbxts/better-gizmos"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { UIDIM } from "client/ui/constants"
+import { getCheckpointDataFromIndex } from "../main/tp-gui"
 function getCheckpointModelByIndex(index: number): Model | undefined {
 	const checkpoints = Workspace.FindFirstChild("Checkpoints") as Folder
 	return checkpoints
@@ -23,11 +24,11 @@ export function StageProgress() {
 	if (!cart_position) {
 		return
 	}
-	const checkpoint = getCheckpointModelByIndex(currentCheckpoint)
+	const checkpoint = getCheckpointModelByIndex(getPreviousBigCheckpoint(currentCheckpoint))
 	if (!checkpoint) {
 		return
 	}
-	const next_checkpoint = getCheckpointModelByIndex(currentCheckpoint + 1)
+	const next_checkpoint = getCheckpointModelByIndex(getNextBigCheckpoint(currentCheckpoint))
 	if (!next_checkpoint) {
 		return
 	}
@@ -46,7 +47,9 @@ export function StageProgress() {
 		total_distance
 	)
 	const new_progress = 1 - math.clamp(current_distance / total_distance, 0, 1)
-
+	if (next_checkpoint === checkpoint) {
+		return
+	}
 	if (!cart) return
 	return (
 		<frame BackgroundTransparency={1} Position={new UDim2(.5,0,0.05,0)} AnchorPoint={UIDIM.A_TOP} Size={UIDIM.ONE}>
@@ -62,7 +65,37 @@ export function StageProgress() {
 				Position={new UDim2(0.5, 0, 0.112, 0)}
 				Size={new UDim2(.15,0,.15,0)}
 			/>
-			<GoofyText Size={UDim2.fromScale(.3,.2)} Text={`${checkpoint.Name} -> ${next_checkpoint.Name}`}/>
+			<GoofyText Size={UDim2.fromScale(.3,.2)} Text={`${getCheckpointDataFromIndex(tonumber(checkpoint.Name)||0)?.name}`}/>
 		</frame>
 	)
+}
+const getPreviousBigCheckpoint = (current: number) => {
+	let found
+	let i = current
+	while (!found && i > 0) {
+		const checkpoint = getCheckpointModelByIndex(i)
+		if (!checkpoint) {
+			return 0
+		}
+		if (checkpoint.FindFirstChild("Spawn")) {
+			found = i
+		}
+		i -= 1
+	}
+	return found ||0
+}
+const getNextBigCheckpoint = (current: number) => {
+	let found
+	let i = current
+	while (!found) {
+		i += 1
+		const checkpoint = getCheckpointModelByIndex(i)
+		if (!checkpoint) {
+			return current
+		}
+		if (checkpoint.FindFirstChild("Spawn")) {
+			found = i
+		}
+	}
+	return found
 }

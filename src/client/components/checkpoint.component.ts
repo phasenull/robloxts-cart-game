@@ -68,6 +68,13 @@ export class CheckpointComponent
 			)
 		// this.idle_animation_track.Play()
 		this.is_collected = false
+		ClientEvents.CheckpointService.updateCheckpointState.connect((state,all) => {
+			const numbered = tonumber(this.instance.Name)
+			if (numbered !== state) {
+				return
+			}
+			this.collect()
+		})
 	}
 	private idle_animation_track: AnimationTrack
 	private toggle_animation_track: AnimationTrack

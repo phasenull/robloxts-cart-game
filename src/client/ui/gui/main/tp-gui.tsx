@@ -250,13 +250,13 @@ function CheckpointEntry(props: {
 		mutationFn: async (checkpoint_index: number) => {
 			if (props.is_locked) {
 				UIHelper.playSound(A.sounds.error)
-				return false
+				return true
 			}
 			if (__IS_EDIT__) {
 				return true
 			}
 			if (cart) {
-				cart.cleanupRide("tp'ing")
+				return true
 			}
 			await ClientFunctions.CheckpointService.tpMeToCheckpoint
 				.invokeWithTimeout(5000, checkpoint_index)
@@ -280,6 +280,7 @@ function CheckpointEntry(props: {
 		}
 	})
 	if (!config) return
+	if (cart) return
 	return (
 		<frame
 			key="CheckpointEntry"
@@ -403,7 +404,7 @@ const ISLAND_CONFIG = {
 		image: A.backgrounds.post_magma
 	}
 }
-function getCheckpointDataFromIndex(index: number) {
+export function getCheckpointDataFromIndex(index: number) {
 	const config = ISLAND_CONFIG[`${index}` as keyof typeof ISLAND_CONFIG]
 	if (!config) {
 		return

@@ -14,6 +14,7 @@ import { useInput } from "client/ui/hooks/useInput"
 import { useInputType } from "client/ui/hooks/useInputType"
 import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
+import { useCheckpoint } from "../hooks/useCheckpoint"
 
 interface DeathButtonsProps {
 	transparency: number
@@ -27,11 +28,12 @@ export function DeathButtons({
 	const { changeState, confirmHardReset, spawnPoint, state, products } =
 		useCart()
 	const shouldShow = state === "death_screen" || state === "reviving"
+	const checkpoint = useCheckpoint().currentCheckpoint
 	const { mutate: mutateRevive } = useMutation({
 		queryKey: ["death-revive"],
 		mutationFn: async () => {
 			const controller = Dependency<CartController>()
-			controller.promptRevive()
+			controller.promptRevive(checkpoint)
 			changeState("reviving")
 			return true
 		}

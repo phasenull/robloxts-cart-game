@@ -16,7 +16,7 @@ export class MonetizationService implements OnStart {
 	onStart(): void {
 		Players.PlayerAdded.Connect((p) => this.playerAdded(p));
 		const CartService = Dependency<CartService>();
-		MarketplaceService.ProcessReceipt = this.processReceipt;
+		MarketplaceService.ProcessReceipt = (receipt) => this.processReceipt(receipt);
 	}
 	processReceipt(reciept: ReceiptInfo): Enum.ProductPurchaseDecision {
 		const user_id = reciept.PlayerId;

@@ -19,6 +19,7 @@ import { FadeGui } from "./gui/main/fade-gui"
 import { CheckpointProvider } from "./gui/cart/hooks/useCheckpoint"
 import { RightSidebar } from "./components/right-sidebar"
 import { TPGui } from "./gui/main/tp-gui"
+import Sidebar from "./gui/sidebar"
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 	const [open_gui, set_open_gui] = useState<GUI_KEYS | undefined>(
 		__IS_EDIT__ ? props.initial_gui : undefined
@@ -60,6 +61,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 							}}
 						>
 							<SettingsProvider>
+								<Sidebar/>
 								<FadeGui />
 								<DeathGui />
 								<RightSidebar />
