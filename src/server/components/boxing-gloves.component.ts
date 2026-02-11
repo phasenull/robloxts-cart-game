@@ -1,4 +1,5 @@
-import { BaseComponent, Component } from "@flamework/components"
+import { Component } from "@flamework/components"
+import { CartTouch } from "shared/components/cart-touch.component"
 import {
 	BuildWeldConstraints,
 	MasslessPart,
@@ -8,7 +9,7 @@ import {
 @Component({
 	tag: "BoxingGlovesComponent"
 })
-export class BoxingGlovesComponent extends BaseComponent<{}, Model> {
+export class BoxingGlovesComponent extends CartTouch<Model> {
 	constructor() {
 		super()
 		const root = MasslessPart(this.instance, "Root")
@@ -61,5 +62,8 @@ export class BoxingGlovesComponent extends BaseComponent<{}, Model> {
 			task.cancel(this.thread)
 		}
 		this.instance.Destroy()
+	}
+	onTouch(other_part: BasePart, cart_model: Model): void {
+		
 	}
 }
