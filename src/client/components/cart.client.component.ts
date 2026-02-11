@@ -157,14 +157,20 @@ export class CartClientComponent
 			return
 		}
 		const root = this.instance.Root
-		force.Force = humanoid.MoveDirection.mul(this.power).add(
-			new Vector3(
-				0,
-				((root.AssemblyMass * Workspace.Gravity) / 2) *
+		if (this.brake && velocity.Magnitude > .01 && !is_in_air) {
+			const velocity_direction = normalizeVector3(velocity)
+			const brake_force = velocity_direction.mul(-this.wheel_friction * 5)
+			force.Force = brake_force
+		} else {
+			force.Force = humanoid.MoveDirection.mul(this.power).add(
+				new Vector3(
+					0,
+					((root.AssemblyMass * Workspace.Gravity) / 2) *
 					this.anti_gravity_multiplier,
-				0
+					0
+				)
 			)
-		)
+		}
 		// wheel alignment
 		// const direction = humanoid.MoveDirection.Unit
 		// if (direction.Magnitude > 0) {
