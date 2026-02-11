@@ -29,7 +29,6 @@ export function RottenButton(props: {
 	const [is_subbed_key_down, set_id_subbed_key_down] = React.useState(false)
 	const { isMouseDown, isMouseOver } = useMouseEvents(thisRef)
 	function processClick() {
-		UIHelper.playSound(A.sounds.click_hard)
 		props.onClick?.()
 	}
 	useInput({
@@ -67,7 +66,10 @@ export function RottenButton(props: {
 			Rotation={props.Rotation ?? 0}
 			Event={{
 				MouseButton1Click: processClick,
-				MouseButton1Down: () => props.onDown?.(true),
+				MouseButton1Down: () => {
+					UIHelper.playSound(A.sounds.click_hard)
+					props.onDown?.(true)
+				},
 				MouseButton1Up: () => props.onDown?.(false)
 			}}
 			LayoutOrder={props.LayoutOrder}

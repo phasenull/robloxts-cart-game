@@ -293,18 +293,18 @@ export class CartClientComponent
 		})
 		this.rider.JumpHeight = 0
 		const humanoid = this.rider
-		const conn = this.rider.GetPropertyChangedSignal("Jump").Connect(() => {
-			const value = humanoid.Jump
-			if (!this.rider || this.rider !== humanoid) {
-				conn.Disconnect()
-				return
-			}
-			if (value) {
-				this.toggleBrake(true)
-			} else {
-				this.toggleBrake(false)
-			}
-		})
+		// const conn = this.rider.GetPropertyChangedSignal("Jump").Connect(() => {
+		// 	const value = humanoid.Jump
+		// 	if (!this.rider || this.rider !== humanoid) {
+		// 		conn.Disconnect()
+		// 		return
+		// 	}
+		// 	if (value) {
+		// 		this.toggleBrake(true)
+		// 	} else {
+		// 		this.toggleBrake(false)
+		// 	}
+		// })
 		const cart_controller = Dependency<CartController>()
 		cart_controller.onCartChange.Fire(this)
 	}
@@ -355,7 +355,6 @@ export class CartClientComponent
 		})
 		this.brakeListener.Fire(enable)
 		this.toggleFriction(enable)
-		this.brake = enable
 		const anim = this.brake_animation_track
 		if (anim) {
 			if (enable) {

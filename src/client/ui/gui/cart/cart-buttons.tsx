@@ -15,6 +15,7 @@ import { useInput } from "client/ui/hooks/useInput"
 import { UIHelper } from "client/ui.helper"
 import { CartState, useCart } from "client/ui/contexts/cart.context"
 import { ClientFunctions } from "shared/network.helper"
+import { useActionImage } from "client/ui/hooks/useKeyImage"
 
 export function CartButtons(props: {
 	__story?: {
@@ -26,11 +27,10 @@ export function CartButtons(props: {
 }) {
 	const { cart, state, changeState, products } = useCart()
 	const device = props.__story?.override_device ?? useInputType()
-	const brake_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.BRAKE)
-	const honk_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.HONK)
-	const flip_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.FLIP)
-	const reset_icon = UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.RESET)
-
+	const brake_icon = useActionImage("BRAKE", device)
+	const honk_icon = useActionImage("HONK", device)
+	const flip_icon = useActionImage("FLIP", device)
+	const reset_icon = useActionImage("RESET", device)
 	const cartId = cart?.instance.Name ?? "no-cart"
 
 	const { mutate: mutateBrake, data: is_braking_data } = useMutation({
@@ -69,7 +69,7 @@ export function CartButtons(props: {
 		mutationFn: async () => {
 			if (!cart) return true
 			UIHelper.toggleFade(true)
-			task.wait(.5)
+			task.wait(0.5)
 			changeState("death_screen")
 			await cart.cleanupRide("reset by player")
 			task.wait(0.5)
@@ -94,11 +94,11 @@ export function CartButtons(props: {
 		mutationFn: async () => {
 			if (!cart) return false
 			return await cart.promptFlip()
-
 		}
 	})
 
-	const is_alive = cart?.instance && state === "alive" || !!props.__story?.cart_enabled
+	const is_alive =
+		(cart?.instance && state === "alive") || !!props.__story?.cart_enabled
 	const IS_VISIBLE = is_alive
 
 	const is_brake_down = useInput({
@@ -184,16 +184,21 @@ export function CartButtons(props: {
 				onDown={(val) => val && mutateHonk()}
 				mockMouseDown={is_honk_down === true ? true : undefined}
 			>
-				{device === "Gamepad" && (
+				{honk_icon ? (
 					<Icon
-						Size={new UDim2(0.5, 0, 0.5, 0)}
 						Image={honk_icon}
 						AnchorPoint={UIDIM.A_CENTER}
-						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
+						Size={
+							device === "Gamepad"
+								? new UDim2(0.5, 0, 0.5, 0)
+								: new UDim2(0.3, 0, 0.3, 0)
+						}
+						
+						Position={UIDIM.TOP_RIGHT.add(new UDim2(device === "Gamepad" ? 0.1 : -0., 0,device === "Gamepad" ? -.15: 0.05, 0))}
 						Color3={new Color3(0.36, 0.66, 1)}
 						Transparency={0.1}
 					/>
-				)}
+				) : undefined}
 			</RottenButton>
 			<frame
 				Size={UIDIM.ONE}
@@ -212,16 +217,22 @@ export function CartButtons(props: {
 					onDown={(is_down) => mutateBrake(is_down)}
 					mockMouseDown={IS_BRAKING === true ? true : undefined}
 				>
-					{device === "Gamepad" && (
+					{brake_icon ? (
 						<Icon
-							Size={new UDim2(0.5, 0, 0.5, 0)}
+							Size={
+								device === "Gamepad"
+									? new UDim2(0.5, 0, 0.5, 0)
+									: new UDim2(0.3, 0, 0.3, 0)
+							}
+						Position={device === "Gamepad" ? UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0,-.15, 0)):UIDIM.TOP_CENTER.add(new UDim2(0, 0, 0.05, 0))}
 							Image={brake_icon}
+							escape_ratio={true}
 							AnchorPoint={UIDIM.A_CENTER}
-							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
 							Color3={new Color3(0.36, 0.66, 1)}
 							Transparency={0.1}
+							ScaleType={Enum.ScaleType.Fit}
 						/>
-					)}
+					) : undefined}
 				</RottenButton>
 			</frame>
 			<frame BackgroundTransparency={1} Size={UIDIM.ONE}>
@@ -241,16 +252,19 @@ export function CartButtons(props: {
 					Color={new Color3(0.11, 0.75, 0.95)}
 					mockMouseDown={is_flip_down === true ? true : undefined}
 				>
-					{device === "Gamepad" && (
+					{flip_icon ? (
 						<Icon
-							Size={new UDim2(0.8, 0, 0.8, 0)}
+							Size={new UDim2(0.5, 0, 0.5, 0)}
 							Image={flip_icon}
 							AnchorPoint={UIDIM.A_LEFT}
-							Position={UIDIM.RIGHT.add(new UDim2(0.1, 0, 0, 0))}
+							Position={UIDIM.RIGHT.add(
+								new UDim2(device === "Gamepad" ? 0.1 : -0.1, 0, 0, 0)
+							)}
 							Color3={new Color3(0.36, 0.66, 1)}
 							Transparency={0.1}
+							ScaleType={Enum.ScaleType.Fit}
 						/>
-					)}
+					) : undefined}
 				</RottenButton>
 				<RottenButton
 					onClick={() => mutateSwitchToResetScreen()}
@@ -260,7 +274,7 @@ export function CartButtons(props: {
 					Color={new Color3(0.69, 0.02, 1)}
 					mockMouseDown={is_reset_down === true ? true : undefined}
 				>
-					{device === "Gamepad" && (
+					{reset_icon ? (
 						<Icon
 							Size={new UDim2(0.8, 0, 0.8, 0)}
 							Image={reset_icon}
@@ -269,7 +283,7 @@ export function CartButtons(props: {
 							Color3={new Color3(0.36, 0.66, 1)}
 							Transparency={0.1}
 						/>
-					)}
+					) : undefined}
 				</RottenButton>
 			</frame>
 		</frame>

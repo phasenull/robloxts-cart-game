@@ -5,10 +5,20 @@ export const GAMEPAD_BUTTONS = {
 	"HONK": Enum.KeyCode.ButtonB,
 	"FLIP": Enum.KeyCode.ButtonY,
 	"RESET": Enum.KeyCode.ButtonX,
-
-	
 	"REVIVE": Enum.KeyCode.ButtonA,
 	"CONFIRM_RESET": Enum.KeyCode.ButtonY
+}
+export const MOUSE_KEYBOARD_BUTTONS = {
+	"BRAKE": Enum.KeyCode.Space,
+	"HONK": Enum.KeyCode.H,
+}
+export interface IActionKeyMap {
+	BRAKE: Enum.KeyCode
+	HONK: Enum.KeyCode
+	FLIP: Enum.KeyCode
+	RESET: Enum.KeyCode
+	REVIVE: Enum.KeyCode
+	CONFIRM_RESET: Enum.KeyCode
 }
 export const REVIVE_TIME = 8
 export const TESTING_USERS = [

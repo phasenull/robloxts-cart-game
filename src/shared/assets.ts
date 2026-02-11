@@ -59,7 +59,12 @@ export namespace A {
 		halftone_circle: "rbxassetid://124284820217674",
 		tile:"rbxassetid://120250412681646",
 		inner_shadow:"rbxassetid://75600902046326",
-		ellipse:"rbxassetid://113978818477114"
+		ellipse:"rbxassetid://113978818477114",
+		keys: {
+			h: "rbxassetid://99753543559272",
+			empty: "rbxassetid://137837563740597",
+			space: "rbxassetid://140163882410345"
+		}
 	}
 	export const backgrounds = {
 		post_magma:"rbxassetid://89145592620126",

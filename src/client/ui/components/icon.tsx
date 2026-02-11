@@ -11,6 +11,7 @@ interface IconProps {
 	Rotation?: number
 	ZIndex?: number
 	Color3?: Color3
+	ScaleType?: Enum.ScaleType
 }
 export const Icon = forwardRef<ImageLabel, IconProps>((props,ref) => {
 	return (
@@ -26,6 +27,7 @@ export const Icon = forwardRef<ImageLabel, IconProps>((props,ref) => {
 			Position={props.Position}
 			Size={props.Size ?? new UDim2(0.1, 0, 0.1, 0)}
 			Image={props.Image}
+			ScaleType={props.ScaleType}
 			BackgroundTransparency={1}
 		>
 			{!props.escape_ratio && <uiaspectratioconstraint AspectRatio={1} />}
