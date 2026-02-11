@@ -38,6 +38,10 @@ export function RottenButton(props: {
 	const effectiveBindKey = props.bindKey ?? (props.action
 		? (device === "Gamepad" ? GAMEPAD_BUTTONS[props.action] : kbKey)
 		: undefined)
+	const resolvedKeyCode = effectiveBindKey ?? (props.action
+		? (device === "Gamepad" ? GAMEPAD_BUTTONS[props.action] : kbKey)
+		: undefined)
+	const iconAspectRatio = resolvedKeyCode === Enum.KeyCode.Space ? 2 : 1
 	const original_size = props.Size ?? new UDim2(0.6, 0, 0.1, 0)
 	const [is_subbed_key_down, set_id_subbed_key_down] = React.useState(false)
 	const { isMouseDown, isMouseOver } = useMouseEvents(thisRef)
@@ -166,7 +170,10 @@ export function RottenButton(props: {
 					Color3={new Color3(0.36, 0.66, 1)}
 					Transparency={0.1}
 					ScaleType={Enum.ScaleType.Fit}
-				/>
+					escape_ratio={iconAspectRatio !== 1}
+				>
+					<uiaspectratioconstraint AspectRatio={iconAspectRatio} />
+				</Icon>
 			) : undefined}
 			{props.children}
 		</imagebutton>
