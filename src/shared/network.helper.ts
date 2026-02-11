@@ -25,6 +25,7 @@ interface ServerToClientEvents {
 	},
 	CartService: {
 		playerProductsUpdated: (data:Map<string, number>) => void
+		clearDeathPreview: () => void
 	}
 }
 

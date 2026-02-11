@@ -249,6 +249,7 @@ export class CartService implements OnStart {
 				this.PLAYER_CARTS.delete(player)
 			})
 		})
+		ServerEvents.CartService.clearDeathPreview(player)
 		return cart_model
 	}
 	private readonly SHIELDS = new Map<Model, number>() // Tracks shield expiry time per cart
@@ -491,6 +492,7 @@ export class CartService implements OnStart {
 				)
 			}
 		})
+		ServerEvents.CartService.clearDeathPreview(player)
 		return cart_model
 	}
 }
