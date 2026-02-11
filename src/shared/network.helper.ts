@@ -39,6 +39,7 @@ interface ClientToServerFunctions {
 		getConfig: () => ProperReturns<ICartConfig>
 		respawn: () => void
 		useProduct: (product_key: string) => ProperReturns<true>
+		reviveSpawn: (target: CFrame, stage: number) => ProperReturns<true>
 	}
 	
 	CheckpointService: {

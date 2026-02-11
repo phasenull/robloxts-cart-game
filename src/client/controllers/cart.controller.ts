@@ -1,23 +1,23 @@
 import { Components } from "@flamework/components"
 import { Controller, Dependency, OnStart } from "@flamework/core"
-import { arrow } from "@rbxts/better-gizmos"
+import { arrow, point, sphere } from "@rbxts/better-gizmos"
 import { MarketplaceService, Players, Workspace } from "@rbxts/services"
 import Signal from "@rbxts/signal"
-import { ButtonComponent } from "client/components/button.component"
 import { CartClientComponent } from "client/components/cart.client.component"
 import { UIHelper } from "client/ui.helper"
 import { Logger } from "shared/logger"
 import { ClientEvents, ClientFunctions } from "shared/network.helper"
 import { PRODUCTS } from "shared/purchasables"
-import { ButtonModel } from "shared/type.helper"
+import { ProperReturns } from "shared/type.helper"
 
 @Controller({ loadOrder: 5 })
 export class CartController implements OnStart {
 	constructor(private logger: Logger) {}
 	private __last_checkpoint: CFrame | undefined
-	private arrow = arrow
 	saveCheckpoint(cframe: CFrame) {
 		this.__last_checkpoint = cframe
+		const drawn =sphere.draw(cframe.Position, 1)
+		task.delay(0.05, () => drawn.Destroy())
 	}
 	public onCartChange = new Signal<
 		(cart: CartClientComponent | undefined) => void
@@ -32,71 +32,43 @@ export class CartController implements OnStart {
 			this.toggleOnDeathScreen.Fire(undefined)
 		}
 	}
-	private readonly revive_product_id = 3532858318
 	private __is_reviving = false
 	private __cached_stage = 0
-	async promptRevive(current_stage: number) {
+	async promptRevive(current_stage: number) : Promise<ProperReturns<true>> {
 		if (!this.__last_checkpoint) {
-			return
+			return [false, "No checkpoint to revive to"]
 		}
 		if (this.__is_reviving) {
-			return
+			return [false, "Already reviving"]
 		}
 		this.__is_reviving = true
 
 		const cache = this.__last_checkpoint
 		this.__cached_stage = current_stage || 0
-		const [use_result, err] =
-			await ClientFunctions.CartService.useProduct.invokeWithTimeout(
-				5000,
-				"revives"
-			)
-		if (use_result) {
-			this.revivePlayer(cache)
-			return true
-		}
-		MarketplaceService.PromptProductPurchase(
-			Players.LocalPlayer,
-			PRODUCTS.revives
-		)
-		const connection = MarketplaceService.PromptProductPurchaseFinished.Connect(
-			async (user_id, assetId, wasPurchased) => {
-				if (user_id !== Players.LocalPlayer.UserId) return
-				if (assetId !== PRODUCTS.revives) return
-				connection.Disconnect()
-				if (!wasPurchased) return
-				this.revivePlayer(cache)
-				await ClientFunctions.CartService.useProduct.invokeWithTimeout(
-					5000,
-					"revives"
-				)
-			}
-		)
-	}
-	revivePlayer(target: CFrame) {
+		
 		this.__is_reviving = true
 		this.logger.log("Reviving player...")
 		this.__last_checkpoint = undefined
-		if (!target) {
-			return
-		}
-		const components = Dependency<Components>()
-		const random_button = components.getAllComponents(ButtonComponent)[0]
-		if (!random_button) {
-			return
+		if (!cache) {
+			return [false, "No checkpoint to revive to"]
 		}
 		UIHelper.toggleFade(true)
 		task.wait(0.5)
-		this.toggleDeathScreen(false)
-		ClientEvents.CartService.spawnCart.fire(random_button.instance)
-		ClientEvents.CheckpointService.setCheckpoint.fire(this.__cached_stage)
-		task.wait(0.5)
-		const cart = this.getMyCart()
-		if (cart) {
-			cart.instance.PivotTo(target)
+		const [success, err] =
+			await ClientFunctions.CartService.reviveSpawn.invokeWithTimeout(
+				5000,
+				cache,
+				this.__cached_stage
+			)
+		if (!success) {
+			this.logger.warn(`Failed to revive-spawn cart: ${err}`)
+			return [success, err]
 		}
+		this.toggleDeathScreen(false)
+		task.wait(0.5)
 		UIHelper.toggleFade(false)
 		this.__is_reviving = false
+		return [true]
 	}
 	getMyCart(): CartClientComponent | undefined {
 		const components = Dependency<Components>()

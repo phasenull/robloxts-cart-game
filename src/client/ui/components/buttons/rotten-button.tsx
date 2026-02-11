@@ -2,6 +2,7 @@ import React, { useEffect } from "@rbxts/react"
 import { UIHelper } from "client/ui.helper"
 import { UIDIM } from "client/ui/constants"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
+import { useInput } from "client/ui/hooks/useInput"
 import { useMouseEvents } from "client/ui/hooks/useMouseEvents"
 import { useMouseHover } from "client/ui/hooks/useMouseHover"
 import { A } from "shared/assets"
@@ -20,12 +21,32 @@ export function RottenButton(props: {
 	mockMouseDown?: boolean
 	LayoutOrder?: number
 	children?: React.ReactNode
+	bindKey?: Enum.KeyCode
 	onDown?: (status: boolean) => void
 }) {
 	const thisRef = React.useRef<ImageButton>()
 	const original_size = props.Size ?? new UDim2(0.6, 0, 0.1, 0)
+	const [is_subbed_key_down, set_id_subbed_key_down] = React.useState(false)
 	const { isMouseDown, isMouseOver } = useMouseEvents(thisRef)
-	const is_mouse_down = props.mockMouseDown ?? isMouseDown
+	function processClick() {
+		UIHelper.playSound(A.sounds.click_hard)
+		props.onClick?.()
+	}
+	useInput({
+		key: props.bindKey || Enum.KeyCode.Unknown,
+		enabled: props.bindKey !== undefined,
+		handler: (pressed) => {
+			set_id_subbed_key_down(pressed)
+			props.onDown?.(pressed)
+			if (pressed === false) {
+				if (props.onClick) {
+					processClick()
+				}
+			}
+		}
+	})
+	const is_mouse_down =
+		props.mockMouseDown ?? (isMouseDown || is_subbed_key_down)
 	const value = useAnimateValue({
 		target_value: is_mouse_down ? 0.9 : isMouseOver ? 1.1 : 1,
 		tween_info: new TweenInfo(
@@ -45,10 +66,9 @@ export function RottenButton(props: {
 		<imagebutton
 			Rotation={props.Rotation ?? 0}
 			Event={{
-				MouseButton1Click: () => {
-					UIHelper.playSound(A.sounds.click_hard)
-					props.onClick?.()
-				}
+				MouseButton1Click: processClick,
+				MouseButton1Down: () => props.onDown?.(true),
+				MouseButton1Up: () => props.onDown?.(false)
 			}}
 			LayoutOrder={props.LayoutOrder}
 			ZIndex={props.ZIndex}

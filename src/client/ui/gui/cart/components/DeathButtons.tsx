@@ -33,9 +33,14 @@ export function DeathButtons({
 		queryKey: ["death-revive"],
 		mutationFn: async () => {
 			const controller = Dependency<CartController>()
-			controller.promptRevive(checkpoint)
-			changeState("reviving")
-			return true
+			const [result, err] = await controller.promptRevive(checkpoint)
+			if (!result || err) {
+				throw `${err}`
+			}
+			return result
+		},
+		onError: (err) => {
+			warn(`Failed to revive player: ${err}`)
 		}
 	})
 
@@ -62,18 +67,6 @@ export function DeathButtons({
 				return false
 			}
 		}
-	})
-
-	const is_revive_down = useInput({
-		key: GAMEPAD_BUTTONS.REVIVE,
-		handler: (value) => value && mutateRevive(),
-		enabled: shouldShow
-	})
-
-	const is_confirm_reset_down = useInput({
-		key: GAMEPAD_BUTTONS.CONFIRM_RESET,
-		handler: (value) => value && mutateReset(),
-		enabled: shouldShow
 	})
 	useEffect(() => {
 		if (!shouldShow) {
@@ -108,9 +101,9 @@ export function DeathButtons({
 			/>
 			<RottenButton
 				Size={UIDIM.ONE}
-				onDown={(val) => val && mutateReset()}
+				onClick={mutateReset}
 				Text="RESET"
-				mockMouseDown={is_confirm_reset_down}
+				bindKey={GAMEPAD_BUTTONS.CONFIRM_RESET}
 			>
 				<GoofyText
 					MinTextSize={1}
@@ -133,12 +126,12 @@ export function DeathButtons({
 				)}
 			</RottenButton>
 			<RottenButton
-				onDown={(val) => val && mutateRevive()}
+				onClick={mutateRevive}
 				Color={new Color3(0.09, 0.86, 0.09)}
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
 				Text={`REVIVE (${products.get("revives") || 0}x)`}
 				Ratio={1.5}
-				mockMouseDown={is_revive_down}
+				bindKey={GAMEPAD_BUTTONS.REVIVE}
 			>
 				<RadialProgress
 					degrees_per_second={360 / REVIVE_TIME}

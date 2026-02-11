@@ -14,6 +14,7 @@ import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { ButtonModel } from "shared/type.helper"
 import { DataService } from "./data.service"
 import { PRODUCTS } from "shared/purchasables"
+import { CheckpointService } from "./checkpoint.service"
 
 @Service()
 export class CartService implements OnStart {
@@ -23,7 +24,7 @@ export class CartService implements OnStart {
 	) {}
 	private readonly PLAYER_CARTS = new Map<Player, Model>()
 	private readonly DEBOUNCE_TABLE = new Map<Player, number>()
-	getPlayerCarts(player:Player) {
+	getPlayerCarts(player: Player) {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
 			return []
@@ -35,19 +36,20 @@ export class CartService implements OnStart {
 		if (!profile) {
 			return
 		}
-		this.logger.log(`Granting player ${player.Name} permanent cart: ${cart_name}`)
+		this.logger.log(
+			`Granting player ${player.Name} permanent cart: ${cart_name}`
+		)
 		const vehicles = profile.Data.vehicles || []
 		if (!vehicles.includes(cart_name)) {
 			vehicles.push(cart_name)
 			profile.Data.vehicles = vehicles
 		}
-
 	}
 	doesPlayerOwnCart(player: Player, cart_name: string): boolean {
 		const player_carts = this.getPlayerCarts(player)
 		return player_carts.includes(cart_name)
 	}
-	
+
 	onStart(): void {
 		ServerEvents.CartService.spawnCart.connect((player, button) => {
 			this.logger.log(`Spawning cart for player ${player.Name}`)
@@ -115,11 +117,34 @@ export class CartService implements OnStart {
 				}
 			}
 		)
-		
+
 		ServerFunctions.CartService.getConfig.setCallback(() => {
 			const config = getConfig()
 			return [config.CartConfig]
 		})
+
+		ServerFunctions.CartService.reviveSpawn.setCallback(
+			(player, target, stage) => {
+				this.logger.log(
+					`Revive-spawning cart for player ${player.Name} at stage ${stage}`
+				)
+				try {
+					const cart_skin = this.getPlayerSkin(player)
+					const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
+					const checkpoint_service = Dependency<CheckpointService>()
+					checkpoint_service.setCheckpointIndex(player, stage)
+					if (!cart) {
+						return [false, "Failed to spawn cart"] as [false, string]
+					}
+					return [true] as [true]
+				} catch (e) {
+					this.logger.warn(
+						`Failed to revive-spawn cart for ${player.Name}: ${e}`
+					)
+					return [false, `Failed to spawn cart: ${e}`] as [false, string]
+				}
+			}
+		)
 
 		ServerFunctions.CartService.respawn.setCallback((player) => {
 			this.logger.log(`Respawning player ${player.Name}`)
@@ -175,12 +200,8 @@ export class CartService implements OnStart {
 		assert(orig_cart, `Cart model ${target_skin} not found in assets`)
 		const cart_model = orig_cart.Clone()
 
-		cart_model.PivotTo(
-			cframe
-				.mul(new CFrame(0, cart_model.GetExtentsSize().Y / 2, 0))
-				.mul(CFrame.Angles(0, math.rad(-90), 0))
-		)
 		cart_model.Parent = Workspace
+		cart_model.PivotTo(cframe)
 		this.PLAYER_CARTS.set(player, cart_model)
 		const dependecy = Dependency<Components>()
 		cart_model.Name = `${cart_model.Name}_${player.Name}`
@@ -366,7 +387,7 @@ export class CartService implements OnStart {
 	makePlayerBuyProduct(player: Player, productId: number) {
 		MarketplaceService.PromptProductPurchase(player, productId)
 	}
-	incrementPlayerRevives(player: Player,amount=1) {
+	incrementPlayerRevives(player: Player, amount = 1) {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
 			return
@@ -374,7 +395,7 @@ export class CartService implements OnStart {
 		this.logger.log(`Incrementing revives for player ${player.Name}`)
 		profile.Data.revives = (profile.Data.revives || 0) + amount
 	}
-	incrementPlayerFlips(player: Player,amount=1) {
+	incrementPlayerFlips(player: Player, amount = 1) {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
 			return
