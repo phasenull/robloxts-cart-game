@@ -54,9 +54,9 @@ export class CartClientComponent
 		friction: number
 		max_velocity: number
 	}): void {
-		this.logger.log(
-			`Overriding cart config: power=${args.power}, friction=${args.friction}, max_velocity=${args.max_velocity}`
-		)
+		// this.logger.log(
+		// 	`Overriding cart config: power=${args.power}, friction=${args.friction}, max_velocity=${args.max_velocity}`
+		// )
 		this.power = args.power
 		this.wheel_friction = args.friction
 		this.max_velocity = args.max_velocity
@@ -511,7 +511,7 @@ export class CartClientComponent
 		if (new_rider === humanoid) {
 			// local player just got on
 			this.rider = humanoid
-			this.logger.log("Local player got on the cart")
+			// this.logger.log("Local player got on the cart")
 			this.onRide()
 			return
 		}

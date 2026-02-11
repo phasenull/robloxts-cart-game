@@ -128,9 +128,9 @@ export class CartService implements OnStart {
 			if (!data || err) {
 				return [false, err || "Failed to use revive product"]
 			}
-			this.logger.log(
-				`Revive-spawning cart for player ${player.Name} at stage ${stage}`
-			)
+			// this.logger.log(
+			// 	`Revive-spawning cart for player ${player.Name} at stage ${stage}`
+			// )
 			const cart_skin = this.getPlayerSkin(player)
 			const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
 			const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
@@ -432,8 +432,8 @@ export class CartService implements OnStart {
 		if (!profile) {
 			return
 		}
-		this.logger.log(`Incrementing revives for player ${player.Name}`)
 		profile.Data.revives = (profile.Data.revives || 0) + amount
+		this.logger.log(`Incrementing revives for player ${player.Name}, new total: ${profile.Data.revives}`)
 	}
 	incrementPlayerFlips(player: Player, amount = 1) {
 		const profile = this.DataService.getProfile(player)

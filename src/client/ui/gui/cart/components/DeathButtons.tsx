@@ -39,7 +39,6 @@ export function DeathButtons({
 			let startedPurchaseFlow = false
 
 			let revive_amount = products.get("revives") || 0
-			print("revives:", revive_amount)
 			if (revive_amount <= 0) {
 				// Check if there's already a pending purchase
 				if (!controller.tryStartPurchaseFlow()) {

@@ -66,7 +66,7 @@ export class CartController implements OnStart {
 		this.__cached_stage = current_stage || 0
 
 		this.__is_reviving = true
-		this.logger.log("Reviving player...")
+		// this.logger.log("Reviving player...")
 		if (!cache) {
 			return [false, "No checkpoint to revive to"]
 		}
