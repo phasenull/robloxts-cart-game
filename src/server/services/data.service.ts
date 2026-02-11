@@ -64,7 +64,7 @@ export class DataService implements OnStart {
 		// 		},
 		// 	];
 		// });
-		this.logger.log("DataService started and listening to player events");
+		// this.logger.log("DataService started and listening to player events");
 
 		// while (true) {
 		// 	const board = Workspace.FindFirstChild("KillsBoard")?.FindFirstChild("leaderboard") as ScreenGui;
@@ -105,9 +105,9 @@ export class DataService implements OnStart {
 			player.Kick("Your data was unloaded!");
 		});
 		if (RunService.IsStudio()) {
-			this.logger.log(
-				"[STUDIO] Profile loaded for player " + player.Name + ", total playtime: " + profile.Data.playtime,
-			);
+			// this.logger.log(
+			// 	"[STUDIO] Profile loaded for player " + player.Name + ", total playtime: " + profile.Data.playtime,
+			// );
 		}
 		this.state.set(player.UserId, profile);
 		this.playtime_state.set(player.UserId, os.clock());

@@ -39,7 +39,7 @@ export function useDeathCamera({ spawnPoint, shouldShow }: UseDeathCameraProps) 
 				camera.CameraSubject = char.PrimaryPart
 			}
 		}
-	}, [target_cframe])
+	}, [target_cframe,shouldShow])
 
 	// Cleanup camera on unmount
 	useEffect(() => {
@@ -49,7 +49,7 @@ export function useDeathCamera({ spawnPoint, shouldShow }: UseDeathCameraProps) 
 				camera.CameraType = Enum.CameraType.Custom
 			}
 		}
-	}, [spawnPoint])
+	}, [shouldShow,spawnPoint])
 
 	return { rotation }
 }

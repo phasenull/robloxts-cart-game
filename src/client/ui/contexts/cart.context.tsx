@@ -60,11 +60,10 @@ export function CartProvider(props: {
 				(c) => c.resolvePlayer() === Players.LocalPlayer
 			)
 			if (my_cart && my_cart !== cart) {
-				logger.log(`Found cart: ${my_cart.instance.GetFullName()}`)
 				setCart(my_cart)
+				setSpawnPoint(undefined)
 				changeState("alive")
 			} else if (!my_cart && cart) {
-				logger.log("Lost cart")
 				setCart(undefined)
 				changeState("none")
 			}
@@ -119,7 +118,6 @@ export function CartProvider(props: {
 			return
 		}
 		ClientEvents.CartService.playerProductsUpdated.connect((data) => {
-			logger.log(`Received product update: ${data}`)
 			setProducts(data)
 		})
 		const cart_controller = Dependency<CartController>()

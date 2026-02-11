@@ -9,10 +9,10 @@ import { useDeathCamera } from "./hooks/useDeathCamera"
 import { useDeathPreview } from "./hooks/useDeathPreview"
 
 export function DeathGui() {
-	const { spawnPoint, state } = useCart()
+	const { spawnPoint, state,cart } = useCart()
 	const shouldShow = state === "death_screen" || state === "reviving"
 
-	useDeathPreview({ spawnPoint })
+	useDeathPreview({ spawnPoint, shouldShow })
 	useDeathCamera({ spawnPoint, shouldShow })
 
 

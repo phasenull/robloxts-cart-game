@@ -251,6 +251,8 @@ export class CartClientComponent
 		const player = Players.LocalPlayer
 		const character = player.Character
 		const my_hunanoid = character?.FindFirstChildOfClass("Humanoid")
+		const model = this.rider?.Parent
+		if (model?.Name === "Player") return
 		if (my_hunanoid !== this.rider) {
 			return
 		}

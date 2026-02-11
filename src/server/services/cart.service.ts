@@ -151,7 +151,7 @@ export class CartService implements OnStart {
 
 			if (vehicle_seat && pp && char) {
 				pp.PivotTo(target)
-				// task.wait(0.5) // Wait for the seat to be fully initialized
+				task.wait(0.5) // Wait for the seat to be fully initialized
 				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
 			}
 			const checkpoint_service = Dependency<CheckpointService>()
@@ -471,7 +471,6 @@ export class CartService implements OnStart {
 			})
 			const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
 			if (vehicle_seat) {
-				this.logger.log(`Sitting player ${player.Name} in cart`)
 				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
 			} else {
 				this.logger.warn(
