@@ -353,6 +353,7 @@ export class CartClientComponent
 		wheel_constraints.forEach((constraint) => {
 			constraint.MaxFrictionTorque = enable ? 30 : 5
 		})
+		this.brake = enable
 		this.brakeListener.Fire(enable)
 		this.toggleFriction(enable)
 		const anim = this.brake_animation_track

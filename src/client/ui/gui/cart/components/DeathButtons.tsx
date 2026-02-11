@@ -28,7 +28,7 @@ export function DeathButtons({
 		useCart()
 	const shouldShow = (state === "death_screen" || state === "reviving") && !cart
 	const checkpoint = useCheckpoint().currentCheckpoint
-	const { mutate: mutateRevive } = useMutation({
+	const { mutate: mutateRevive,isLoading } = useMutation({
 		queryKey: [
 			`death-revive-${Object.keys(products)
 				.map((e) => `${e}-${products.get(e)}`)
@@ -110,7 +110,6 @@ export function DeathButtons({
 			}
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
-			changeState("none")
 			confirmHardReset()
 			UIHelper.toggleFade(false)
 			if (__IS_EDIT__) return true
@@ -170,7 +169,7 @@ export function DeathButtons({
 				></GoofyText>
 			</RottenButton>
 			<RottenButton
-				onClick={mutateRevive}
+				onClick={()=> !isLoading && mutateRevive()}
 				Color={new Color3(0.09, 0.86, 0.09)}
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
 				Text={`REVIVE (${products.get("revives") || 0}x)`}
