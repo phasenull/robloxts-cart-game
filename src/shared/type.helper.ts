@@ -17,7 +17,11 @@ export type IConfig = {
 	CartConfig: ICartConfig;
 	PurchasableConfig: IPurchasableConfig;
 };
-
+export type INotification = {
+	title: string;
+	description: string;
+	duration?: number;
+}
 export type IPurchasableConfig = IPurchasable<"gamepass" | "product">[]
 
 
