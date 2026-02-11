@@ -40,5 +40,6 @@ class CommandClass {
 			return
 		}
 		cart_service.addShield(player_CART, duration)
+		ctx.reply(`Granted ${duration} second shield to ${player.Name}`)
 	}
 }

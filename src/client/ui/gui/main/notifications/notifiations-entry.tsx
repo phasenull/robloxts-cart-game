@@ -30,6 +30,7 @@ export function NotificationEntry({ id, title, description }: NotificationEntryP
 				TextScaled={true}
 				TextSize={14}
 				TextWrapped={true}
+				RichText={true}
 			>
 				<uistroke Thickness={3} />
 			</textlabel>

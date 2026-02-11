@@ -106,6 +106,11 @@ export class CartService implements OnStart {
 						const cart2 = this.getPlayerCart(player)
 						if (cart2) {
 							this.addShield(cart2, 10)
+							ServerEvents.NotificationService.sendNotification(player, {
+								title: "<b>Shield Activated!</b>",
+								description: "<font color='#00D4FF'>10 seconds</font> of protection",
+								duration: 3
+							})
 						}
 						this.refreshPlayerProducts(player)
 						return [true]
@@ -195,6 +200,14 @@ export class CartService implements OnStart {
 		const dependecy = Dependency<Components>()
 		const component = dependecy.getComponent(cart, CartServerComponent)
 		return component
+	}
+	getPlayerFromCart(cart: Model): Player | undefined {
+		for (const [player, playerCart] of this.PLAYER_CARTS) {
+			if (playerCart === cart) {
+				return player
+			}
+		}
+		return undefined
 	}
 	getPlayerSkin(player: Player): string {
 		return "Cart"
@@ -300,6 +313,15 @@ export class CartService implements OnStart {
 				this.removeShield(cart)
 			})
 			this.SHIELD_TASKS.set(cart, removalTask)
+			// Find player and send notification
+			const player = this.getPlayerFromCart(cart)
+			if (player) {
+				ServerEvents.NotificationService.sendNotification(player, {
+					title: "<b>Shield Extended!</b>",
+					description: `<font color='#00D4FF'>+${duration} seconds</font> added`,
+					duration: 3
+				})
+			}
 			return
 		}
 
@@ -435,6 +457,12 @@ export class CartService implements OnStart {
 		}
 		profile.Data.revives = (profile.Data.revives || 0) + amount
 		this.logger.log(`Incrementing revives for player ${player.Name}, new total: ${profile.Data.revives}`)
+		ServerEvents.NotificationService.sendNotification(player, {
+			title: "<b>Revives Earned!</b>",
+			description: `<font color='#00FF88'>+${amount}</font> ${amount === 1 ? 'revive' : 'revives'}`,
+			duration: 4
+		})
+		this.refreshPlayerProducts(player)
 	}
 	incrementPlayerFlips(player: Player, amount = 1) {
 		const profile = this.DataService.getProfile(player)
@@ -443,6 +471,12 @@ export class CartService implements OnStart {
 		}
 		this.logger.log(`Incrementing flips for player ${player.Name}`)
 		profile.Data.flips = (profile.Data.flips || 0) + amount
+		ServerEvents.NotificationService.sendNotification(player, {
+			title: "<b>Flips Earned!</b>",
+			description: `<font color='#FFD700'>+${amount}</font> ${amount === 1 ? 'flip' : 'flips'}`,
+			duration: 4
+		})
+		this.refreshPlayerProducts(player)
 	}
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		if (this.DEBOUNCE_TABLE.has(player)) {

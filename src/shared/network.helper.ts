@@ -9,7 +9,7 @@ import {
 } from "@flamework/networking/out/functions/types"
 import { __IS_CLIENT__, __IS_EDIT__, __IS_SERVER__ } from "./config.helper"
 import { Logger } from "./logger"
-import { ButtonModel, ICartConfig, ProperReturns } from "./type.helper"
+import { ButtonModel, ICartConfig, INotification, ProperReturns } from "./type.helper"
 /*
 
 	SERVER TO CLIENT
@@ -26,6 +26,9 @@ interface ServerToClientEvents {
 	CartService: {
 		playerProductsUpdated: (data:Map<string, number>) => void
 		clearDeathPreview: () => void
+	},
+	NotificationService: {
+		sendNotification: (notification: INotification) => void
 	}
 }
 
