@@ -82,7 +82,7 @@ export class CartController implements OnStart {
 			this.logger.warn(`Failed to revive-spawn cart: ${err}`)
 			return [success, err]
 		}
-		this.__last_checkpoint = undefined
+		// this.__last_checkpoint = undefined
 		// UIHelper.toggleFade(false)
 		return [true]
 	}
@@ -96,5 +96,33 @@ export class CartController implements OnStart {
 	}
 	onStart(): void {
 		const components = Dependency<Components>()
+		
+		// Listen for boxing glove punches
+		ClientEvents.CartService.boxingGlovePunch.connect((touch_position: Vector3) => {
+			const cart = this.getMyCart()
+			if (!cart) return
+			
+			const cart_instance = cart.instance
+			const root = cart_instance.FindFirstChild("Root") as BasePart | undefined
+			if (!root) return
+			
+			// Calculate punch direction from touch position to cart
+			const punch_direction = root.Position.sub(touch_position).Unit
+			
+			// Apply linear velocity (punch force)
+			const punch_force = 150
+			const current_velocity = root.AssemblyLinearVelocity
+			const new_velocity = current_velocity.add(punch_direction.mul(punch_force))
+			root.AssemblyLinearVelocity = new_velocity
+			
+			// Apply angular velocity (spinning effect)
+			const spin_torque = new Vector3(
+				math.random() * 2 - 1,
+				math.random() * 4 - 2,
+				math.random() * 2 - 1
+			).mul(5)
+			const current_angular = root.AssemblyAngularVelocity
+			root.AssemblyAngularVelocity = current_angular.add(spin_torque)
+		})
 	}
 }

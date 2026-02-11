@@ -1,5 +1,8 @@
 import { Component } from "@flamework/components"
+import { Players } from "@rbxts/services"
 import { CartTouch } from "shared/components/cart-touch.component"
+import { ServerEvents } from "shared/network.helper"
+import { ICart } from "shared/type.helper"
 import {
 	BuildWeldConstraints,
 	MasslessPart,
@@ -10,6 +13,9 @@ import {
 	tag: "BoxingGlovesComponent"
 })
 export class BoxingGlovesComponent extends CartTouch<Model> {
+	private readonly debounce_cooldown = .2
+	private debounce_map = new Map<Model, number>()
+	
 	constructor() {
 		super()
 		const root = MasslessPart(this.instance, "Root")
@@ -21,7 +27,7 @@ export class BoxingGlovesComponent extends CartTouch<Model> {
 				return
 			}
 			if (descendant.IsA("BasePart")) {
-				descendant.CanCollide = true
+				descendant.CanCollide = false
 				descendant.Massless = true
 				descendant.Anchored = false
 				descendant.CollisionGroup = "Spike"
@@ -38,7 +44,7 @@ export class BoxingGlovesComponent extends CartTouch<Model> {
 						Enum.EasingDirection.Out
 					),
 					(alpha) => {
-						const punch_offset = 40 * alpha
+						const punch_offset = 50 * alpha
 						root.CFrame = cached_pivot.mul(new CFrame(-punch_offset, 0, 0))
 					}
 				)
@@ -47,7 +53,7 @@ export class BoxingGlovesComponent extends CartTouch<Model> {
 				const return_tween = TweenValue(
 					new TweenInfo(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
 					(alpha) => {
-						const punch_offset = 40 * (1-alpha)
+						const punch_offset = 50 * (1-alpha)
 						root.CFrame = cached_pivot.mul(new CFrame(-punch_offset, 0, 0))
 					}
 				)
@@ -63,7 +69,31 @@ export class BoxingGlovesComponent extends CartTouch<Model> {
 		}
 		this.instance.Destroy()
 	}
-	onTouch(other_part: BasePart, cart_model: Model): void {
+	onTouch(other_part: BasePart, cart_model: ICart): void {
+		// Check debounce
+		const now = tick()
+		const last_hit = this.debounce_map.get(cart_model)
+		if (last_hit !== undefined && now - last_hit < this.debounce_cooldown) {
+			return
+		}
 		
+		const seat = cart_model.FindFirstChildOfClass("Seat")
+		if (!seat) {
+			return
+		}
+		const occupant = seat.Occupant
+		if (!occupant) {
+			return
+		}
+		const player = Players.GetPlayerFromCharacter(occupant.Parent)
+		if (!player) {
+			return
+		}
+		
+		// Update debounce
+		this.debounce_map.set(cart_model, now)
+		
+		const touch_position = this.touch_part.Position
+		ServerEvents.CartService.boxingGlovePunch.fire(player, touch_position)
 	}
 }

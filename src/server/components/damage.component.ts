@@ -18,6 +18,10 @@ export class DamageComponent extends CartTouch {
 		if (["Root","Mass","VehicleSeat","Hitbox","IgnoreDestruction"].includes(other_part.Name)) {
 			return
 		}
+		if (this.instance.IsDescendantOf(cart_model)) {
+			// spike cart
+			return
+		}
 		const cart_service = Dependency<CartService>()
 		cart_service.makePartsDrop(cart_model,[other_part])
 	}

@@ -25,6 +25,7 @@ interface ServerToClientEvents {
 	CartService: {
 		playerProductsUpdated: (data:Map<string, number>) => void
 		clearDeathPreview: () => void
+		boxingGlovePunch: (touch_position: Vector3) => void
 	},
 	NotificationService: {
 		sendNotification: (notification: INotification) => void

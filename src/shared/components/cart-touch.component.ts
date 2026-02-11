@@ -5,7 +5,7 @@ export class CartTouch<T extends Instance = BasePart> extends BaseComponent<
 	{},
 	T
 > {
-	private touch_part: BasePart
+	public touch_part: BasePart
 	constructor() {
 		super()
 		function recurseUntilModel(instance: Instance): Model | undefined {

@@ -7,6 +7,7 @@ import {
 	BuildWeldConstraints,
 	MasslessPart
 } from "./util.helper"
+import StringUtils from "@rbxts/string-utils"
 
 export function RigCartModel(cart_model: ICart) {
 	const visuals = cart_model.FindFirstChild("Visuals") as Model
@@ -20,7 +21,9 @@ export function RigCartModel(cart_model: ICart) {
 	mass_part.CFrame = bounding_box.mul(new CFrame(0, -0.5, 0))
 	mass_part.Massless = false
 	const hitbox = MasslessPart(cart_model, "Hitbox")
-	hitbox.Size = size.add(new Vector3(0, -2, 0))
+	const is_spike = StringUtils.startsWith(cart_model.Name,"Spiky Cart")
+	hitbox.Size = size.mul(is_spike ? new Vector3(.7,1,.7) : 1).add(new Vector3(0, -2, 0))
+	print(`Hitbox size for cart ${cart_model.Name}: ${hitbox.Size} ${hitbox.GetFullName()} :: ${is_spike}`)
 	hitbox.CFrame = bounding_box.mul(new CFrame(0, 0.5, 0))
 	hitbox.CanCollide = true
 	hitbox.CollisionGroup = "Hitbox"
