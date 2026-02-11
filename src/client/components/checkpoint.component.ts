@@ -1,5 +1,4 @@
 import { Component, Components } from "@flamework/components"
-import { InteractableComponent } from "./interactable.component"
 import { Logger } from "shared/logger"
 import { CartTriggerComponent } from "./cart-trigger.component"
 import { t } from "@rbxts/t"

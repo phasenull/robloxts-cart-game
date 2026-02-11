@@ -303,6 +303,17 @@ export class CartService implements OnStart {
 		}
 
 		// New shield - change collision group to Invincible
+		const root = cart.FindFirstChild("Root") as BasePart
+		if (root) {
+			const vfx = root.FindFirstChild("ShieldVFX") as Attachment
+			if (!vfx) {
+				const orig_vfx = assets.FindFirstChild("ShieldVFX") as Attachment
+				if (orig_vfx) {
+					const vfx_clone = orig_vfx.Clone()
+					vfx_clone.Parent = root
+				}
+			}
+		}
 		this.SHIELDS.set(cart, tick() + duration)
 		this.setCartCollisionGroup(cart, "Invincible")
 
@@ -328,6 +339,8 @@ export class CartService implements OnStart {
 
 		this.SHIELDS.delete(cart)
 		this.setCartCollisionGroup(cart, "Hitbox")
+		const root = cart.FindFirstChild("Root") as BasePart
+		root.FindFirstChild("ShieldVFX")?.Destroy()
 	}
 
 	/**
