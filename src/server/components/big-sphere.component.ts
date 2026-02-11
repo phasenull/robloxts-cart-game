@@ -4,20 +4,33 @@ import { OnStart } from "@flamework/core";
 @Component({
     tag: "BigSphereComponent"
 })
-export class BigSphereComponent extends BaseComponent<{},BasePart & {AttachedTo:Attachment}> implements OnStart {
+export class BigSphereComponent extends BaseComponent<{},BasePart> implements OnStart {
     private rope?: RopeConstraint;
+    private anchorPart?: BasePart;
     
     onStart(): void {
+        this.instance.Anchored = false;
         this.setupRope();
         this.applyRandomVelocity();
     }
     
     private setupRope(): void {
-        const attachment = this.instance.AttachedTo;
-        if (!attachment) {
-            warn("BigSphereComponent: AttachedTo attachment not found");
-            return;
-        }
+        // Create an anchored invisible part above the sphere
+        const anchorPart = new Instance("Part");
+        anchorPart.Name = "RopeAnchor";
+        anchorPart.Size = new Vector3(1, 1, 1);
+        anchorPart.Position = this.instance.Position.add(new Vector3(0, 20, 0));
+        anchorPart.Anchored = true;
+        anchorPart.Transparency = 1;
+        anchorPart.CanCollide = false;
+        anchorPart.Parent = this.instance.Parent;
+        
+        this.anchorPart = anchorPart;
+        
+        // Create attachment on the anchor part
+        const anchorAttachment = new Instance("Attachment");
+        anchorAttachment.Name = "AnchorAttachment";
+        anchorAttachment.Parent = anchorPart;
         
         // Create attachment on the sphere for the rope
         const sphereAttachment = new Instance("Attachment");
@@ -26,7 +39,7 @@ export class BigSphereComponent extends BaseComponent<{},BasePart & {AttachedTo:
         
         // Create rope constraint
         const rope = new Instance("RopeConstraint");
-        rope.Attachment0 = attachment;
+        rope.Attachment0 = anchorAttachment;
         rope.Attachment1 = sphereAttachment;
         rope.Length = 20;
         rope.Visible = true;
@@ -57,5 +70,11 @@ export class BigSphereComponent extends BaseComponent<{},BasePart & {AttachedTo:
             math.random(-10, 10)
         );
         bodyAngularVelocity.Parent = this.instance;
+    }
+    
+    destroy(): void {
+        if (this.anchorPart) {
+            this.anchorPart.Destroy();
+        }
     }
 }

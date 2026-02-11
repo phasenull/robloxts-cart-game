@@ -636,7 +636,6 @@ export class CartClientComponent
 				return false
 			}
 			if (ray.Instance.Name === "AntiRevive") {
-				this.logger.log("Checkpoint unavailable due to anti-revive zone")
 				return false
 			}
 		}

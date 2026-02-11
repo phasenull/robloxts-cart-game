@@ -16,13 +16,7 @@ export class CartController implements OnStart {
 	private __last_checkpoint: CFrame | undefined
 	saveCheckpoint(cframe: CFrame) {
 		this.__last_checkpoint = cframe
-		const drawn = sphere.draw(cframe.Position, 1)
-		task.delay(0.05, () => {
-			if (this.__last_checkpoint === cframe) {
-				return
-			}
-			drawn.Destroy()
-		})
+
 	}
 	public onCartChange = new Signal<
 		(cart: CartClientComponent | undefined) => void
