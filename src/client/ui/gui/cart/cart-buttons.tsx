@@ -1,21 +1,14 @@
 import React, { useEffect } from "@rbxts/react"
 
 import useAnimateValue from "../../hooks/useAnimateValue"
-import { GAMEPAD_BUTTONS, UIDIM } from "client/ui/constants"
-import { CartClientComponent } from "client/components/cart.client.component"
+import { UIDIM } from "client/ui/constants"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { useMutation } from "@rbxts/react-query"
-import { __IS_STUDIO__ } from "shared/config.helper"
 
 import { A } from "shared/assets"
-import { Players, TweenService, UserInputService } from "@rbxts/services"
-import { useInputType } from "client/ui/hooks/useInputType"
-import { Icon } from "client/ui/components/icon"
-import { useInput } from "client/ui/hooks/useInput"
+import { TweenService } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
-import { CartState, useCart } from "client/ui/contexts/cart.context"
-import { ClientFunctions } from "shared/network.helper"
-import { useActionImage } from "client/ui/hooks/useKeyImage"
+import { useCart } from "client/ui/contexts/cart.context"
 
 export function CartButtons(props: {
 	__story?: {
@@ -26,11 +19,6 @@ export function CartButtons(props: {
 	}
 }) {
 	const { cart, state, changeState, products } = useCart()
-	const device = props.__story?.override_device ?? useInputType()
-	const brake_icon = useActionImage("BRAKE", device)
-	const honk_icon = useActionImage("HONK", device)
-	const flip_icon = useActionImage("FLIP", device)
-	const reset_icon = useActionImage("RESET", device)
 	const cartId = cart?.instance.Name ?? "no-cart"
 
 	const { mutate: mutateBrake, data: is_braking_data } = useMutation({
@@ -101,30 +89,8 @@ export function CartButtons(props: {
 		(cart?.instance && state === "alive") || !!props.__story?.cart_enabled
 	const IS_VISIBLE = is_alive
 
-	const is_brake_down = useInput({
-		key: GAMEPAD_BUTTONS.BRAKE,
-		handler: (value) => mutateBrake(value),
-		enabled: IS_VISIBLE
-	})
 	const IS_BRAKING =
-		props.__story?.override_brake ?? (is_braking_data || is_brake_down)
-	const is_honk_down = useInput({
-		key: GAMEPAD_BUTTONS.HONK,
-		handler: (value) => value && mutateHonk(),
-		enabled: IS_VISIBLE
-	})
-
-	const is_flip_down = useInput({
-		key: GAMEPAD_BUTTONS.FLIP,
-		handler: (value) => value && mutateFlip(),
-		enabled: IS_VISIBLE
-	})
-
-	const is_reset_down = useInput({
-		key: GAMEPAD_BUTTONS.RESET,
-		handler: (value) => value && mutateSwitchToResetScreen(),
-		enabled: IS_VISIBLE
-	})
+		props.__story?.override_brake ?? is_braking_data
 
 	const brake_shake = useAnimateValue({
 		target_value: IS_BRAKING ? 1 : 0,
@@ -181,23 +147,9 @@ export function CartButtons(props: {
 				Text="HONK"
 				Color={new Color3(0.95, 0.86, 0.11)}
 				onDown={(val) => val && mutateHonk()}
-				mockMouseDown={is_honk_down === true ? true : undefined}
-			>
-				{honk_icon ? (
-					<Icon
-						Image={honk_icon}
-						AnchorPoint={UIDIM.A_CENTER}
-						Size={
-							device === "Gamepad"
-								? new UDim2(0.5, 0, 0.5, 0)
-								: new UDim2(0.3, 0, 0.3, 0)
-						}
-						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-						Color3={new Color3(0.36, 0.66, 1)}
-						Transparency={0.1}
-					/>
-				) : undefined}
-			</RottenButton>
+				action="HONK"
+				overrideDevice={props.__story?.override_device}
+			/>
 			<frame
 				Size={UIDIM.ONE}
 				AnchorPoint={UIDIM.A_CENTER}
@@ -214,24 +166,9 @@ export function CartButtons(props: {
 					Color={new Color3(1, 0.02, 0.02)}
 					onDown={(is_down) => mutateBrake(is_down)}
 					mockMouseDown={IS_BRAKING === true ? true : undefined}
-				>
-					{brake_icon ? (
-						<Icon
-							Size={
-								device === "Gamepad"
-									? new UDim2(0.5, 0, 0.5, 0)
-									: new UDim2(0.3, 0, 0.3, 0)
-							}
-							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-							Image={brake_icon}
-							escape_ratio={true}
-							AnchorPoint={UIDIM.A_CENTER}
-							Color3={new Color3(0.36, 0.66, 1)}
-							Transparency={0.1}
-							ScaleType={Enum.ScaleType.Fit}
-						/>
-					) : undefined}
-				</RottenButton>
+					action="BRAKE"
+					overrideDevice={props.__story?.override_device}
+				/>
 			</frame>
 			<frame BackgroundTransparency={1} Size={UIDIM.ONE}>
 				<uiaspectratioconstraint AspectRatio={0.8} />
@@ -248,39 +185,18 @@ export function CartButtons(props: {
 					Text={`FLIP ${products.get("flips") || 0}x`}
 					onClick={() => mutateFlip()}
 					Color={new Color3(0.11, 0.75, 0.95)}
-					mockMouseDown={is_flip_down === true ? true : undefined}
-				>
-					{flip_icon ? (
-						<Icon
-							Size={new UDim2(0.5, 0, 0.5, 0)}
-							Image={flip_icon}
-							AnchorPoint={UIDIM.A_CENTER}
-							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-							Color3={new Color3(0.36, 0.66, 1)}
-							Transparency={0.1}
-							ScaleType={Enum.ScaleType.Fit}
-						/>
-					) : undefined}
-				</RottenButton>
+					action="FLIP"
+					overrideDevice={props.__story?.override_device}
+				/>
 				<RottenButton
 					onClick={() => mutateSwitchToResetScreen()}
 					Size={UIDIM.ONE}
 					Ratio={2}
 					Text="RESET"
 					Color={new Color3(0.69, 0.02, 1)}
-					mockMouseDown={is_reset_down === true ? true : undefined}
-				>
-					{reset_icon ? (
-						<Icon
-							Size={new UDim2(0.5, 0, 0.5, 0)}
-							Image={reset_icon}
-							AnchorPoint={UIDIM.A_CENTER}
-							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-							Color3={new Color3(0.36, 0.66, 1)}
-							Transparency={0.1}
-						/>
-					) : undefined}
-				</RottenButton>
+					action="RESET"
+					overrideDevice={props.__story?.override_device}
+				/>
 			</frame>
 		</frame>
 	)

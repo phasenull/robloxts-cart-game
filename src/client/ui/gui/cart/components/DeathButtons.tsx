@@ -1,17 +1,14 @@
 import { Dependency } from "@flamework/core"
 import React, { useEffect } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
-import { MarketplaceService, Players, UserInputService } from "@rbxts/services"
+import { MarketplaceService, Players } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
 import { UIHelper } from "client/ui.helper"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { GoofyText } from "client/ui/components/goofy-text"
-import { Icon } from "client/ui/components/icon"
 import { RadialProgress } from "client/ui/components/radial-progress"
-import { GAMEPAD_BUTTONS, REVIVE_TIME, UIDIM } from "client/ui/constants"
+import { REVIVE_TIME, UIDIM } from "client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
-import { useInput } from "client/ui/hooks/useInput"
-import { useInputType } from "client/ui/hooks/useInputType"
 import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
 import { useCheckpoint } from "../hooks/useCheckpoint"
@@ -27,7 +24,6 @@ export function DeathButtons({
 	// shouldShow,
 	transparency
 }: DeathButtonsProps) {
-	const device = useInputType()
 	const { changeState, confirmHardReset, spawnPoint, state, products } =
 		useCart()
 	const shouldShow = state === "death_screen" || state === "reviving"
@@ -126,7 +122,7 @@ export function DeathButtons({
 				Size={UIDIM.ONE}
 				onClick={mutateHardReset}
 				Text="RESET"
-				bindKey={GAMEPAD_BUTTONS.CONFIRM_RESET}
+				action="CONFIRM_RESET"
 			>
 				<GoofyText
 					MinTextSize={1}
@@ -135,18 +131,6 @@ export function DeathButtons({
 					AnchorPoint={UIDIM.A_TOP.add(new Vector2(0, 0.1))}
 					Text={"(last checkpoint)"}
 				></GoofyText>
-				{device === "Gamepad" && (
-					<Icon
-						Size={new UDim2(0.5, 0, 0.5, 0)}
-						Image={UserInputService.GetImageForKeyCode(
-							GAMEPAD_BUTTONS.CONFIRM_RESET
-						)}
-						AnchorPoint={UIDIM.A_CENTER}
-						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-						Color3={new Color3(0.36, 0.66, 1)}
-						Transparency={0.1}
-					/>
-				)}
 			</RottenButton>
 			<RottenButton
 				onClick={mutateRevive}
@@ -154,7 +138,7 @@ export function DeathButtons({
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
 				Text={`REVIVE (${products.get("revives") || 0}x)`}
 				Ratio={1.5}
-				bindKey={GAMEPAD_BUTTONS.REVIVE}
+				action="REVIVE"
 			>
 				<RadialProgress
 					degrees_per_second={360 / REVIVE_TIME}
@@ -167,16 +151,6 @@ export function DeathButtons({
 
 					// initial_progress={1}
 				/>
-				{device === "Gamepad" && (
-					<Icon
-						Size={new UDim2(0.5, 0, 0.5, 0)}
-						Image={UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.REVIVE)}
-						AnchorPoint={UIDIM.A_CENTER}
-						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-						Color3={new Color3(0.36, 0.66, 1)}
-						Transparency={0.1}
-					/>
-				)}
 			</RottenButton>
 		</imagelabel>
 	)

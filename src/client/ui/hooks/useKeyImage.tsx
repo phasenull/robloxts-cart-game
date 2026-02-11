@@ -9,13 +9,16 @@ import { UserInputService } from "@rbxts/services"
 import { A } from "shared/assets"
 
 export function useActionImage(
-	action: keyof IActionKeyMap,
+	action?: keyof IActionKeyMap,
 	override_device?: "Gamepad" | "Keyboard" | "Mobile"
 ) {
 	const input_type = override_device ?? useInputType()
 	const [img, setImg] = useState<string | undefined>(undefined)
 	useEffect(() => {
-		print("rendering cart buttons with device", input_type)
+		if (!action) {
+			setImg(undefined)
+			return
+		}
 		if (input_type === "Gamepad") {
 			const key_code = GAMEPAD_BUTTONS[action]
 			const image = UserInputService.GetImageForKeyCode(key_code)
