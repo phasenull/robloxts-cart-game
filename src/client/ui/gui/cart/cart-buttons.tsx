@@ -193,8 +193,7 @@ export function CartButtons(props: {
 								? new UDim2(0.5, 0, 0.5, 0)
 								: new UDim2(0.3, 0, 0.3, 0)
 						}
-						
-						Position={UIDIM.TOP_RIGHT.add(new UDim2(device === "Gamepad" ? 0.1 : -0., 0,device === "Gamepad" ? -.15: 0.05, 0))}
+						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
 						Color3={new Color3(0.36, 0.66, 1)}
 						Transparency={0.1}
 					/>
@@ -224,7 +223,7 @@ export function CartButtons(props: {
 									? new UDim2(0.5, 0, 0.5, 0)
 									: new UDim2(0.3, 0, 0.3, 0)
 							}
-						Position={device === "Gamepad" ? UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0,-.15, 0)):UIDIM.TOP_CENTER.add(new UDim2(0, 0, 0.05, 0))}
+							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
 							Image={brake_icon}
 							escape_ratio={true}
 							AnchorPoint={UIDIM.A_CENTER}
@@ -256,10 +255,8 @@ export function CartButtons(props: {
 						<Icon
 							Size={new UDim2(0.5, 0, 0.5, 0)}
 							Image={flip_icon}
-							AnchorPoint={UIDIM.A_LEFT}
-							Position={UIDIM.RIGHT.add(
-								new UDim2(device === "Gamepad" ? 0.1 : -0.1, 0, 0, 0)
-							)}
+							AnchorPoint={UIDIM.A_CENTER}
+							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
 							Color3={new Color3(0.36, 0.66, 1)}
 							Transparency={0.1}
 							ScaleType={Enum.ScaleType.Fit}
@@ -276,10 +273,10 @@ export function CartButtons(props: {
 				>
 					{reset_icon ? (
 						<Icon
-							Size={new UDim2(0.8, 0, 0.8, 0)}
+							Size={new UDim2(0.5, 0, 0.5, 0)}
 							Image={reset_icon}
-							AnchorPoint={UIDIM.A_LEFT}
-							Position={UIDIM.RIGHT.add(new UDim2(0.1, 0, 0, 0))}
+							AnchorPoint={UIDIM.A_CENTER}
+							Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
 							Color3={new Color3(0.36, 0.66, 1)}
 							Transparency={0.1}
 						/>
