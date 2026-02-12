@@ -7,7 +7,7 @@ import {
 	Workspace
 } from "@rbxts/services"
 import { CartServerComponent } from "server/components/cart.server.component"
-import { assets } from "shared/assets"
+import { A, assets } from "shared/assets"
 import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
@@ -168,6 +168,30 @@ export class CartService implements OnStart {
 				if (!cart) {
 					return [false, "Failed to spawn cart"] as [false, string]
 				}
+
+				// Wait for cart to be ready and add shield (with 30 second timeout)
+				task.spawn(() => {
+					const startTime = tick()
+					const timeout = 30
+
+					// Poll for cart existence and readiness
+					while (tick() - startTime < timeout) {
+						const playerCart = this.getPlayerCart(player)
+						if (playerCart && playerCart === cart) {
+							// Cart exists and is tracked, add shield
+							this.addShield(cart, 10)
+
+							return
+						}
+						task.wait(0.1) // Check every 0.1 seconds
+					}
+
+					// Timeout reached, try to add shield anyway if cart still exists
+					if (cart.Parent) {
+						this.addShield(cart, 10)
+					}
+				})
+
 				return [true] as [true]
 			}
 		)
@@ -247,7 +271,6 @@ export class CartService implements OnStart {
 			existing.Destroy()
 		}
 		Workspace.GetChildren().forEach((child) => {
-
 			if (
 				child.GetTags().find((e) => e === "CartComponent") &&
 				child.IsA("Model")
@@ -330,6 +353,15 @@ export class CartService implements OnStart {
 			task.cancel(existingTask)
 		}
 
+		const player = this.getPlayerFromCart(cart)
+		if (player) {
+			ServerEvents.NotificationService.sendNotification(player, {
+				title: "<b>Shield Extended</b>",
+				description: `<font color='#00D4FF'>+${duration}s</font>`,
+				duration: 3,
+				soundId: A.sounds.reward_earned
+			})
+		}
 		if (wasShielded) {
 			// Extend existing shield
 			this.SHIELDS.set(cart, existing + duration)
@@ -342,14 +374,6 @@ export class CartService implements OnStart {
 			})
 			this.SHIELD_TASKS.set(cart, removalTask)
 			// Find player and send notification
-			const player = this.getPlayerFromCart(cart)
-			if (player) {
-				ServerEvents.NotificationService.sendNotification(player, {
-					title: "<b>Shield Extended!</b>",
-					description: `<font color='#00D4FF'>+${duration} seconds</font> added`,
-					duration: 3
-				})
-			}
 			return
 		}
 
