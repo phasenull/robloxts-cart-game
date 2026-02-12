@@ -99,7 +99,6 @@ export function RigCartModel(cart_model: ICart) {
 		// new Vector3(0, 0, connection.Size.Z / 2)
 		// )
 		ball.Color = new Color3(1, 0, 0)
-		ball.Transparency = 0.3
 		attachment_ball.Name = "ball->connection"
 		attachment_connection.Name = "connection->ball"
 		const attachment_root_to_ball = new Instance("Attachment", cart_model.Root)
