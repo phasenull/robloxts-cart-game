@@ -86,7 +86,8 @@ export namespace A {
 		drift:"rbxassetid://71308996451354",
 		party:"rbxassetid://5759274072",
 		click_kaan:"rbxassetid://876939830",
-		cash_kaan: "rbxassetid://134952684776633"
+		cash_kaan: "rbxassetid://134952684776633",
+		reward_earned: "rbxassetid://4612375802"
 	}
 }
 export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {

@@ -8,8 +8,7 @@ import {
 	ServerHandler as ServerHandlerFunction
 } from "@flamework/networking/out/functions/types"
 import { __IS_CLIENT__, __IS_EDIT__, __IS_SERVER__ } from "./config.helper"
-import { Logger } from "./logger"
-import { ButtonModel, ICartConfig, ProperReturns } from "./type.helper"
+import { ButtonModel, ICartConfig, INotification, ProperReturns } from "./type.helper"
 /*
 
 	SERVER TO CLIENT
@@ -25,6 +24,11 @@ interface ServerToClientEvents {
 	},
 	CartService: {
 		playerProductsUpdated: (data:Map<string, number>) => void
+		clearDeathPreview: () => void
+		boxingGlovePunch: (touch_position: Vector3) => void
+	},
+	NotificationService: {
+		sendNotification: (notification: INotification) => void
 	}
 }
 
@@ -65,10 +69,6 @@ interface ClientToServerEvents {
 /*
 EXPORT STUFF
 */
-const logger = new Logger("network.helper")
-logger.log(
-	`is_edit: ${__IS_EDIT__} is_server: ${__IS_SERVER__} is_client: ${__IS_CLIENT__}`
-)
 export const GlobalEvents = __IS_EDIT__
 	? undefined
 	: Networking.createEvent<ClientToServerEvents, ServerToClientEvents>()

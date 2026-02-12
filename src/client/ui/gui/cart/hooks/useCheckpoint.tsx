@@ -17,8 +17,13 @@ export const CheckpointContext = createContext<{
 	collectedCheckpoints: [],
 	refresh: async () => {}
 })
-export function CheckpointProvider(props: { children: React.ReactNode }) {
-	const [currentCheckpoint, setCurrentCheckpoint] = useState(0)
+export function CheckpointProvider(props: {
+	children: React.ReactNode
+	__story?: { mock_checkpoint: number }
+}) {
+	const [currentCheckpoint, setCurrentCheckpoint] = useState(
+		0
+	)
 	const [collectedCheckpoints, setCollectedCheckpoints] = useState<number[]>([])
 	useEffect(() => {
 		if (__IS_EDIT__) {
@@ -74,7 +79,7 @@ export function CheckpointProvider(props: { children: React.ReactNode }) {
 	return (
 		<CheckpointContext.Provider
 			value={{
-				currentCheckpoint,
+				currentCheckpoint: props.__story?.mock_checkpoint ?? currentCheckpoint,
 				collectedCheckpoints,
 				refresh: () => refresh()
 			}}

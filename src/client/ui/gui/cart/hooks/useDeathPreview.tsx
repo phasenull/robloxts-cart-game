@@ -1,4 +1,4 @@
-import { useEffect } from "@rbxts/react"
+import { useEffect, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { Players, Workspace } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
@@ -6,6 +6,8 @@ import { useCart } from "client/ui/contexts/cart.context"
 import { assets } from "shared/assets"
 import { RigCartModel } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
+import { ClientEvents } from "shared/network.helper"
+import { __IS_EDIT__ } from "shared/config.helper"
 
 interface UseDeathPreviewProps {
 	spawnPoint: CFrame | undefined
@@ -13,8 +15,21 @@ interface UseDeathPreviewProps {
 }
 
 export function useDeathPreview() {
-	const { spawnPoint, state } = useCart()
-	const should_show = state === "death_screen"
+	const { cart, spawnPoint, state } = useCart()
+	const [previewModel, setPreviewModel] = useState<Model | undefined>(undefined)
+	const should_show = state === "death_screen" && !cart
+	
+	// Listen for clear preview event from server
+	useEffect(() => {
+		if (__IS_EDIT__) return
+		const connection = ClientEvents.CartService.clearDeathPreview.connect(() => {
+			if (previewModel) {
+				previewModel.Destroy()
+				setPreviewModel(undefined)
+			}
+		})
+		return () => connection.Disconnect()
+	}, [previewModel])
 	// const char = player.Character
 	// const pp = char?.PrimaryPart
 	// if (char && pp) {
@@ -43,6 +58,7 @@ export function useDeathPreview() {
 		queryFn: async () => {
 			const cart = buildPreviewCart(spawnPoint!)
 			if (!cart) {throw `Failed to build preview cart for spawn point ${spawnPoint}`}
+			setPreviewModel(cart)
 			return cart
 		},
 		enabled: should_show && spawnPoint !== undefined,
@@ -50,6 +66,7 @@ export function useDeathPreview() {
 			warn(`Failed to create death preview cart: ${err}`)
 		}
 	})
+	
 	return { data }
 }
 function buildPreviewCart(spawnPoint: CFrame) {

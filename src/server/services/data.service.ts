@@ -11,12 +11,13 @@ import {
 } from "@rbxts/services";
 import Signal from "@rbxts/signal";
 import { Logger } from "shared/logger";
+import { ServerEvents } from "shared/network.helper";
 const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],
 	cash: 0,
 	playtime: 0,
-	revives: 0,
-	flips: 1,
+	revives: 999,
+	flips: 999,
 	collected_checkpoints: [0] as number[],
 	inventory: [] as string[],
 	vehicles: [] as string[],
@@ -87,6 +88,14 @@ export class DataService implements OnStart {
 		const current = profile.Data.cash as number;
 		profile.Data.cash = (current + amount) as any;
 		this.logger.log(`Granted ${amount} cash to player ${player.Name}. Reason: ${reason || "N/A"}`);
+		if (amount > 0) {
+			ServerEvents.NotificationService.sendNotification(player, {
+				title: "<b>Cash Earned!</b>",
+				description: `<font color='#00FF00'>+$${amount}</font>${reason ? ` - ${reason}` : ""}`,
+				duration: 4
+			});
+		}
+		return profile.Data.cash as number
 	}
 	public refreshLeaderboard(leaderboard: ScreenGui, stat: string) {
 	}

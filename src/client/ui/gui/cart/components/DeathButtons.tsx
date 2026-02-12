@@ -1,17 +1,14 @@
 import { Dependency } from "@flamework/core"
 import React, { useEffect } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
-import { MarketplaceService, Players, UserInputService } from "@rbxts/services"
+import { MarketplaceService, Players } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
 import { UIHelper } from "client/ui.helper"
 import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { GoofyText } from "client/ui/components/goofy-text"
-import { Icon } from "client/ui/components/icon"
 import { RadialProgress } from "client/ui/components/radial-progress"
-import { GAMEPAD_BUTTONS, REVIVE_TIME, UIDIM } from "client/ui/constants"
+import { REVIVE_TIME, UIDIM } from "client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
-import { useInput } from "client/ui/hooks/useInput"
-import { useInputType } from "client/ui/hooks/useInputType"
 import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
 import { useCheckpoint } from "../hooks/useCheckpoint"
@@ -27,39 +24,74 @@ export function DeathButtons({
 	// shouldShow,
 	transparency
 }: DeathButtonsProps) {
-	const device = useInputType()
-	const { changeState, confirmHardReset, spawnPoint, state, products } =
+	const { cart, changeState, confirmHardReset, spawnPoint, state, products } =
 		useCart()
-	const shouldShow = state === "death_screen" || state === "reviving"
+	const shouldShow = (state === "death_screen" || state === "reviving") && !cart
 	const checkpoint = useCheckpoint().currentCheckpoint
-	const { mutate: mutateRevive } = useMutation({
-		queryKey: [`death-revive-${Object.keys(products).map((e)=>`${e}-${products.get(e)}`).join("-")}`],
+	const { mutate: mutateRevive,isLoading } = useMutation({
+		queryKey: [
+			`death-revive-${Object.keys(products)
+				.map((e) => `${e}-${products.get(e)}`)
+				.join("-")}`
+		],
 		mutationFn: async () => {
-			const revive_amount = products.get("revives") || 0
-			print("revives:", revive_amount)
-			if (revive_amount <= 0) {
-				const purchase_resulted = new Signal<(status:boolean)=>void>()
-				MarketplaceService.PromptProductPurchase(Players.LocalPlayer, PRODUCTS.revives)
-				const result = await MarketplaceService.PromptProductPurchaseFinished.Connect((uid,pid,ip)=>{
-					if (uid !== Players.LocalPlayer.UserId) {
-						return
-					}
-					if (pid !== PRODUCTS.revives) {
-						return
-					}
-					purchase_resulted.Fire(ip)
-				})
-				purchase_resulted.Wait()
-			}
 			const controller = Dependency<CartController>()
+			let startedPurchaseFlow = false
+
+			let revive_amount = products.get("revives") || 0
+			if (revive_amount <= 0) {
+				// Check if there's already a pending purchase
+				if (!controller.tryStartPurchaseFlow()) {
+					warn("Purchase already in progress, ignoring duplicate request")
+					return false
+				}
+				startedPurchaseFlow = true
+
+				try {
+					const purchase_resulted = new Signal<(status: boolean) => void>()
+					MarketplaceService.PromptProductPurchase(
+						Players.LocalPlayer,
+						PRODUCTS.revives
+					)
+					const conn =
+						await MarketplaceService.PromptProductPurchaseFinished.Connect(
+							(uid, pid, ip) => {
+								if (uid !== Players.LocalPlayer.UserId) {
+									return
+								}
+								if (pid !== PRODUCTS.revives) {
+									return
+								}
+								conn.Disconnect()
+								purchase_resulted.Fire(ip)
+							}
+						)
+					const purchased = await purchase_resulted.Wait()
+					if (!purchased) {
+						warn("Purchase was canceled by user")
+						return false
+					}
+					revive_amount += 1
+				} finally {
+					if (startedPurchaseFlow) {
+						controller.finishPurchaseFlow()
+					}
+				}
+			}
+			if (revive_amount <= 0) {
+				warn("No revives available, cannot revive")
+				return false
+			}
+			
+			// Only switch to reviving state after confirming we have revives
 			changeState("reviving")
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
 			const [result, err] = await controller.promptRevive(checkpoint)
+			UIHelper.toggleFade(false)
 			if (!result || err) {
 				throw `${err}`
 			}
-			UIHelper.toggleFade(false)
 			return result
 		},
 		onError: (err) => {
@@ -77,7 +109,6 @@ export function DeathButtons({
 			}
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
-			changeState("none")
 			confirmHardReset()
 			UIHelper.toggleFade(false)
 			if (__IS_EDIT__) return true
@@ -116,7 +147,7 @@ export function DeathButtons({
 		>
 			<uiaspectratioconstraint AspectRatio={4} />
 			<uilistlayout
-				Padding={new UDim(0.3, 0)}
+				Padding={new UDim(0.2, 0)}
 				FillDirection={Enum.FillDirection.Horizontal}
 				HorizontalAlignment={Enum.HorizontalAlignment.Center}
 				VerticalAlignment={Enum.VerticalAlignment.Center}
@@ -125,8 +156,8 @@ export function DeathButtons({
 			<RottenButton
 				Size={UIDIM.ONE}
 				onClick={mutateHardReset}
-				Text="RESET"
-				bindKey={GAMEPAD_BUTTONS.CONFIRM_RESET}
+				Text="SPAWN"
+				action="CONFIRM_RESET"
 			>
 				<GoofyText
 					MinTextSize={1}
@@ -135,26 +166,15 @@ export function DeathButtons({
 					AnchorPoint={UIDIM.A_TOP.add(new Vector2(0, 0.1))}
 					Text={"(last checkpoint)"}
 				></GoofyText>
-				{device === "Gamepad" && (
-					<Icon
-						Size={new UDim2(0.5, 0, 0.5, 0)}
-						Image={UserInputService.GetImageForKeyCode(
-							GAMEPAD_BUTTONS.CONFIRM_RESET
-						)}
-						AnchorPoint={UIDIM.A_CENTER}
-						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-						Color3={new Color3(0.36, 0.66, 1)}
-						Transparency={0.1}
-					/>
-				)}
 			</RottenButton>
 			<RottenButton
-				onClick={mutateRevive}
+				onClick={()=> !isLoading && mutateRevive()}
 				Color={new Color3(0.09, 0.86, 0.09)}
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
-				Text={`REVIVE (${products.get("revives") || 0}x)`}
+				// Text={`REVIVE (${products.get("revives") || 0}x)`}
+				Text={`REVIVE`}
 				Ratio={1.5}
-				bindKey={GAMEPAD_BUTTONS.REVIVE}
+				action="REVIVE"
 			>
 				<RadialProgress
 					degrees_per_second={360 / REVIVE_TIME}
@@ -167,16 +187,6 @@ export function DeathButtons({
 
 					// initial_progress={1}
 				/>
-				{device === "Gamepad" && (
-					<Icon
-						Size={new UDim2(0.5, 0, 0.5, 0)}
-						Image={UserInputService.GetImageForKeyCode(GAMEPAD_BUTTONS.REVIVE)}
-						AnchorPoint={UIDIM.A_CENTER}
-						Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
-						Color3={new Color3(0.36, 0.66, 1)}
-						Transparency={0.1}
-					/>
-				)}
 			</RottenButton>
 		</imagelabel>
 	)

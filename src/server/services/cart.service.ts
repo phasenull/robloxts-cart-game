@@ -7,7 +7,7 @@ import {
 	Workspace
 } from "@rbxts/services"
 import { CartServerComponent } from "server/components/cart.server.component"
-import { assets } from "shared/assets"
+import { A, assets } from "shared/assets"
 import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
@@ -16,6 +16,8 @@ import { DataService } from "./data.service"
 import { PRODUCTS } from "shared/purchasables"
 import { CheckpointService } from "./checkpoint.service"
 import { arrow } from "@rbxts/better-gizmos"
+import StringUtils from "@rbxts/string-utils"
+import { isTester } from "shared/role.utils"
 
 @Service()
 export class CartService implements OnStart {
@@ -51,6 +53,13 @@ export class CartService implements OnStart {
 		return player_carts.includes(cart_name)
 	}
 	playerAdded(player: Player) {
+		const is_tester = isTester(player)
+		if (is_tester) {
+			task.delay(5, () => {
+				this.incrementPlayerRevives(player, 25)
+				this.incrementPlayerFlips(player, 25)
+			})
+		}
 		player.CharacterAdded.Connect((char) => {
 			char.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
@@ -106,6 +115,12 @@ export class CartService implements OnStart {
 						const cart2 = this.getPlayerCart(player)
 						if (cart2) {
 							this.addShield(cart2, 10)
+							ServerEvents.NotificationService.sendNotification(player, {
+								title: "<b>Shield Activated!</b>",
+								description:
+									"<font color='#00D4FF'>10 seconds</font> of protection",
+								duration: 3
+							})
 						}
 						this.refreshPlayerProducts(player)
 						return [true]
@@ -121,35 +136,65 @@ export class CartService implements OnStart {
 			return [config.CartConfig]
 		})
 
-		ServerFunctions.CartService.revive.setCallback(async (player, target, stage) => {
-			// this.logger.warn("REVIVE RF CALLED")
-			// return [true]
-			const [data,err] = await ServerFunctions.CartService.useProduct.predict(player, "revives")
-			if (!data || err) {
-				return [false, err || "Failed to use revive product"]
-			}
-			this.logger.log(
-				`Revive-spawning cart for player ${player.Name} at stage ${stage}`
-			)
-			const cart_skin = this.getPlayerSkin(player)
-			const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
-			const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
+		ServerFunctions.CartService.revive.setCallback(
+			async (player, target, stage) => {
+				// this.logger.warn("REVIVE RF CALLED")
+				// return [true]
+				const [data, err] =
+					await ServerFunctions.CartService.useProduct.predict(
+						player,
+						"revives"
+					)
+				if (!data || err) {
+					return [false, err || "Failed to use revive product"]
+				}
+				// this.logger.log(
+				// 	`Revive-spawning cart for player ${player.Name} at stage ${stage}`
+				// )
+				const cart_skin = this.getPlayerSkin(player)
+				const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
+				const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
 
-			const char = player.Character
-			const pp = char?.PrimaryPart
+				const char = player.Character
+				const pp = char?.PrimaryPart
 
-			if (vehicle_seat && pp && char) {
-				pp.PivotTo(target)
-				task.wait(0.5) // Wait for the seat to be fully initialized
-				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
+				if (vehicle_seat && pp && char) {
+					pp.PivotTo(target)
+					task.wait(0.5) // Wait for the seat to be fully initialized
+					vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
+				}
+				const checkpoint_service = Dependency<CheckpointService>()
+				checkpoint_service.setCheckpointIndex(player, stage)
+				if (!cart) {
+					return [false, "Failed to spawn cart"] as [false, string]
+				}
+
+				// Wait for cart to be ready and add shield (with 30 second timeout)
+				task.spawn(() => {
+					const startTime = tick()
+					const timeout = 30
+
+					// Poll for cart existence and readiness
+					while (tick() - startTime < timeout) {
+						const playerCart = this.getPlayerCart(player)
+						if (playerCart && playerCart === cart) {
+							// Cart exists and is tracked, add shield
+							this.addShield(cart, 10)
+
+							return
+						}
+						task.wait(0.1) // Check every 0.1 seconds
+					}
+
+					// Timeout reached, try to add shield anyway if cart still exists
+					if (cart.Parent) {
+						this.addShield(cart, 10)
+					}
+				})
+
+				return [true] as [true]
 			}
-			const checkpoint_service = Dependency<CheckpointService>()
-			checkpoint_service.setCheckpointIndex(player, stage)
-			if (!cart) {
-				return [false, "Failed to spawn cart"] as [false, string]
-			}
-			return [true] as [true]
-		})
+		)
 
 		ServerFunctions.CartService.reset.setCallback((player) => {
 			// this.logger.log(`Respawning player ${player.Name}`)
@@ -196,6 +241,14 @@ export class CartService implements OnStart {
 		const component = dependecy.getComponent(cart, CartServerComponent)
 		return component
 	}
+	getPlayerFromCart(cart: Model): Player | undefined {
+		for (const [player, playerCart] of this.PLAYER_CARTS) {
+			if (playerCart === cart) {
+				return player
+			}
+		}
+		return undefined
+	}
 	getPlayerSkin(player: Player): string {
 		return "Cart"
 	}
@@ -217,6 +270,17 @@ export class CartService implements OnStart {
 		if (existing) {
 			existing.Destroy()
 		}
+		Workspace.GetChildren().forEach((child) => {
+			if (
+				child.GetTags().find((e) => e === "CartComponent") &&
+				child.IsA("Model")
+			) {
+				const does_name_match = child.Name.split("_")[1] === player.Name
+				if (does_name_match) {
+					child.Destroy()
+				}
+			}
+		})
 		my_cart.forEach((cart) => {
 			cart.cleanup()
 		})
@@ -249,6 +313,7 @@ export class CartService implements OnStart {
 				this.PLAYER_CARTS.delete(player)
 			})
 		})
+		ServerEvents.CartService.clearDeathPreview(player)
 		return cart_model
 	}
 	private readonly SHIELDS = new Map<Model, number>() // Tracks shield expiry time per cart
@@ -288,6 +353,15 @@ export class CartService implements OnStart {
 			task.cancel(existingTask)
 		}
 
+		const player = this.getPlayerFromCart(cart)
+		if (player) {
+			ServerEvents.NotificationService.sendNotification(player, {
+				title: "<b>Shield Extended</b>",
+				description: `<font color='#00D4FF'>+${duration}s</font>`,
+				duration: 3,
+				soundId: A.sounds.reward_earned
+			})
+		}
 		if (wasShielded) {
 			// Extend existing shield
 			this.SHIELDS.set(cart, existing + duration)
@@ -299,13 +373,14 @@ export class CartService implements OnStart {
 				this.removeShield(cart)
 			})
 			this.SHIELD_TASKS.set(cart, removalTask)
+			// Find player and send notification
 			return
 		}
 
 		// New shield - change collision group to Invincible
-		const root = cart.FindFirstChild("Root") as BasePart
+		const root = cart?.FindFirstChild("Root") as BasePart
 		if (root) {
-			const vfx = root.FindFirstChild("ShieldVFX") as Attachment
+			const vfx = root?.FindFirstChild("ShieldVFX") as Attachment
 			if (!vfx) {
 				const orig_vfx = assets.FindFirstChild("ShieldVFX") as Attachment
 				if (orig_vfx) {
@@ -339,8 +414,8 @@ export class CartService implements OnStart {
 
 		this.SHIELDS.delete(cart)
 		this.setCartCollisionGroup(cart, "Hitbox")
-		const root = cart.FindFirstChild("Root") as BasePart
-		root.FindFirstChild("ShieldVFX")?.Destroy()
+		const root = cart?.FindFirstChild("Root") as BasePart
+		root?.FindFirstChild("ShieldVFX")?.Destroy()
 	}
 
 	/**
@@ -432,8 +507,17 @@ export class CartService implements OnStart {
 		if (!profile) {
 			return
 		}
-		this.logger.log(`Incrementing revives for player ${player.Name}`)
 		profile.Data.revives = (profile.Data.revives || 0) + amount
+		this.logger.log(
+			`Incrementing revives for player ${player.Name}, new total: ${profile.Data.revives}`
+		)
+		ServerEvents.NotificationService.sendNotification(player, {
+			title: "<b>Revives Earned!</b>",
+			description: `<font color='#00FF88'>+${amount}</font> ${amount === 1 ? "revive" : "revives"}`,
+			duration: 4
+		})
+		this.refreshPlayerProducts(player)
+		return profile.Data.revives
 	}
 	incrementPlayerFlips(player: Player, amount = 1) {
 		const profile = this.DataService.getProfile(player)
@@ -442,6 +526,13 @@ export class CartService implements OnStart {
 		}
 		this.logger.log(`Incrementing flips for player ${player.Name}`)
 		profile.Data.flips = (profile.Data.flips || 0) + amount
+		ServerEvents.NotificationService.sendNotification(player, {
+			title: "<b>Flips Earned!</b>",
+			description: `<font color='#FFD700'>+${amount}</font> ${amount === 1 ? "flip" : "flips"}`,
+			duration: 4
+		})
+		this.refreshPlayerProducts(player)
+		return profile.Data.flips
 	}
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		if (this.DEBOUNCE_TABLE.has(player)) {
@@ -491,6 +582,7 @@ export class CartService implements OnStart {
 				)
 			}
 		})
+		ServerEvents.CartService.clearDeathPreview(player)
 		return cart_model
 	}
 }

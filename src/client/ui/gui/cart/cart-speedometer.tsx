@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "@rbxts/react"
-import { Players, RunService } from "@rbxts/services"
+import { Players, RunService, Workspace } from "@rbxts/services"
 import { CartClientComponent } from "client/components/cart.client.component"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { UIDIM } from "client/ui/constants"
@@ -7,13 +7,16 @@ import { useCart } from "client/ui/contexts/cart.context"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
 import { A } from "shared/assets"
 import { Logger } from "shared/logger"
+import { useInputType } from "client/ui/hooks/useInputType"
 const logger = new Logger("SpeedometerHud")
 export function SpeedometerHud(props: {
-	__story?: { cart_enabled: boolean; override_speed: number }
+	__story?: { cart_enabled: boolean; override_speed: number; override_device?: "Gamepad" | "Keyboard" | "Mobile" }
 }) {
-	const {cart,state} = useCart()
+	const { cart, state } = useCart()
+	const device = props.__story?.override_device ?? useInputType()
+	const isMobile = device === "Mobile"
 	const max_speed = 70
-	const degrees_range = [-20, 110]
+	const degrees_range = isMobile ? [20,160]:  [-20, 110]
 	const [speed, set_speed] = useState<number>(0)
 	const death_speed = 130
 	let target_speed = props.__story?.override_speed ?? speed
@@ -60,20 +63,36 @@ export function SpeedometerHud(props: {
 			Enum.EasingDirection.InOut
 		)
 	})
+	const default_fov = 70
+	const camera = Workspace.CurrentCamera
+	if (camera) {
+		const min_degrees = 20
+		const max_degrees = 120
+		const added_fov = 50
+		const calculated_fov =
+			default_fov +
+			math.clamp(
+				((target_speed - min_degrees) / (max_degrees - min_degrees)) * added_fov,
+				0,
+				added_fov
+			)
+		camera.FieldOfView = calculated_fov
+	}
 	const death_value = useAnimateValue({
 		target_value: is_death ? 1 : 0,
 		tween_info: new TweenInfo(
 			0.2,
 			Enum.EasingStyle.Sine,
 			Enum.EasingDirection.InOut
-		)
+		),
+		enabled: !isMobile
 	})
 	return (
 		<frame
 			key={"movement-scaler"}
 			Size={new UDim2(0.3, 0, 0.3, 0)}
-			AnchorPoint={new Vector2(0.8, 0.8)}
-			Position={new UDim2(1, 0, 1, 0)}
+			AnchorPoint={isMobile ? UIDIM.A_CENTER.add(new Vector2(0,.1)) : new Vector2(0.8, 0.8)}
+			Position={isMobile ? UIDIM.BOTTOM_CENTER : new UDim2(1, 0, 1, 0)}
 			BackgroundTransparency={1}
 		>
 			<uiaspectratioconstraint AspectRatio={1} />
@@ -84,7 +103,7 @@ export function SpeedometerHud(props: {
 				AnchorPoint={new Vector2(0.5, 0.5)}
 				Position={
 					new UDim2(
-						0.5 + (1 - value) - death_value * 0.2,
+						0.5 + (isMobile ? 0 :( (1 - value) - death_value * 0.2)),
 						0,
 						0.5 + (1 - value) - death_value * 0.2,
 						0
@@ -108,8 +127,8 @@ export function SpeedometerHud(props: {
 				<frame
 					BackgroundTransparency={1}
 					Size={new UDim2(1.05, 0, 1.05, 0)}
-					AnchorPoint={UIDIM.A_BOTTOM_RIGHT}
-					Position={UIDIM.BOTTOM_RIGHT}
+					AnchorPoint={isMobile ? UIDIM.A_CENTER : UIDIM.A_BOTTOM_RIGHT}
+					Position={ isMobile ? UIDIM.CENTER: UIDIM.BOTTOM_RIGHT}
 				>
 					{speed_keypoints.map((speed_value) => (
 						<frame
@@ -120,13 +139,16 @@ export function SpeedometerHud(props: {
 							}
 							AnchorPoint={UIDIM.A_CENTER}
 							Size={new UDim2(0.05, 0, 0.05, 0)}
-							Position={new UDim2(0.6, 0, 0.6, 0)}
+							Position={isMobile ? UIDIM.CENTER.add(UDim2.fromScale(0,.1)) : new UDim2(0.6, 0, 0.6, 0)}
 							key={"dot"}
 							BackgroundTransparency={1}
 						>
 							<textlabel
 								BackgroundTransparency={1}
 								TextScaled
+								Rotation={(speed_value / max_speed) *
+									(degrees_range[1] - degrees_range[0]) +
+								degrees_range[0] > 90 ? 180 : 0}
 								AnchorPoint={UIDIM.A_LEFT}
 								Size={new UDim2(3, 0, 3, 0)}
 								Position={
@@ -167,6 +189,7 @@ export function SpeedometerHud(props: {
 					MaxTextSize={200}
 					Size={new UDim2(.3,0,.3,0)}
 				/> */}
+				{isMobile ? undefined : 
 				<GoofyText
 					Position={
 						new UDim2(1.3 - death_value * 0.3, 0, 1.3 - death_value * 0.3, 0)
@@ -176,12 +199,12 @@ export function SpeedometerHud(props: {
 					TextScaled
 					MaxTextSize={200}
 					Size={new UDim2(0.3, 0, 0.3, 0)}
-				/>
+				/>}
 				<frame
-					Rotation={degree}
+					Rotation={math.clamp(degree,0,isMobile ? degrees_range[1]+20 : 360)}
 					AnchorPoint={UIDIM.A_CENTER}
 					Size={new UDim2(0.05, 0, 0.05, 0)}
-					Position={new UDim2(0.6, 0, 0.6, 0)}
+					Position={isMobile ? UIDIM.CENTER.add(UDim2.fromScale(0,.1)) : new UDim2(0.6, 0, 0.6, 0)}
 					key={"dot"}
 					BackgroundTransparency={1}
 				>

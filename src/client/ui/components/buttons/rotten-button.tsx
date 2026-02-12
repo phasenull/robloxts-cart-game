@@ -1,8 +1,11 @@
 import React, { useEffect } from "@rbxts/react"
 import { UIHelper } from "client/ui.helper"
-import { UIDIM } from "client/ui/constants"
+import { GAMEPAD_BUTTONS, IActionKeyMap, MOUSE_KEYBOARD_BUTTONS, UIDIM } from "client/ui/constants"
+import { Icon } from "client/ui/components/icon"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
 import { useInput } from "client/ui/hooks/useInput"
+import { useActionImage } from "client/ui/hooks/useKeyImage"
+import { useInputType } from "client/ui/hooks/useInputType"
 import { useMouseEvents } from "client/ui/hooks/useMouseEvents"
 import { useMouseHover } from "client/ui/hooks/useMouseHover"
 import { A } from "shared/assets"
@@ -23,8 +26,22 @@ export function RottenButton(props: {
 	children?: React.ReactNode
 	bindKey?: Enum.KeyCode
 	onDown?: (status: boolean) => void
+	action?: keyof IActionKeyMap
+	overrideDevice?: "Gamepad" | "Keyboard" | "Mobile"
 }) {
 	const thisRef = React.useRef<ImageButton>()
+	const device = props.overrideDevice ?? useInputType()
+	const actionImage = useActionImage(props.action, device)
+	const kbKey = props.action
+		? (MOUSE_KEYBOARD_BUTTONS as Partial<Record<keyof IActionKeyMap, Enum.KeyCode>>)[props.action]
+		: undefined
+	const effectiveBindKey = props.bindKey ?? (props.action
+		? (device === "Gamepad" ? GAMEPAD_BUTTONS[props.action] : kbKey)
+		: undefined)
+	const resolvedKeyCode = effectiveBindKey ?? (props.action
+		? (device === "Gamepad" ? GAMEPAD_BUTTONS[props.action] : kbKey)
+		: undefined)
+	const iconAspectRatio = resolvedKeyCode === Enum.KeyCode.Space ? 2 : 1
 	const original_size = props.Size ?? new UDim2(0.6, 0, 0.1, 0)
 	const [is_subbed_key_down, set_id_subbed_key_down] = React.useState(false)
 	const { isMouseDown, isMouseOver } = useMouseEvents(thisRef)
@@ -32,8 +49,8 @@ export function RottenButton(props: {
 		props.onClick?.()
 	}
 	useInput({
-		key: props.bindKey || Enum.KeyCode.Unknown,
-		enabled: props.bindKey !== undefined,
+		key: effectiveBindKey || Enum.KeyCode.Unknown,
+		enabled: effectiveBindKey !== undefined,
 		handler: (pressed) => {
 			set_id_subbed_key_down(pressed)
 			props.onDown?.(pressed)
@@ -144,6 +161,20 @@ export function RottenButton(props: {
 				BorderSizePixel={0}
 				key={"inner_shadow_bottom"}
 			/>
+			{actionImage && device !== "Keyboard" ? (
+				<Icon
+					Image={actionImage}
+					AnchorPoint={UIDIM.A_CENTER}
+					Size={device === "Gamepad" ? new UDim2(0.5, 0, 0.5, 0) : new UDim2(0.3, 0, 0.3, 0)}
+					Position={UIDIM.TOP_RIGHT.add(new UDim2(0.01, 0, -0.05, 0))}
+					Color3={new Color3(0.36, 0.66, 1)}
+					Transparency={0.1}
+					ScaleType={Enum.ScaleType.Fit}
+					escape_ratio={iconAspectRatio !== 1}
+				>
+					<uiaspectratioconstraint AspectRatio={iconAspectRatio} />
+				</Icon>
+			) : undefined}
 			{props.children}
 		</imagebutton>
 	)

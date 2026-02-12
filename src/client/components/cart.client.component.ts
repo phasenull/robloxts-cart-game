@@ -10,6 +10,7 @@ import { AnimationController } from "client/controllers/animation.controller"
 import { CartController } from "client/controllers/cart.controller"
 import { UIHelper } from "client/ui.helper"
 import { __STUDIO__ } from "client/ui/constants"
+import { IHandBrake } from "shared/cart.helper"
 import { Logger } from "shared/logger"
 import { ClientEvents, ClientFunctions } from "shared/network.helper"
 import { PRODUCTS } from "shared/purchasables"
@@ -27,7 +28,7 @@ export class CartClientComponent
 	extends BaseComponent<{}, ICart>
 	implements OnPhysics, OnStart
 {
-	private readonly cart_lever_animation_id = 110707374829481
+	private readonly cart_lever_animation_id = 125184894660712
 	private readonly cart_spawn_animation_id = 95061387311577
 	private readonly cart_idle_animation_id = 126006910637391
 	private rider: Humanoid | undefined
@@ -54,9 +55,9 @@ export class CartClientComponent
 		friction: number
 		max_velocity: number
 	}): void {
-		this.logger.log(
-			`Overriding cart config: power=${args.power}, friction=${args.friction}, max_velocity=${args.max_velocity}`
-		)
+		// this.logger.log(
+		// 	`Overriding cart config: power=${args.power}, friction=${args.friction}, max_velocity=${args.max_velocity}`
+		// )
 		this.power = args.power
 		this.wheel_friction = args.friction
 		this.max_velocity = args.max_velocity
@@ -157,7 +158,7 @@ export class CartClientComponent
 			return
 		}
 		const root = this.instance.Root
-		if (this.brake && velocity.Magnitude > .01 && !is_in_air) {
+		if (this.brake && velocity.Magnitude > 0.01 && !is_in_air) {
 			const velocity_direction = normalizeVector3(velocity)
 			const brake_force = velocity_direction.mul(-this.wheel_friction * 5)
 			force.Force = brake_force
@@ -166,7 +167,7 @@ export class CartClientComponent
 				new Vector3(
 					0,
 					((root.AssemblyMass * Workspace.Gravity) / 2) *
-					this.anti_gravity_multiplier,
+						this.anti_gravity_multiplier,
 					0
 				)
 			)
@@ -283,16 +284,13 @@ export class CartClientComponent
 		const seat_weld = seat.FindFirstChildOfClass("Weld")
 		const pp = character?.PrimaryPart
 		if (seat_weld) {
-			seat_weld.C0 = new CFrame(0, 0.6, 0)
+			seat_weld.C0 = new CFrame(0.1, 0.3, 0.15)
 			seat_weld.C1 = new CFrame(0, 0, 0)
 		}
-
 		this.brake_animation_track = this.AnimationController.preload({
 			key: "cart_lever",
 			animationId: this.cart_lever_animation_id
 		})
-		this.rider.JumpHeight = 0
-		const humanoid = this.rider
 		// const conn = this.rider.GetPropertyChangedSignal("Jump").Connect(() => {
 		// 	const value = humanoid.Jump
 		// 	if (!this.rider || this.rider !== humanoid) {
@@ -345,6 +343,16 @@ export class CartClientComponent
 				brake.Enabled = false
 			}
 		}
+		if (this.brake_animation_track) {
+			this.brake_animation_track.Priority = Enum.AnimationPriority.Action4
+			this.brake_animation_track.AdjustSpeed(0)
+			this.brake_animation_track.Looped = true
+			if (enable) {
+				this.brake_animation_track.Play()
+			} else {
+				this.brake_animation_track.Stop()
+			}
+		}
 		const wheel_constraints = this.instance
 			.GetDescendants()
 			.filter((descendant) =>
@@ -353,6 +361,7 @@ export class CartClientComponent
 		wheel_constraints.forEach((constraint) => {
 			constraint.MaxFrictionTorque = enable ? 30 : 5
 		})
+		this.brake = enable
 		this.brakeListener.Fire(enable)
 		this.toggleFriction(enable)
 		const anim = this.brake_animation_track
@@ -363,6 +372,17 @@ export class CartClientComponent
 			} else {
 				anim.Stop()
 			}
+		}
+		const handbrake = this.instance.FindFirstChild("HandBrake") as IHandBrake
+		if (handbrake) {
+			const motor = handbrake.RootPart.FindFirstChildOfClass("Motor6D")
+			if (motor) {
+				motor.DesiredAngle = this.brake ? -0.3 : 0
+			} else {
+				this.logger.warn("Motor6D not found in HandBrake")
+			}
+		} else {
+			this.logger.warn("HandBrake model not found in cart instance")
 		}
 	}
 	private __is_flipping = false
@@ -459,7 +479,6 @@ export class CartClientComponent
 			return
 		}
 		if (this.rider && this.rider === humanoid) {
-			this.rider.JumpHeight = 7.2
 			if (this.rider.Seated) {
 				this.rider.Sit = false
 			}
@@ -510,7 +529,7 @@ export class CartClientComponent
 		if (new_rider === humanoid) {
 			// local player just got on
 			this.rider = humanoid
-			this.logger.log("Local player got on the cart")
+			// this.logger.log("Local player got on the cart")
 			this.onRide()
 			return
 		}
@@ -635,7 +654,6 @@ export class CartClientComponent
 				return false
 			}
 			if (ray.Instance.Name === "AntiRevive") {
-				this.logger.log("Checkpoint unavailable due to anti-revive zone")
 				return false
 			}
 		}

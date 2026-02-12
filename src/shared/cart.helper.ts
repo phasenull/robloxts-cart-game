@@ -1,5 +1,5 @@
 import { Workspace } from "@rbxts/services"
-import { A } from "./assets"
+import { A, assets } from "./assets"
 import { __IS_STUDIO__ } from "./config.helper"
 import { ICart, IWheel } from "./type.helper"
 import {
@@ -7,24 +7,33 @@ import {
 	BuildWeldConstraints,
 	MasslessPart
 } from "./util.helper"
-
+import StringUtils from "@rbxts/string-utils"
+export type IHandBrake = Model & {
+	RootPart: BasePart & {
+		WeldConstraint: WeldConstraint
+		Motor6D: Motor6D
+	}
+}
 export function RigCartModel(cart_model: ICart) {
 	const visuals = cart_model.FindFirstChild("Visuals") as Model
 	// logger.log(`Initializing cart: ${cart_model.GetFullName()}`)
 
 	// build required parts
 	const wheels = cart_model.Wheels
-	const [bounding_box, size] = cart_model.GetBoundingBox()
+	const [bounding_box, _] = cart_model.GetBoundingBox()
 	const mass_part = MasslessPart(cart_model, "Mass")
 	mass_part.Size = new Vector3(2.712, 1, 2.475)
 	mass_part.CFrame = bounding_box.mul(new CFrame(0, -0.5, 0))
 	mass_part.Massless = false
 	const hitbox = MasslessPart(cart_model, "Hitbox")
-	hitbox.Size = size.add(new Vector3(0, -2, 0))
+	const is_spike = StringUtils.startsWith(cart_model.Name, "Spiky Cart")
+	hitbox.Size = new Vector3(4, 3.851, 5)
+		.mul(is_spike ? new Vector3(0.7, 1, 0.7) : 1)
+		.add(new Vector3(0, -2, 0))
 	hitbox.CFrame = bounding_box.mul(new CFrame(0, 0.5, 0))
 	hitbox.CanCollide = true
 	hitbox.CollisionGroup = "Hitbox"
-	hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7, 1, 0.2)
+	hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7, 1, 0.01)
 	const root_part = MasslessPart(cart_model, "Root")
 	root_part.CFrame = bounding_box
 	root_part.Color = new Color3(0, 0.9, 1)
@@ -39,7 +48,7 @@ export function RigCartModel(cart_model: ICart) {
 	seat.Name = "VehicleSeat"
 	seat.Size = new Vector3(4.278, 0.332, 5.622)
 	seat.CFrame = bounding_box.mul(new CFrame(0, -0.5, 0))
-	seat.Transparency = __IS_STUDIO__ ? 0.5 : 1
+	seat.Transparency = 1
 	seat.CanCollide = false
 	BuildWeldConstraints(root_part, seat)
 	BuildWeldConstraints(root_part, mass_part)
@@ -53,6 +62,7 @@ export function RigCartModel(cart_model: ICart) {
 		ball.Shape = Enum.PartType.Ball
 		ball.CFrame = model.GetPivot()
 		ball.CanCollide = true
+		ball.Transparency = 1
 		const wheel = model.WHEEL
 		ball.Destroying.Once(() => {
 			wheel?.Destroy()
@@ -81,6 +91,7 @@ export function RigCartModel(cart_model: ICart) {
 		const model = _ as IWheel
 		const wheel = model.WHEEL
 		const connection = model.CONNECTION
+		connection.Size = new Vector3(0.7, 0.5, 0.875)
 		const ball = model.BALL
 		const attachment_ball = new Instance("Attachment", ball)
 		const attachment_connection = new Instance("Attachment", root_part)
@@ -89,7 +100,6 @@ export function RigCartModel(cart_model: ICart) {
 		// new Vector3(0, 0, connection.Size.Z / 2)
 		// )
 		ball.Color = new Color3(1, 0, 0)
-		ball.Transparency = 0.3
 		attachment_ball.Name = "ball->connection"
 		attachment_connection.Name = "connection->ball"
 		const attachment_root_to_ball = new Instance("Attachment", cart_model.Root)
@@ -146,6 +156,27 @@ export function RigCartModel(cart_model: ICart) {
 		// weld_mass.C0 = new CFrame(.3, 0, 0)
 		// 	.mul(CFrame.Angles(math.rad(90), 0, 0))
 	})
+
+	const __hand_brake = assets.FindFirstChild("HandBrake") as IHandBrake
+	assert(__hand_brake, "HandBrake model not found in assets")
+	const hand_brake_clone = __hand_brake.Clone()
+	hand_brake_clone.GetDescendants().forEach((descendant) => {
+		if (descendant.IsA("BasePart")) {
+			descendant.CanCollide = false
+			descendant.Massless = true
+			descendant.Anchored = false
+		}
+	})
+	hand_brake_clone.Name = "HandBrake"
+	hand_brake_clone.Parent = cart_model
+	hand_brake_clone.RootPart.WeldConstraint.Destroy()
+	const motor6d = new Instance("Motor6D", hand_brake_clone.RootPart)
+	motor6d.Name = "Motor6D"
+	motor6d.Part0 = hand_brake_clone.RootPart
+	motor6d.Part1 = cart_model.PrimaryPart
+	motor6d.C0 = new CFrame()
+	motor6d.MaxVelocity = 0.025
+	motor6d.C1 = new CFrame(1.9, 0, 0.7).mul(CFrame.Angles(0, math.rad(90), 0))
 }
 
 export const getPreviousBigCheckpoint = (current: number) => {
