@@ -16,6 +16,8 @@ import { DataService } from "./data.service"
 import { PRODUCTS } from "shared/purchasables"
 import { CheckpointService } from "./checkpoint.service"
 import { arrow } from "@rbxts/better-gizmos"
+import StringUtils from "@rbxts/string-utils"
+import { isTester } from "shared/role.utils"
 
 @Service()
 export class CartService implements OnStart {
@@ -51,6 +53,11 @@ export class CartService implements OnStart {
 		return player_carts.includes(cart_name)
 	}
 	playerAdded(player: Player) {
+		const is_tester = isTester(player)
+		if (is_tester) {
+			this.incrementPlayerRevives(player, 25)
+			this.incrementPlayerFlips(player, 25)
+		}
 		player.CharacterAdded.Connect((char) => {
 			char.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
@@ -108,7 +115,8 @@ export class CartService implements OnStart {
 							this.addShield(cart2, 10)
 							ServerEvents.NotificationService.sendNotification(player, {
 								title: "<b>Shield Activated!</b>",
-								description: "<font color='#00D4FF'>10 seconds</font> of protection",
+								description:
+									"<font color='#00D4FF'>10 seconds</font> of protection",
 								duration: 3
 							})
 						}
@@ -126,35 +134,41 @@ export class CartService implements OnStart {
 			return [config.CartConfig]
 		})
 
-		ServerFunctions.CartService.revive.setCallback(async (player, target, stage) => {
-			// this.logger.warn("REVIVE RF CALLED")
-			// return [true]
-			const [data,err] = await ServerFunctions.CartService.useProduct.predict(player, "revives")
-			if (!data || err) {
-				return [false, err || "Failed to use revive product"]
-			}
-			// this.logger.log(
-			// 	`Revive-spawning cart for player ${player.Name} at stage ${stage}`
-			// )
-			const cart_skin = this.getPlayerSkin(player)
-			const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
-			const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
+		ServerFunctions.CartService.revive.setCallback(
+			async (player, target, stage) => {
+				// this.logger.warn("REVIVE RF CALLED")
+				// return [true]
+				const [data, err] =
+					await ServerFunctions.CartService.useProduct.predict(
+						player,
+						"revives"
+					)
+				if (!data || err) {
+					return [false, err || "Failed to use revive product"]
+				}
+				// this.logger.log(
+				// 	`Revive-spawning cart for player ${player.Name} at stage ${stage}`
+				// )
+				const cart_skin = this.getPlayerSkin(player)
+				const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
+				const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
 
-			const char = player.Character
-			const pp = char?.PrimaryPart
+				const char = player.Character
+				const pp = char?.PrimaryPart
 
-			if (vehicle_seat && pp && char) {
-				pp.PivotTo(target)
-				task.wait(0.5) // Wait for the seat to be fully initialized
-				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
+				if (vehicle_seat && pp && char) {
+					pp.PivotTo(target)
+					task.wait(0.5) // Wait for the seat to be fully initialized
+					vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
+				}
+				const checkpoint_service = Dependency<CheckpointService>()
+				checkpoint_service.setCheckpointIndex(player, stage)
+				if (!cart) {
+					return [false, "Failed to spawn cart"] as [false, string]
+				}
+				return [true] as [true]
 			}
-			const checkpoint_service = Dependency<CheckpointService>()
-			checkpoint_service.setCheckpointIndex(player, stage)
-			if (!cart) {
-				return [false, "Failed to spawn cart"] as [false, string]
-			}
-			return [true] as [true]
-		})
+		)
 
 		ServerFunctions.CartService.reset.setCallback((player) => {
 			// this.logger.log(`Respawning player ${player.Name}`)
@@ -230,6 +244,18 @@ export class CartService implements OnStart {
 		if (existing) {
 			existing.Destroy()
 		}
+		Workspace.GetChildren().forEach((child) => {
+
+			if (
+				child.GetTags().find((e) => e === "CartComponent") &&
+				child.IsA("Model")
+			) {
+				const does_name_match = child.Name.split("_")[1] === player.Name
+				if (does_name_match) {
+					child.Destroy()
+				}
+			}
+		})
 		my_cart.forEach((cart) => {
 			cart.cleanup()
 		})
@@ -456,10 +482,12 @@ export class CartService implements OnStart {
 			return
 		}
 		profile.Data.revives = (profile.Data.revives || 0) + amount
-		this.logger.log(`Incrementing revives for player ${player.Name}, new total: ${profile.Data.revives}`)
+		this.logger.log(
+			`Incrementing revives for player ${player.Name}, new total: ${profile.Data.revives}`
+		)
 		ServerEvents.NotificationService.sendNotification(player, {
 			title: "<b>Revives Earned!</b>",
-			description: `<font color='#00FF88'>+${amount}</font> ${amount === 1 ? 'revive' : 'revives'}`,
+			description: `<font color='#00FF88'>+${amount}</font> ${amount === 1 ? "revive" : "revives"}`,
 			duration: 4
 		})
 		this.refreshPlayerProducts(player)
@@ -473,7 +501,7 @@ export class CartService implements OnStart {
 		profile.Data.flips = (profile.Data.flips || 0) + amount
 		ServerEvents.NotificationService.sendNotification(player, {
 			title: "<b>Flips Earned!</b>",
-			description: `<font color='#FFD700'>+${amount}</font> ${amount === 1 ? 'flip' : 'flips'}`,
+			description: `<font color='#FFD700'>+${amount}</font> ${amount === 1 ? "flip" : "flips"}`,
 			duration: 4
 		})
 		this.refreshPlayerProducts(player)
