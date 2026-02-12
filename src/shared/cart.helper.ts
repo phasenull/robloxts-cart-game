@@ -91,6 +91,7 @@ export function RigCartModel(cart_model: ICart) {
 		const model = _ as IWheel
 		const wheel = model.WHEEL
 		const connection = model.CONNECTION
+		connection.Size = new Vector3(0.7, 0.5, 0.875)
 		const ball = model.BALL
 		const attachment_ball = new Instance("Attachment", ball)
 		const attachment_connection = new Instance("Attachment", root_part)

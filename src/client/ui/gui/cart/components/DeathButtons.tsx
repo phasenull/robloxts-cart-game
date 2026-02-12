@@ -143,7 +143,7 @@ export function DeathButtons({
 			Size={UDim2.fromScale(0.2, 0.2)}
 			AnchorPoint={UIDIM.A_BOTTOM}
 			Position={UDim2.fromScale(0.5, 0.95 + 1 - transparency)}
-			BackgroundTransparency={.5}
+			BackgroundTransparency={1}
 		>
 			<uiaspectratioconstraint AspectRatio={4} />
 			<uilistlayout
