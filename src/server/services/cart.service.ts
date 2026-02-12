@@ -55,8 +55,10 @@ export class CartService implements OnStart {
 	playerAdded(player: Player) {
 		const is_tester = isTester(player)
 		if (is_tester) {
-			this.incrementPlayerRevives(player, 25)
-			this.incrementPlayerFlips(player, 25)
+			task.delay(5, () => {
+				this.incrementPlayerRevives(player, 25)
+				this.incrementPlayerFlips(player, 25)
+			})
 		}
 		player.CharacterAdded.Connect((char) => {
 			char.GetDescendants().forEach((descendant) => {
