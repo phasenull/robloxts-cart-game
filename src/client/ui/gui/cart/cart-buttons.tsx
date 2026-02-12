@@ -131,13 +131,13 @@ export function CartButtons(props: {
 			AnchorPoint={isMobile ? UIDIM.A_BOTTOM_RIGHT : UIDIM.A_BOTTOM}
 			Position={
 				isMobile
-					? new UDim2(1, -10, 0.9, 0)
+					? new UDim2(1, -20, 0.9, 0)
 					: new UDim2(0.5, 0, 1.3 - value * 0.4, 0)
 			}
 			// .add(new UDim2(0, 0, value, 0))
 			BackgroundTransparency={1}
 			ClipsDescendants={false}
-			Size={new UDim2(0.5, 0, isMobile ? 0.5 : 0.15, 0)}
+			Size={new UDim2(0.5, 0, isMobile ? 0.4 : 0.15, 0)}
 		>
 			<uiaspectratioconstraint AspectRatio={isMobile ? 1 : 5} />
 			<uiscale Scale={1.3 - value * 0.3} />
@@ -187,19 +187,27 @@ export function CartButtons(props: {
 						__story={props.__story}
 					/>
 				) : undefined}
-				<RottenButton
-					Rotation={IS_BRAKING ? (brake_shake - 0.5) * 5 : 0}
+				<frame
+					BackgroundTransparency={1}
 					Size={isMobile ? UDim2.fromScale(1, 2) : UIDIM.ONE}
-					Ratio={isMobile ? 0.7 : 2}
-					Position={UIDIM.CENTER}
-					AnchorPoint={UIDIM.A_CENTER}
-					Text="BRAKE"
-					Color={new Color3(1, 0.02, 0.02)}
-					onDown={(is_down) => mutateBrake(is_down)}
-					mockMouseDown={IS_BRAKING === true ? true : undefined}
-					action="BRAKE"
-					overrideDevice={props.__story?.override_device}
-				/>
+						Position={UIDIM.CENTER}
+						AnchorPoint={UIDIM.A_CENTER}
+				>
+					<uiaspectratioconstraint AspectRatio={isMobile ? 0.7 : 2} />
+					<RottenButton
+						Rotation={IS_BRAKING ? (brake_shake - 0.5) * 5 : 0}
+						Size={isMobile ? UDim2.fromScale(1, 2) : UIDIM.ONE}
+						Ratio={isMobile ? 0.7 : 2}
+						Position={UIDIM.CENTER}
+						AnchorPoint={UIDIM.A_CENTER}
+						Text="BRAKE"
+						Color={new Color3(1, 0.02, 0.02)}
+						onDown={(is_down) => mutateBrake(is_down)}
+						mockMouseDown={IS_BRAKING === true ? true : undefined}
+						action="BRAKE"
+						overrideDevice={props.__story?.override_device}
+					/>
+				</frame>
 			</frame>
 			<frame
 				BackgroundTransparency={1}
