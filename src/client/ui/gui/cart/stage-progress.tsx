@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from "@rbxts/react"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useCheckpoint } from "./hooks/useCheckpoint"
-import { Workspace } from "@rbxts/services"
+import { Players, Workspace } from "@rbxts/services"
 import { ProgressBarComponent } from "client/ui/components/progressbar-component"
 import { useRendering } from "client/ui/hooks/useRendering"
 import { sphere } from "@rbxts/better-gizmos"
 import { GoofyText } from "client/ui/components/goofy-text"
-import { UIDIM } from "client/ui/constants"
-import { getCheckpointDataFromIndex, getCheckpointModelByIndex, getNextBigCheckpoint, getPreviousBigCheckpoint } from "shared/cart.helper"
+import { PRIMARY, UIDIM } from "client/ui/constants"
+import {
+	getCheckpointDataFromIndex,
+	getCheckpointModelByIndex,
+	getNextBigCheckpoint,
+	getPreviousBigCheckpoint
+} from "shared/cart.helper"
+import { PlayerAvatar } from "client/ui/components/player-avatar"
 export function StageProgress() {
 	const { cart } = useCart()
 	const { currentCheckpoint } = useCheckpoint()
@@ -18,11 +24,15 @@ export function StageProgress() {
 	if (!cart_position) {
 		return
 	}
-	const checkpoint = getCheckpointModelByIndex(getPreviousBigCheckpoint(currentCheckpoint))
+	const checkpoint = getCheckpointModelByIndex(
+		getPreviousBigCheckpoint(currentCheckpoint)
+	)
 	if (!checkpoint) {
 		return
 	}
-	const next_checkpoint = getCheckpointModelByIndex(getNextBigCheckpoint(currentCheckpoint))
+	const next_checkpoint = getCheckpointModelByIndex(
+		getNextBigCheckpoint(currentCheckpoint)
+	)
 	if (!next_checkpoint) {
 		return
 	}
@@ -46,20 +56,45 @@ export function StageProgress() {
 	}
 	if (!cart) return
 	return (
-		<frame BackgroundTransparency={1} Position={new UDim2(.5,0,0.05,0)} AnchorPoint={UIDIM.A_TOP} Size={UIDIM.ONE}>
+		<frame
+			BackgroundTransparency={1}
+			Position={new UDim2(0.5, 0, 0.05, 0)}
+			AnchorPoint={UIDIM.A_TOP}
+			Size={UIDIM.ONE}
+		>
 			<uiaspectratioconstraint AspectRatio={10} />
-			<uilistlayout SortOrder={Enum.SortOrder.LayoutOrder} Padding={new UDim(.05,0)} FillDirection={Enum.FillDirection.Vertical} HorizontalAlignment={Enum.HorizontalAlignment.Center}/>
+			<uilistlayout
+				SortOrder={Enum.SortOrder.LayoutOrder}
+				Padding={new UDim(0.05, 0)}
+				FillDirection={Enum.FillDirection.Vertical}
+				HorizontalAlignment={Enum.HorizontalAlignment.Center}
+			/>
 			<ProgressBarComponent
 				progress={new_progress}
-				
 				total_duration={0}
 				Color={Color3.fromRGB(249, 65, 0)}
 				Text={`${math.floor(new_progress * 100)}%`}
 				AnchorPoint={new Vector2(0.5, 0)}
 				Position={new UDim2(0.5, 0, 0.112, 0)}
-				Size={new UDim2(.15,0,.15,0)}
+				Size={new UDim2(0.15, 0, 0.15, 0)}
+			>
+				<PlayerAvatar
+					img_type={Enum.ThumbnailType.HeadShot}
+					user_id={Players.LocalPlayer.UserId}
+					AnchorPoint={UIDIM.A_CENTER}
+					Position={UDim2.fromScale(new_progress, 0.5)}
+					BackgroundTransparency={0}
+					BackgroundColor3={PRIMARY}
+					Size={UDim2.fromScale(2,2)}
+					BorderSizePixel={0}
+				>
+					<uicorner CornerRadius={new UDim(1, 0)} />
+				</PlayerAvatar>
+			</ProgressBarComponent>
+			<GoofyText
+				Size={UDim2.fromScale(0.3, 0.2)}
+				Text={`${getCheckpointDataFromIndex(tonumber(checkpoint.Name) || 0)?.name}`}
 			/>
-			<GoofyText Size={UDim2.fromScale(.3,.2)} Text={`${getCheckpointDataFromIndex(tonumber(checkpoint.Name)||0)?.name}`}/>
 		</frame>
 	)
 }

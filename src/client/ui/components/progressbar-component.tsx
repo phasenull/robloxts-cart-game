@@ -9,6 +9,7 @@ export function ProgressBarComponent(props: {
 	Position?: UDim2
 	Text?: string
 	AnchorPoint?: Vector2
+	children?: React.ReactNode
 }) {
 	const target_color = props.Color ?? Color3.fromRGB(249, 65, 0)
 	const tinted_color = target_color.Lerp(Color3.fromRGB(255, 255, 255), 0.8)
@@ -98,6 +99,7 @@ export function ProgressBarComponent(props: {
 				Size={new UDim2(1, 0, 0.994, 0)}
 				ZIndex={0}
 			/>
+			{props.children}
 			<uistroke Color={Color3.fromRGB(41, 41, 41)} Thickness={4} />
 		</frame>
 	)
