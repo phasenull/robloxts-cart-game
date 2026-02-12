@@ -21,6 +21,7 @@ export type INotification = {
 	title: string;
 	description: string;
 	duration?: number;
+	soundId?: string;
 }
 export type IPurchasableConfig = IPurchasable<"gamepass" | "product">[]
 

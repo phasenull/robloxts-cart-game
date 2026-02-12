@@ -31,6 +31,7 @@ export function NotificationsGui() {
 					title={notification.title}
 					description={notification.description}
 					duration={notification.duration}
+					soundId={notification.soundId}
 				/>
 			))}
 		</frame>

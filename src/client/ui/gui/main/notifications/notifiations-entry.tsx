@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "@rbxts/react"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
+import { UIHelper } from "client/ui.helper"
 
 interface NotificationEntryProps {
 	id: string
 	title: string
 	description: string
 	duration?: number
+	soundId?: string
 }
 
-export function NotificationEntry({ id, title, description, duration = 3 }: NotificationEntryProps) {
+export function NotificationEntry({ id, title, description, duration = 3, soundId }: NotificationEntryProps) {
 	const [isAppearing, setIsAppearing] = useState(true)
 	const fullText = `${title}: ${description}`
 	const textLength = fullText.size()
@@ -36,6 +38,9 @@ export function NotificationEntry({ id, title, description, duration = 3 }: Noti
 
 	useEffect(() => {
 		setIsAppearing(false)
+		if (soundId) {
+			UIHelper.playSound(soundId)
+		}
 	}, [])
 
 	return (
