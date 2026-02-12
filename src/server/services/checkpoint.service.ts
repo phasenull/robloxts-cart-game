@@ -1,10 +1,14 @@
 import { Dependency, OnStart, Service } from "@flamework/core"
-import { Players, Workspace } from "@rbxts/services"
+import { AnalyticsService, Players, Workspace } from "@rbxts/services"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
 import { Logger } from "shared/logger"
-import { getCheckpointModelByIndex, getPreviousBigCheckpoint } from "shared/cart.helper"
+import {
+	getCheckpointDataFromIndex,
+	getCheckpointModelByIndex,
+	getPreviousBigCheckpoint
+} from "shared/cart.helper"
 import { sphere } from "@rbxts/better-gizmos"
 
 @Service({ loadOrder: 5 })
@@ -94,10 +98,13 @@ export class CheckpointService implements OnStart {
 		const player_checkpoint = this.getCheckpointIndex(player)
 		const big_checkpoint_index = getPreviousBigCheckpoint(player_checkpoint)
 		const checkpoint = getCheckpointModelByIndex(big_checkpoint_index)
-		assert(checkpoint, `Checkpoint ${big_checkpoint_index} not found for player ${player.Name}`)
+		assert(
+			checkpoint,
+			`Checkpoint ${big_checkpoint_index} not found for player ${player.Name}`
+		)
 		const multi_spawn = checkpoint
-		.GetChildren()
-		.filter((child) => child.IsA("BasePart") && child.Name === "Spawn")
+			.GetChildren()
+			.filter((child) => child.IsA("BasePart") && child.Name === "Spawn")
 		let cframe
 		const char = player.Character
 		const humanoid = char?.FindFirstChildWhichIsA("Humanoid")
@@ -145,7 +152,7 @@ export class CheckpointService implements OnStart {
 		cframe = (checkpoint.FindFirstChild("Trigger") as BasePart)?.CFrame
 		char.PivotTo(cframe)
 		const cart_service = Dependency<CartService>()
-		cart_service.spawnPlayerCartAtLocation(player,cframe)
+		cart_service.spawnPlayerCartAtLocation(player, cframe)
 	}
 	getPlayerCheckpoints(player: Player): number[] {
 		const profile_service = Dependency<DataService>()
@@ -161,6 +168,14 @@ export class CheckpointService implements OnStart {
 	attemptToSaveCheckpoint(player: Player, checkpoint_index: number) {
 		const profile_service = Dependency<DataService>()
 		const profile = profile_service.getProfile(player)
+		if (checkpoint_index > 0) {
+			AnalyticsService.LogOnboardingFunnelStepEvent(
+				player,
+				checkpoint_index,
+				getCheckpointDataFromIndex(checkpoint_index)?.name ||
+					`unknown_checkpoint-${checkpoint_index}`
+			)
+		}
 		if (!this.isBigCheckpoint(checkpoint_index)) {
 			return
 		}

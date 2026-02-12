@@ -10,4 +10,5 @@ export const PRODUCTS = {
 	revives: 3532858318,
 
 	revives_10:3534758322,
+	skip_island:3535471413
 }

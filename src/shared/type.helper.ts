@@ -23,19 +23,18 @@ export type INotification = {
 	duration?: number;
 	soundId?: string;
 }
-export type IPurchasableConfig = IPurchasable<"gamepass" | "product">[]
+export type IPurchasableConfig = IPurchasable[]
 
 
-export type IPurchasable<T extends "gamepass" | "product"> = {
-	descriptor:string,
-	gamepass_id: T extends "gamepass" ? number : never;
-	product_id: T extends "product" ? number : never;
-	type: T;
+export type IPurchasable = {
+	// descriptor:string,
+	// gamepass_id: T extends "gamepass" ? number : never;
+	product_id: number;
 	rewards: IReward<any>[];
 };
 
 export type IDescriptableReward = "cart" | "lucky_block";
-export type IValuableReward = "cash" | "revives" | "flips";
+export type IValuableReward = "cash" | "revives" | "flips" | "skip_island";
 export type IRewardType = IDescriptableReward | IValuableReward | "custom";
 export type IReward<
 	T extends IRewardType
