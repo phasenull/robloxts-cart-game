@@ -48,6 +48,7 @@ export class ElevatorComponent
 		this.align_position.MaxForce = math.huge
 		this.align_position.Responsiveness = 5
 		this.align_position.MaxVelocity = 20
+		this.align_position.RigidityEnabled = true
 		const align_orientation = new Instance("AlignOrientation", this.root)
 		align_orientation.Attachment0 = new Instance("Attachment", this.root)
 		align_orientation.Attachment0.Name = "AlignOrientationAttachment"
@@ -71,17 +72,42 @@ export class ElevatorComponent
 	// 	new_tween.Play()
 	// 	return new_tween
 	// }
+	private readonly wait_duration = 5
+	private readonly tween_duration = 10
+
 	// private readonly number_value = new Instance("NumberValue", this.instance)
 	onStart() {
 		// this.number_value.Value = 0
 		// this.number_value.Changed.Connect(() => this.progress(this.number_value.Value))
 		while (true) {
-			// this.tweenValue(1, 10).Completed.Wait()
-			task.wait(15)
-			this.align_target.WorldCFrame = this.initial_cframe.mul(CFrame.Angles(0, math.rad(90), 0))
-			// this.tweenValue(0, 10).Completed.Wait()
-			task.wait(15)
-			this.align_target.WorldCFrame = this.target_cframe.mul(CFrame.Angles(0, math.rad(90), 0))
+			const tween_init = TweenService.Create(
+				this.align_target,
+				new TweenInfo(
+					this.tween_duration,
+					Enum.EasingStyle.Quad,
+					Enum.EasingDirection.InOut
+				),
+				{
+					WorldCFrame: this.target_cframe.mul(CFrame.Angles(0, math.rad(90), 0))
+				}
+			)
+			tween_init.Play()
+			tween_init.Completed.Wait()
+			task.wait(this.wait_duration)
+			const tween = TweenService.Create(
+				this.align_target,
+				new TweenInfo(
+					this.tween_duration,
+					Enum.EasingStyle.Quad,
+					Enum.EasingDirection.InOut
+				),
+				{
+					WorldCFrame: this.initial_cframe.mul(CFrame.Angles(0, math.rad(90), 0))
+				}
+			)
+			tween.Play()
+			tween.Completed.Wait()
+			task.wait(this.wait_duration)
 		}
 	}
 }
