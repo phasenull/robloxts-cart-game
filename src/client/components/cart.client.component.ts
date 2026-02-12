@@ -291,8 +291,6 @@ export class CartClientComponent
 			key: "cart_lever",
 			animationId: this.cart_lever_animation_id
 		})
-		this.rider.JumpHeight = 0
-		const humanoid = this.rider
 		// const conn = this.rider.GetPropertyChangedSignal("Jump").Connect(() => {
 		// 	const value = humanoid.Jump
 		// 	if (!this.rider || this.rider !== humanoid) {
@@ -460,7 +458,6 @@ export class CartClientComponent
 			return
 		}
 		if (this.rider && this.rider === humanoid) {
-			this.rider.JumpHeight = 7.2
 			if (this.rider.Seated) {
 				this.rider.Sit = false
 			}

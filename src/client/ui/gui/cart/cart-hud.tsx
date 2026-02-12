@@ -3,6 +3,7 @@ import { useCart } from "client/ui/contexts/cart.context"
 import { CartButtons } from "./cart-buttons"
 import { SpeedometerHud } from "./cart-speedometer"
 import { StageProgress } from "./stage-progress"
+import { useRendering } from "client/ui/hooks/useRendering"
 
 export function CartHud(props: {
 	__story?: {

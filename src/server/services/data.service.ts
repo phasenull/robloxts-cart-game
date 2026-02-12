@@ -95,6 +95,7 @@ export class DataService implements OnStart {
 				duration: 4
 			});
 		}
+		return profile.Data.cash as number
 	}
 	public refreshLeaderboard(leaderboard: ScreenGui, stat: string) {
 	}

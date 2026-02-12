@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "@rbxts/react"
-import { Players, RunService } from "@rbxts/services"
+import { Players, RunService, Workspace } from "@rbxts/services"
 import { CartClientComponent } from "client/components/cart.client.component"
 import { GoofyText } from "client/ui/components/goofy-text"
 import { UIDIM } from "client/ui/constants"
@@ -11,7 +11,7 @@ const logger = new Logger("SpeedometerHud")
 export function SpeedometerHud(props: {
 	__story?: { cart_enabled: boolean; override_speed: number }
 }) {
-	const {cart,state} = useCart()
+	const { cart, state } = useCart()
 	const max_speed = 70
 	const degrees_range = [-20, 110]
 	const [speed, set_speed] = useState<number>(0)
@@ -60,6 +60,16 @@ export function SpeedometerHud(props: {
 			Enum.EasingDirection.InOut
 		)
 	})
+	const default_fov = 70
+	const camera = Workspace.CurrentCamera
+	if (camera) {
+		const min_degrees = 20
+		const max_degrees = 200
+		const calculated_fov =
+			default_fov +
+			math.clamp(target_speed - min_degrees, 0, max_degrees - min_degrees)
+		camera.FieldOfView = math.clamp(calculated_fov, 70, 90)
+	}
 	const death_value = useAnimateValue({
 		target_value: is_death ? 1 : 0,
 		tween_info: new TweenInfo(

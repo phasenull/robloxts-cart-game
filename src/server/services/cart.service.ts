@@ -493,6 +493,7 @@ export class CartService implements OnStart {
 			duration: 4
 		})
 		this.refreshPlayerProducts(player)
+		return profile.Data.revives
 	}
 	incrementPlayerFlips(player: Player, amount = 1) {
 		const profile = this.DataService.getProfile(player)
@@ -507,6 +508,7 @@ export class CartService implements OnStart {
 			duration: 4
 		})
 		this.refreshPlayerProducts(player)
+		return profile.Data.flips
 	}
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		if (this.DEBOUNCE_TABLE.has(player)) {
