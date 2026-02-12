@@ -1,4 +1,4 @@
-import React, { useEffect } from "@rbxts/react"
+import React, { useEffect, useMemo, useState } from "@rbxts/react"
 
 import useAnimateValue from "../../hooks/useAnimateValue"
 import { UIDIM } from "client/ui/constants"
@@ -9,6 +9,7 @@ import { A } from "shared/assets"
 import { TweenService } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
 import { useCart } from "client/ui/contexts/cart.context"
+import { useInputType } from "client/ui/hooks/useInputType"
 
 export function CartButtons(props: {
 	__story?: {
@@ -20,6 +21,8 @@ export function CartButtons(props: {
 }) {
 	const { cart, state, changeState, products } = useCart()
 	const cartId = cart?.instance.Name ?? "no-cart"
+	const device = props.__story?.override_device ?? useInputType()
+	const isMobile = device === "Mobile"
 
 	const { mutate: mutateBrake, data: is_braking_data } = useMutation({
 		queryKey: ["brake", cartId],
@@ -88,8 +91,7 @@ export function CartButtons(props: {
 	const is_alive = !!cart?.instance || !!props.__story?.cart_enabled
 	const IS_VISIBLE = is_alive
 
-	const IS_BRAKING =
-		props.__story?.override_brake ?? is_braking_data
+	const IS_BRAKING = props.__story?.override_brake ?? is_braking_data
 
 	const brake_shake = useAnimateValue({
 		target_value: IS_BRAKING ? 1 : 0,
@@ -126,40 +128,69 @@ export function CartButtons(props: {
 	return (
 		<frame
 			key={"bottom-hud"}
-			AnchorPoint={UIDIM.A_BOTTOM}
-			Position={new UDim2(0.5, 0, 1.3 - value * 0.4, 0)}
+			AnchorPoint={isMobile ? UIDIM.A_BOTTOM_RIGHT : UIDIM.A_BOTTOM}
+			Position={
+				isMobile
+					? new UDim2(1, -10, 0.9, 0)
+					: new UDim2(0.5, 0, 1.3 - value * 0.4, 0)
+			}
 			// .add(new UDim2(0, 0, value, 0))
 			BackgroundTransparency={1}
-			Size={new UDim2(1, 0, 0.15, 0)}
+			ClipsDescendants={false}
+			Size={new UDim2(0.5, 0, isMobile ? 0.5 : 0.15, 0)}
 		>
-			<uiaspectratioconstraint AspectRatio={5} />
+			<uiaspectratioconstraint AspectRatio={isMobile ? 1 : 5} />
 			<uiscale Scale={1.3 - value * 0.3} />
 			<uilistlayout
-				ItemLineAlignment={Enum.ItemLineAlignment.Center}
-				HorizontalAlignment={Enum.HorizontalAlignment.Center}
-				VerticalAlignment={Enum.VerticalAlignment.Center}
+				ItemLineAlignment={
+					isMobile ? Enum.ItemLineAlignment.End : Enum.ItemLineAlignment.Center
+				}
+				HorizontalAlignment={
+					isMobile
+						? Enum.HorizontalAlignment.Right
+						: Enum.HorizontalAlignment.Center
+				}
+				VerticalAlignment={
+					isMobile
+						? Enum.VerticalAlignment.Bottom
+						: Enum.VerticalAlignment.Center
+				}
 				FillDirection={Enum.FillDirection.Horizontal}
-				Padding={new UDim(0.05, 0)}
+				SortOrder={Enum.SortOrder.LayoutOrder}
+				Padding={new UDim(isMobile ? 0.2 : 0.05, 0)}
 			/>
-			<RottenButton
-				Size={UIDIM.ONE}
-				Ratio={1.2}
-				Text="HONK"
-				Color={new Color3(0.95, 0.86, 0.11)}
-				onDown={(val) => val && mutateHonk()}
-				action="HONK"
-				overrideDevice={props.__story?.override_device}
-			/>
+			{isMobile ? undefined : (
+				<HonkButton
+					isMobile={isMobile}
+					onDown={(val) => val && mutateHonk()}
+					__story={props.__story}
+				/>
+			)}
 			<frame
 				Size={UIDIM.ONE}
 				AnchorPoint={UIDIM.A_CENTER}
 				BackgroundTransparency={1}
+				LayoutOrder={isMobile ? 5 : 0}
+				ClipsDescendants={false}
 			>
-				<uiaspectratioconstraint AspectRatio={2} />
+				<uilistlayout
+					Padding={new UDim(0.1, 0)}
+					ItemLineAlignment={Enum.ItemLineAlignment.End}
+					VerticalAlignment={Enum.VerticalAlignment.Bottom}
+					HorizontalAlignment={Enum.HorizontalAlignment.Center}
+				/>
+				<uiaspectratioconstraint AspectRatio={isMobile ? 0.5 : 2} />
+				{isMobile ? (
+					<HonkButton
+						isMobile={isMobile}
+						onDown={(val) => val && mutateHonk()}
+						__story={props.__story}
+					/>
+				) : undefined}
 				<RottenButton
 					Rotation={IS_BRAKING ? (brake_shake - 0.5) * 5 : 0}
-					Size={UIDIM.ONE}
-					Ratio={2}
+					Size={isMobile ? UDim2.fromScale(1, 2) : UIDIM.ONE}
+					Ratio={isMobile ? 0.7 : 2}
 					Position={UIDIM.CENTER}
 					AnchorPoint={UIDIM.A_CENTER}
 					Text="BRAKE"
@@ -170,7 +201,10 @@ export function CartButtons(props: {
 					overrideDevice={props.__story?.override_device}
 				/>
 			</frame>
-			<frame BackgroundTransparency={1} Size={UIDIM.ONE}>
+			<frame
+				BackgroundTransparency={1}
+				Size={isMobile ? UIDIM.CENTER : UIDIM.ONE}
+			>
 				<uiaspectratioconstraint AspectRatio={0.8} />
 				<uilistlayout
 					ItemLineAlignment={Enum.ItemLineAlignment.Center}
@@ -199,5 +233,25 @@ export function CartButtons(props: {
 				/>
 			</frame>
 		</frame>
+	)
+}
+
+function HonkButton(props: {
+	isMobile: boolean
+	onDown: (is_down: boolean) => void
+	__story?: {
+		override_device: "Gamepad" | "Keyboard" | "Mobile"
+	}
+}) {
+	return (
+		<RottenButton
+			Size={props.isMobile ? UIDIM.CENTER : UIDIM.ONE}
+			Ratio={props.isMobile ? 1 : 1.2}
+			Text="HONK"
+			Color={new Color3(0.95, 0.86, 0.11)}
+			onDown={(val) => val && props.onDown(true)}
+			action="HONK"
+			overrideDevice={props.__story?.override_device}
+		/>
 	)
 }
