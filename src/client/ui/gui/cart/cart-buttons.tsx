@@ -132,6 +132,7 @@ export function CartButtons(props: {
 			BackgroundTransparency={1}
 			Size={new UDim2(1, 0, 0.15, 0)}
 		>
+			<uiaspectratioconstraint AspectRatio={5} />
 			<uiscale Scale={1.3 - value * 0.3} />
 			<uilistlayout
 				ItemLineAlignment={Enum.ItemLineAlignment.Center}

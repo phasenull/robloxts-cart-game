@@ -161,12 +161,12 @@ export function RottenButton(props: {
 				BorderSizePixel={0}
 				key={"inner_shadow_bottom"}
 			/>
-			{actionImage ? (
+			{actionImage && device !== "Keyboard" ? (
 				<Icon
 					Image={actionImage}
 					AnchorPoint={UIDIM.A_CENTER}
 					Size={device === "Gamepad" ? new UDim2(0.5, 0, 0.5, 0) : new UDim2(0.3, 0, 0.3, 0)}
-					Position={UIDIM.TOP_RIGHT.add(new UDim2(0.1, 0, -0.15, 0))}
+					Position={UIDIM.TOP_RIGHT.add(new UDim2(0.01, 0, -0.05, 0))}
 					Color3={new Color3(0.36, 0.66, 1)}
 					Transparency={0.1}
 					ScaleType={Enum.ScaleType.Fit}

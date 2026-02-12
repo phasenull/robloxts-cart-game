@@ -143,11 +143,11 @@ export function DeathButtons({
 			Size={UDim2.fromScale(0.2, 0.2)}
 			AnchorPoint={UIDIM.A_BOTTOM}
 			Position={UDim2.fromScale(0.5, 0.95 + 1 - transparency)}
-			BackgroundTransparency={1}
+			BackgroundTransparency={.5}
 		>
 			<uiaspectratioconstraint AspectRatio={4} />
 			<uilistlayout
-				Padding={new UDim(0.3, 0)}
+				Padding={new UDim(0.2, 0)}
 				FillDirection={Enum.FillDirection.Horizontal}
 				HorizontalAlignment={Enum.HorizontalAlignment.Center}
 				VerticalAlignment={Enum.VerticalAlignment.Center}
@@ -156,7 +156,7 @@ export function DeathButtons({
 			<RottenButton
 				Size={UIDIM.ONE}
 				onClick={mutateHardReset}
-				Text="RESET"
+				Text="SPAWN"
 				action="CONFIRM_RESET"
 			>
 				<GoofyText
@@ -171,7 +171,8 @@ export function DeathButtons({
 				onClick={()=> !isLoading && mutateRevive()}
 				Color={new Color3(0.09, 0.86, 0.09)}
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
-				Text={`REVIVE (${products.get("revives") || 0}x)`}
+				// Text={`REVIVE (${products.get("revives") || 0}x)`}
+				Text={`REVIVE`}
 				Ratio={1.5}
 				action="REVIVE"
 			>

@@ -7,6 +7,7 @@ import { assets } from "shared/assets"
 import { RigCartModel } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
 import { ClientEvents } from "shared/network.helper"
+import { __IS_EDIT__ } from "shared/config.helper"
 
 interface UseDeathPreviewProps {
 	spawnPoint: CFrame | undefined
@@ -20,6 +21,7 @@ export function useDeathPreview() {
 	
 	// Listen for clear preview event from server
 	useEffect(() => {
+		if (__IS_EDIT__) return
 		const connection = ClientEvents.CartService.clearDeathPreview.connect(() => {
 			if (previewModel) {
 				previewModel.Destroy()

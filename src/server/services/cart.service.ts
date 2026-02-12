@@ -414,8 +414,8 @@ export class CartService implements OnStart {
 
 		this.SHIELDS.delete(cart)
 		this.setCartCollisionGroup(cart, "Hitbox")
-		const root = cart.FindFirstChild("Root") as BasePart
-		root.FindFirstChild("ShieldVFX")?.Destroy()
+		const root = cart?.FindFirstChild("Root") as BasePart
+		root?.FindFirstChild("ShieldVFX")?.Destroy()
 	}
 
 	/**
