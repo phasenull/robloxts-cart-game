@@ -64,11 +64,16 @@ export function SpeedometerHud(props: {
 	const camera = Workspace.CurrentCamera
 	if (camera) {
 		const min_degrees = 20
-		const max_degrees = 200
+		const max_degrees = 120
+		const added_fov = 50
 		const calculated_fov =
 			default_fov +
-			math.clamp(target_speed - min_degrees, 0, max_degrees - min_degrees)
-		camera.FieldOfView = math.clamp(calculated_fov, 70, 90)
+			math.clamp(
+				((target_speed - min_degrees) / (max_degrees - min_degrees)) * added_fov,
+				0,
+				added_fov
+			)
+		camera.FieldOfView = calculated_fov
 	}
 	const death_value = useAnimateValue({
 		target_value: is_death ? 1 : 0,
