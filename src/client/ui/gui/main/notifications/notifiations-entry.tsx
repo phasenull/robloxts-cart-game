@@ -50,7 +50,7 @@ export function NotificationEntry({ id, title, description, duration = 3, soundI
 			BackgroundTransparency={1}
 			Position={new UDim2(0.5, 0, 0.029, 0)}
 			Size={new UDim2(0.745, 0, 0.058, 0)}
-			ZIndex={0}
+			ZIndex={100}
 			GroupTransparency={transparency}
 		>
 			<frame
@@ -58,6 +58,7 @@ export function NotificationEntry({ id, title, description, duration = 3, soundI
 				Position={new UDim2(0.5, 0, 0.5, 0)}
 				BackgroundColor3={Color3.fromRGB(0, 36, 62)}
 				BorderSizePixel={0}
+				ZIndex={100}
 				Size={new UDim2(scale, 0, scale, 0)}
 			>
 				<textlabel
@@ -66,6 +67,7 @@ export function NotificationEntry({ id, title, description, duration = 3, soundI
 					FontFace={
 						new Font("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Heavy, Enum.FontStyle.Normal)
 					}
+					ZIndex={101}
 					Position={new UDim2(0.18, 0, 0.068, 0)}
 					Size={new UDim2(0.641, 0, 0.827, 0)}
 					Text={fullText}

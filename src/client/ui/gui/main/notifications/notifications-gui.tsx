@@ -8,6 +8,7 @@ export function NotificationsGui() {
 
 	return (
 		<frame
+			ZIndex={99}
 			key="Notifications"
 			AnchorPoint={new Vector2(0.5, 0.5)}
 			BackgroundTransparency={1}
@@ -26,6 +27,7 @@ export function NotificationsGui() {
 			/>
 			{notifications.map((notification) => (
 				<NotificationEntry
+					
 					key={notification.id}
 					id={notification.id}
 					title={notification.title}

@@ -53,26 +53,23 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 					<CheckpointProvider>
 						<NotificationProvider>
 							<NotificationListener>
-								<GuiProvider initial_gui={__IS_EDIT__ ? props.initial_gui : undefined}>
+								<GuiProvider
+									initial_gui={__IS_EDIT__ ? props.initial_gui : undefined}
+								>
 									<SettingsProvider>
-										<Sidebar/>
+										<Sidebar />
 										<FadeGui />
 										<DeathGui />
 										<RightSidebar />
 										<CartHud />
-										<NotificationsGui />
 										<ErrorPopup />
 										<BlurGui />
 										<PopGui id={"settings"}>
 											<SettingsGui />
 										</PopGui>
 
-										<PopGui
-											hide_title
-											disable_default_close
-											id={"teleport"}
-										>
-											<TPGui/>
+										<PopGui hide_title disable_default_close id={"teleport"}>
+											<TPGui />
 										</PopGui>
 										<PopGui id={"items"} />
 										<PopGui id={"gift"}>
@@ -94,8 +91,9 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										<PopGui id={"cart"}>
 											<CartGui />
 										</PopGui>
+										<NotificationsGui />
 									</SettingsProvider>
-									</GuiProvider>
+								</GuiProvider>
 							</NotificationListener>
 						</NotificationProvider>
 					</CheckpointProvider>
