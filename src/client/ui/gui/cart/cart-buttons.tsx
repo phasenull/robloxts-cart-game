@@ -75,7 +75,6 @@ export function CartButtons(props: {
 		mutationFn: async () => {
 			if (!cart) return true
 			cart.honk()
-			UIHelper.playSound(A.sounds.mango_scream)
 			return true
 		}
 	})

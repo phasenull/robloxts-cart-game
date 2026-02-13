@@ -11,7 +11,7 @@ import { A, assets } from "shared/assets"
 import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
-import { ButtonModel } from "shared/type.helper"
+import { ButtonModel, ICart } from "shared/type.helper"
 import { DataService } from "./data.service"
 import { PRODUCTS } from "shared/purchasables"
 import { CheckpointService } from "./checkpoint.service"
@@ -25,7 +25,7 @@ export class CartService implements OnStart {
 		private logger: Logger,
 		private DataService: DataService
 	) {}
-	private readonly PLAYER_CARTS = new Map<Player, Model>()
+	private readonly PLAYER_CARTS = new Map<Player, ICart>()
 	private readonly DEBOUNCE_TABLE = new Map<Player, number>()
 	getPlayerCarts(player: Player) {
 		const profile = this.DataService.getProfile(player)
@@ -42,10 +42,16 @@ export class CartService implements OnStart {
 		this.logger.log(
 			`Granting player ${player.Name} permanent cart: ${cart_name}`
 		)
-		const vehicles = profile.Data.vehicles || []
+		ServerEvents.NotificationService.sendNotification(player, {
+			title: "<b>New Cart Unlocked!</b>",
+			duration: 5,
+			soundId: A.sounds.party,
+			description: `<font color='#00D4FF'>${cart_name}</font>`,
+		})
+		const vehicles = profile.Data.inventory.vehicles || []
 		if (!vehicles.includes(cart_name)) {
 			vehicles.push(cart_name)
-			profile.Data.vehicles = vehicles
+			profile.Data.inventory.vehicles = vehicles
 		}
 	}
 	doesPlayerOwnCart(player: Player, cart_name: string): boolean {
@@ -72,6 +78,24 @@ export class CartService implements OnStart {
 	onStart(): void {
 		ServerEvents.CartService.spawnCart.connect((player, button) => {
 			this.spawnPlayerCart(player, button)
+		})
+		let cooldowns = new Map<Player, number>()
+		ServerEvents.CartService.honk.connect((player) => {
+			if (cooldowns.has(player) && tick() - cooldowns.get(player)! < .5) {
+				return
+			}
+			cooldowns.set(player, tick())
+			const sound = assets.FindFirstChild("Honk") as Sound
+			assert(sound, "Honk sound not found in assets")
+			const cart = this.getPlayerCart(player)
+			if (cart) {
+				const cloned = sound.Clone()
+				cloned.Parent = cart.FindFirstChild("Root")
+				cloned.Play()
+				cloned.Ended.Once(() => {
+					cloned.Destroy()
+				})
+			}
 		})
 		Players.PlayerAdded.Connect((player) => this.playerAdded(player))
 
@@ -229,7 +253,7 @@ export class CartService implements OnStart {
 		PhysicsService.CollisionGroupSetCollidable("Invincible", "Spike", false)
 	}
 	destroyPlayerCart(player: Player) {}
-	getPlayerCart(player: Player): Model | undefined {
+	getPlayerCart(player: Player): ICart | undefined {
 		return this.PLAYER_CARTS.get(player)
 	}
 	getPlayerCartComponent(player: Player): CartServerComponent | undefined {
@@ -295,7 +319,7 @@ export class CartService implements OnStart {
 		const target_skin = cart_skin ?? this.getPlayerSkin(player)
 		const orig_cart = assets.carts.FindFirstChild(target_skin) as Model
 		assert(orig_cart, `Cart model ${target_skin} not found in assets`)
-		const cart_model = orig_cart.Clone()
+		const cart_model = orig_cart.Clone() as ICart
 
 		cart_model.Parent = Workspace
 		cart_model.PivotTo(cframe.mul(new CFrame(0, 2, 0)))
@@ -549,7 +573,7 @@ export class CartService implements OnStart {
 		const cart_skin = this.getPlayerSkin(player)
 		const orig_cart = assets.carts.FindFirstChild(cart_skin) as Model
 		assert(orig_cart, `Cart model ${cart_skin} not found in assets`)
-		const cart_model = orig_cart.Clone()
+		const cart_model = orig_cart.Clone() as ICart
 		const cframe_part = button.SpawnPlatform.GetChildren().find(
 			(child) => child.IsA("BasePart") && child.Size === new Vector3(8, 0.2, 6)
 		) as BasePart
