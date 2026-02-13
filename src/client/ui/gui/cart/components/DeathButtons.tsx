@@ -86,9 +86,9 @@ export function DeathButtons({
 			}
 			
 			// Only switch to reviving state after confirming we have revives
-			changeState("reviving")
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
+			changeState("reviving")
 			const [result, err] = await controller.promptRevive(checkpoint)
 			UIHelper.toggleFade(false)
 			if (!result || err) {

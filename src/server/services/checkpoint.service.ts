@@ -28,6 +28,7 @@ export class CheckpointService implements OnStart {
 		ServerFunctions.CheckpointService.tpMeToBigCheckpoint.setCallback(
 			(player) => {
 				const result = this.spawnPlayerAtTheirBigCheckpoint(player)
+				ServerEvents.CartService.forceCloseDeathScreen.fire(player)
 				this.logger.log(`CHOSEN_SPAWN: ${result?.GetFullName()}`)
 				return [true]
 			}

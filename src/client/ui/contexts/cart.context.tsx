@@ -126,11 +126,17 @@ export function CartProvider(props: {
 		if (__IS_EDIT__) {
 			return
 		}
-		ClientEvents.CartService.playerProductsUpdated.connect((data) => {
+		const productsConnection = ClientEvents.CartService.playerProductsUpdated.connect((data) => {
 			setProducts(data)
 		})
+		// Listen for force close death screen from server
+		const forceCloseConnection = ClientEvents.CartService.forceCloseDeathScreen.connect(() => {
+			logger.log("Force closing death screen from server")
+			setSpawnPoint(undefined)
+			changeState("none")
+		})
 		const cart_controller = Dependency<CartController>()
-		cart_controller.onCartChange.Connect((new_cart) => {
+		const cartChangeConnection = cart_controller.onCartChange.Connect((new_cart) => {
 			// const my_card = cart_controller.getMyCart()
 			// if (my_card) {
 			// 	new_cart = my_card
@@ -144,6 +150,12 @@ export function CartProvider(props: {
 				changeState("none")
 			}
 		})
+		
+		return () => {
+			productsConnection.Disconnect()
+			forceCloseConnection.Disconnect()
+			cartChangeConnection.Disconnect()
+		}
 	}, [])
 	return (
 		<CartContext.Provider value={value}>{props.children}</CartContext.Provider>

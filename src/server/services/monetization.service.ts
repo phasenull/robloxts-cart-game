@@ -7,7 +7,10 @@ import { IPurchasableConfig, IReward, IRewardType } from "shared/type.helper"
 import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
 import { CheckpointService } from "./checkpoint.service"
-import { getCheckpointDataFromIndex, getNextBigCheckpoint } from "shared/cart.helper"
+import {
+	getCheckpointDataFromIndex,
+	getNextBigCheckpoint
+} from "shared/cart.helper"
 import { ServerEvents } from "shared/network.helper"
 import { A } from "shared/assets"
 
@@ -33,13 +36,15 @@ export class MonetizationService implements OnStart {
 			const product_data = MarketplaceService.GetProductInfoAsync(
 				reciept.ProductId,
 				Enum.InfoType.Product
-			) as ProductInfo;
+			) as ProductInfo
 			if (!product_data) {
 				this.logger.warn(
 					`No product data found for product id ${reciept.ProductId}`
 				)
 			}
-			this.logger.log(`PURCHASE_RECEIPT_PROCESSED: player=${player.Name}, product_id=${reciept.ProductId}, product_name=${product_data.Name}`)
+			this.logger.log(
+				`PURCHASE_RECEIPT_PROCESSED: player=${player.Name}, product_id=${reciept.ProductId}, product_name=${product_data.Name}`
+			)
 		})
 		const purchasables = this.getPurchasables()
 		const product_id = reciept.ProductId
@@ -130,8 +135,11 @@ export class MonetizationService implements OnStart {
 				const target_checkpoint = getNextBigCheckpoint(player_checkpoint)
 				const data = getCheckpointDataFromIndex(target_checkpoint)
 				checkpoint_service.setCheckpointIndex(player, target_checkpoint)
-				checkpoint_service.spawnPlayerAtTheirBigCheckpoint(player)
-				ServerEvents.NotificationService.sendNotification.fire(player,{
+				task.delay(0.1, () => {
+					checkpoint_service.spawnPlayerAtTheirBigCheckpoint(player)
+				})
+				ServerEvents.CartService.forceCloseDeathScreen.fire(player)
+				ServerEvents.NotificationService.sendNotification.fire(player, {
 					description: `<font color="rgb(0, 255, 0)">${data?.name || "Unknown Island"}</font>`,
 					title: "Island Skipped",
 					duration: 5,
