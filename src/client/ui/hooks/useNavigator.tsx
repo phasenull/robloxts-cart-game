@@ -3,19 +3,27 @@ import { GuiContext } from "../contexts/gui-manager.context"
 import { useErrorPage } from "../contexts/error.context"
 
 export function useNavigator() {
-	const openGui = useContext(GuiContext).open_gui
-	const setOpenGui = useContext(GuiContext).setOpenGui
+	const context = useContext(GuiContext)
+	const openGui = context.open_gui
+	const setOpenGui = context.setOpenGui
+	const isSidebarOpen = context.is_sidebar_open
+	const setIsSidebarOpen = context.setIsSidebarOpen
+	const { clearErrors } = useErrorPage()
+	
 	const closeAll = () => {
 		clearErrors()
 		setOpenGui(undefined)
 	}
-	const { clearErrors } = useErrorPage()
+	
 	return {
 		openGui,
 		setOpenGui: (gui: string) => {
 			clearErrors()
 			setOpenGui((old) => (old === gui ? undefined : gui))
 		},
-		closeAll
+		closeAll,
+		isSidebarOpen,
+		setIsSidebarOpen,
+		toggleSidebar: () => setIsSidebarOpen((prev) => !prev)
 	}
 }

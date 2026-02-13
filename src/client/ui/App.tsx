@@ -4,7 +4,7 @@ import { ErrorPopup } from "./components/error-popup"
 import PopGui from "./components/pop-gui"
 import { GUI_KEYS, PRIMARY, UIDIM } from "./constants"
 import { ErrorProvider, useErrorPage } from "./contexts/error.context"
-import { GuiContext } from "./contexts/gui-manager.context"
+import { GuiProvider } from "./contexts/gui-manager.context"
 import { SettingsProvider } from "./contexts/settings.context"
 import { CartProvider } from "./contexts/cart.context"
 import { NotificationProvider } from "./contexts/notification.context"
@@ -24,9 +24,6 @@ import { TPGui } from "./gui/main/tp-gui"
 import Sidebar from "./gui/sidebar"
 import { NotificationsGui } from "./gui/main/notifications/notifications-gui"
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
-	const [open_gui, set_open_gui] = useState<GUI_KEYS | undefined>(
-		__IS_EDIT__ ? props.initial_gui : undefined
-	)
 	const { showError } = useErrorPage()
 	const query_client = new QueryClient({
 		mutations: {
@@ -49,7 +46,6 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 			}
 		}
 	})
-	const [is_sidebar_open, set_is_sidebar_open] = useState<boolean>(true)
 	return (
 		<ErrorProvider>
 			<QueryClientProvider value={query_client}>
@@ -57,14 +53,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 					<CheckpointProvider>
 						<NotificationProvider>
 							<NotificationListener>
-								<GuiContext.Provider
-									value={{
-										is_sidebar_open,
-										setIsSidebarOpen: set_is_sidebar_open,
-										open_gui,
-										setOpenGui: set_open_gui
-									}}
-								>
+								<GuiProvider initial_gui={__IS_EDIT__ ? props.initial_gui : undefined}>
 									<SettingsProvider>
 										<Sidebar/>
 										<FadeGui />
@@ -106,7 +95,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 											<CartGui />
 										</PopGui>
 									</SettingsProvider>
-								</GuiContext.Provider>
+									</GuiProvider>
 							</NotificationListener>
 						</NotificationProvider>
 					</CheckpointProvider>

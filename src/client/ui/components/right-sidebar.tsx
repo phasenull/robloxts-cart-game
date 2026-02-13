@@ -8,6 +8,7 @@ import { getConfig } from "shared/config.helper"
 import { PRODUCTS } from "shared/purchasables"
 import { useCheckpoint } from "../gui/cart/hooks/useCheckpoint"
 import { getCheckpointDataFromIndex } from "shared/cart.helper"
+import useAnimateValue from "../hooks/useAnimateValue"
 
 export function RightSidebar() {
 	const navigator = useNavigator()
@@ -16,11 +17,21 @@ export function RightSidebar() {
 	const data =
 		getCheckpointDataFromIndex(currentCheckpoint + 1) ||
 		getCheckpointDataFromIndex(currentCheckpoint + 2)
+	
+	const animatedValue = useAnimateValue({
+		target_value: navigator.isSidebarOpen ? 0 : 1,
+		tween_info: new TweenInfo(
+			0.4,
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+	})
+	
 	return (
 		<frame
 			key={"right-sidebar"}
 			Size={UDim2.fromScale(0.3, 0.3)}
-			Position={UIDIM.LEFT.add(UDim2.fromOffset(10, 0))}
+			Position={UIDIM.LEFT.add(UDim2.fromOffset(10, 0)).add(UDim2.fromScale(-0.4 * animatedValue, 0))}
 			AnchorPoint={UIDIM.A_LEFT}
 			BackgroundTransparency={1}
 		>
