@@ -11,7 +11,7 @@ import { NotificationProvider } from "./contexts/notification.context"
 import { NotificationListener } from "./components/notification-listener"
 import BlurGui from "./gui/blur-gui"
 import { SettingsGui } from "./gui/main/settings-gui"
-import { ShopGui } from "./gui/main/shop-gui"
+import { PassShopGui } from "./gui/main/pass-shop-gui"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
 import { CartGui } from "./gui/main/cart-gui"
 import { CartHud } from "./gui/cart/cart-hud"
@@ -86,7 +86,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 											</imagelabel>
 										</PopGui>
 										<PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
-											<ShopGui />
+											<PassShopGui />
 										</PopGui>
 										<PopGui id={"cart"}>
 											<CartGui />

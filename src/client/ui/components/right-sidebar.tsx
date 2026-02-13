@@ -50,6 +50,12 @@ export function RightSidebar() {
 				Text="Teleport"
 				onClick={() => navigator.setOpenGui("teleport")}
 			/>
+			<RottenButton
+				Color={new Color3(0, 0.35, 1)}
+				Size={UIDIM.ONE}
+				Text="Carts"
+				onClick={() => navigator.setOpenGui("carts")}
+			/>
 			{data ? (
 				<RottenButton
 					Color={new Color3(1, 0.9, 0)}

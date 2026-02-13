@@ -4,7 +4,7 @@ import { IShopItemTypes, IShopItem, ProperReturns } from "shared/type.helper";
 import { DataService } from "./data.service";
 import { CartService } from "./cart.service";
 import { getConfig } from "shared/config.helper";
-import { ServerEvents } from "shared/network.helper";
+import { ServerEvents, ServerFunctions } from "shared/network.helper";
 import { A } from "shared/assets";
 
 @Service()
@@ -16,6 +16,31 @@ export class ShopService implements OnStart {
 
 	onStart(): void {
 		this.logger.log("ShopService started")
+
+		// Register network functions
+		ServerFunctions.ShopService.getShopConfig.setCallback(() => {
+			return this.getShopConfig()
+		})
+
+		ServerFunctions.ShopService.getShopItems.setCallback((player, item_type) => {
+			return this.getShopItems(item_type)
+		})
+
+		ServerFunctions.ShopService.canPlayerAffordItem.setCallback((player, item_type, item_name) => {
+			return this.canPlayerAffordItem(player, item_type, item_name)
+		})
+
+		ServerFunctions.ShopService.makePlayerPurchaseItem.setCallback((player, item_type, item_name) => {
+			return this.makePlayerPurchaseItem(player, item_type, item_name)
+		})
+
+		ServerFunctions.ShopService.getPlayerInventory.setCallback((player, item_type) => {
+			return this.getPlayerInventory(player, item_type)
+		})
+
+		ServerFunctions.ShopService.doesPlayerOwnItem.setCallback((player, item_type, item_name) => {
+			return this.doesPlayerOwnItem(player, item_type, item_name)
+		})
 	}
 	makePlayerPurchaseItem(player: Player, item_type: IShopItemTypes, item_name: string): ProperReturns<true> {
 		const profile = this.DataService.getProfile(player)

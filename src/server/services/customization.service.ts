@@ -3,6 +3,7 @@ import { Players } from "@rbxts/services"
 import { Logger } from "shared/logger"
 import { ProperReturns } from "shared/type.helper"
 import { DataService } from "./data.service"
+import { ServerFunctions } from "shared/network.helper"
 
 export type ICustomizable = "cart" | "honk" | (string & {})
 
@@ -15,6 +16,15 @@ export class CustomizationService implements OnStart {
 
 	public onStart(): void {
 		this.logger.log("CustomizationService started")
+
+		// Register network functions
+		ServerFunctions.CustomizationService.getPlayerPreference.setCallback((player, item_type) => {
+			return this.getPlayerPreference(player, item_type)
+		})
+
+		ServerFunctions.CustomizationService.setPreference.setCallback((player, key, value) => {
+			return this.setPreference(player, key, value)
+		})
 	}
 
 	/**

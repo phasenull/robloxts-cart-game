@@ -9,7 +9,7 @@ import { Gamepasses } from "./shop/gamepasses"
 import { Products } from "./shop/products"
 import { Badge } from "client/ui/components/badge"
 const frames = ["PASSES", "PRODUCTS", "BUNDLES"] as const
-export function ShopGui() {
+export function PassShopGui() {
 	const [viewing_frame, set_viewing_frame] =
 		React.useState<(typeof frames)[number]>("PASSES")
 	const page_ref = useRef<UIPageLayout>()
