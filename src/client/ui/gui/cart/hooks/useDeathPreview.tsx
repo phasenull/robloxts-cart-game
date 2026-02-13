@@ -1,6 +1,8 @@
+import { Dependency } from "@flamework/core"
 import { useEffect, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { Players, Workspace } from "@rbxts/services"
+import { CartController } from "client/controllers/cart.controller"
 import { UIHelper } from "client/ui.helper"
 import { useCart } from "client/ui/contexts/cart.context"
 import { assets } from "shared/assets"
@@ -18,6 +20,20 @@ export function useDeathPreview() {
 	const { cart, spawnPoint, state } = useCart()
 	const [previewModel, setPreviewModel] = useState<Model | undefined>(undefined)
 	const should_show = state === "death_screen" && !cart
+	
+	// Cleanup preview when should_show becomes false or component unmounts
+	useEffect(() => {
+		if (!should_show && previewModel) {
+			previewModel.Destroy()
+			setPreviewModel(undefined)
+		}
+		return () => {
+			if (previewModel) {
+				previewModel.Destroy()
+				setPreviewModel(undefined)
+			}
+		}
+	}, [should_show, previewModel])
 	
 	// Listen for clear preview event from server
 	useEffect(() => {
@@ -53,12 +69,18 @@ export function useDeathPreview() {
 	// 	}
 
 	// }
-	const { data } = useQuery({
+	const { data, isLoading } = useQuery({
 		queryKey: [`death-preview-cart::${spawnPoint}`],
 		queryFn: async () => {
 			const cart = buildPreviewCart(spawnPoint!)
 			if (!cart) {throw `Failed to build preview cart for spawn point ${spawnPoint}`}
-			setPreviewModel(cart)
+			// Only set preview model if we're still in death screen
+			if (state === "death_screen" && !Dependency<CartController>().getMyCart()) {
+				setPreviewModel(cart)
+			} else {
+				// Clean up immediately if we're no longer in death screen
+				cart.Destroy()
+			}
 			return cart
 		},
 		enabled: should_show && spawnPoint !== undefined,
@@ -67,7 +89,7 @@ export function useDeathPreview() {
 		}
 	})
 	
-	return { data }
+	return { data, isLoading }
 }
 function buildPreviewCart(spawnPoint: CFrame) {
 	const example_cart = assets.carts.FindFirstChild("Cart")?.Clone() as ICart

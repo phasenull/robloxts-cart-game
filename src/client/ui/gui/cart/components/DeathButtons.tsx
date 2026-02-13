@@ -18,11 +18,13 @@ import Signal from "@rbxts/signal"
 
 interface DeathButtonsProps {
 	transparency: number
+	isPreviewLoading?: boolean
 }
 
 export function DeathButtons({
 	// shouldShow,
-	transparency
+	transparency,
+	isPreviewLoading = false
 }: DeathButtonsProps) {
 	const { cart, changeState, confirmHardReset, spawnPoint, state, products } =
 		useCart()
@@ -155,8 +157,8 @@ export function DeathButtons({
 			/>
 			<RottenButton
 				Size={UIDIM.ONE}
-				onClick={mutateHardReset}
-				Text="SPAWN"
+				onClick={() => !isPreviewLoading && mutateHardReset()}
+				Text={isPreviewLoading ? "LOADING..." : "SPAWN"}
 				action="CONFIRM_RESET"
 			>
 				<GoofyText
