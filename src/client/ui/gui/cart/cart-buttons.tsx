@@ -140,7 +140,7 @@ export function CartButtons(props: {
 			Size={new UDim2(0.5, 0, isMobile ? 0.4 : 0.15, 0)}
 		>
 			<uiaspectratioconstraint AspectRatio={isMobile ? 1 : 5} />
-			<uiscale Scale={1.3 - value * 0.3} />
+			<uiscale Scale={isMobile ? 1.3 * (value) : 1.3 - value * 0.3} />
 			<uilistlayout
 				ItemLineAlignment={
 					isMobile ? Enum.ItemLineAlignment.End : Enum.ItemLineAlignment.Center
