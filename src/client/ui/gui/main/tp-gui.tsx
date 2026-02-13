@@ -18,7 +18,6 @@ import { getCheckpointDataFromIndex, ISLAND_CONFIG } from "shared/cart.helper"
 export function TPGui() {
 	const { collectedCheckpoints, refresh } = useCheckpoint()
 	const navigator = useNavigator()
-	const  cart  = useCart().cart
 	useQuery({
 		queryKey: ["tpCheckpointState"],
 		queryFn: async () => {
@@ -30,11 +29,6 @@ export function TPGui() {
 		},
 		enabled: !__IS_EDIT__
 	})
-	useEffect(() => {
-		if (cart) {
-			navigator.closeAll()
-		}
-	},[cart])
 	return (
 		<frame
 			key="Teleport"
@@ -252,7 +246,6 @@ function CheckpointEntry(props: {
 }) {
 	const config = getCheckpointDataFromIndex(props.checkpoint_index)
 	const navigator = useNavigator()
-	const cart = useCart().cart
 	const { mutate, isLoading } = useMutation({
 		queryKey: [`tpToCheckpoint-${props.checkpoint_index}`],
 		mutationFn: async (checkpoint_index: number) => {
@@ -261,9 +254,6 @@ function CheckpointEntry(props: {
 				return true
 			}
 			if (__IS_EDIT__) {
-				return true
-			}
-			if (cart) {
 				return true
 			}
 			await ClientFunctions.CheckpointService.tpMeToCheckpoint

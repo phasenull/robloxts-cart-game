@@ -48,6 +48,11 @@ export class CheckpointService implements OnStart {
 		)
 		ServerFunctions.CheckpointService.tpMeToCheckpoint.setCallback(
 			(player, checkpoint_index) => {
+				const cart_service = Dependency<CartService>()
+				const player_cart = cart_service.getPlayerCartComponent(player)
+				player_cart?.cleanup()
+				cart_service.destroyExistingCardsIfAny(player)
+				cart_service.destroyPlayerCart(player)
 				if (typeOf(checkpoint_index) !== "number") {
 					return [false, "Invalid checkpoint index"]
 				}
@@ -59,6 +64,10 @@ export class CheckpointService implements OnStart {
 				}
 				this.setCheckpointIndex(player, checkpoint_index)
 				this.spawnPlayerAtTheirCheckpoint(player)
+				task.delay(0.1, () => {
+					ServerEvents.CartService.forceCloseDeathScreen.fire(player)
+					player.LoadCharacterAsync()
+				})
 				return [true]
 			}
 		)

@@ -133,7 +133,8 @@ export function CartProvider(props: {
 		const forceCloseConnection = ClientEvents.CartService.forceCloseDeathScreen.connect(() => {
 			logger.log("Force closing death screen from server")
 			setSpawnPoint(undefined)
-			changeState("none")
+			setCart(undefined)
+			setState("none")
 		})
 		const cart_controller = Dependency<CartController>()
 		const cartChangeConnection = cart_controller.onCartChange.Connect((new_cart) => {

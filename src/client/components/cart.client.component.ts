@@ -578,7 +578,7 @@ export class CartClientComponent
 				max_velocity: cart_config.max_velocity
 			})
 		}
-		this.instance.Wheels.GetDescendants()
+		this.instance.FindFirstChild("Wheels")?.GetDescendants()
 			.filter((child) => child.Name === "BALL")
 			.forEach((child) => {
 				if (child.IsA("BasePart")) {

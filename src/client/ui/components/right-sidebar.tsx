@@ -13,13 +13,15 @@ export function RightSidebar() {
 	const navigator = useNavigator()
 	const cart = useCart().cart
 	const { currentCheckpoint } = useCheckpoint()
-	const data = getCheckpointDataFromIndex(currentCheckpoint + 1) ||  getCheckpointDataFromIndex(currentCheckpoint + 2)
+	const data =
+		getCheckpointDataFromIndex(currentCheckpoint + 1) ||
+		getCheckpointDataFromIndex(currentCheckpoint + 2)
 	return (
 		<frame
 			key={"right-sidebar"}
 			Size={UDim2.fromScale(0.3, 0.3)}
-			Position={UIDIM.RIGHT}
-			AnchorPoint={UIDIM.A_RIGHT}
+			Position={UIDIM.LEFT.add(UDim2.fromOffset(10, 0))}
+			AnchorPoint={UIDIM.A_LEFT}
 			BackgroundTransparency={1}
 		>
 			<uilistlayout
@@ -27,23 +29,21 @@ export function RightSidebar() {
 				SortOrder={Enum.SortOrder.LayoutOrder}
 				VerticalAlignment={Enum.VerticalAlignment.Center}
 				HorizontalAlignment={Enum.HorizontalAlignment.Center}
-				Padding={new UDim(.1,0)}
+				Padding={new UDim(0.1, 0)}
 			/>
 			<uipadding PaddingRight={new UDim(0.1, 0)} />
 			<uiaspectratioconstraint AspectRatio={0.5} />
-			{cart ? undefined : (
-				<RottenButton
-					Color={new Color3(0, 0.35, 1)}
-					Size={UIDIM.ONE}
-					Text="Teleport"
-					onClick={() => navigator.setOpenGui("teleport")}
-				/>
-			)}
+			<RottenButton
+				Color={new Color3(0, 0.35, 1)}
+				Size={UIDIM.ONE}
+				Text="Teleport"
+				onClick={() => navigator.setOpenGui("teleport")}
+			/>
 			{data ? (
 				<RottenButton
 					Color={new Color3(1, 0.9, 0)}
 					Size={UIDIM.ONE}
-					Text="Skip Stage"
+					Text="Skip Island"
 					onClick={() =>
 						MarketplaceService.PromptProductPurchase(
 							Players.LocalPlayer,

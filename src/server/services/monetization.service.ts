@@ -135,10 +135,11 @@ export class MonetizationService implements OnStart {
 				const target_checkpoint = getNextBigCheckpoint(player_checkpoint)
 				const data = getCheckpointDataFromIndex(target_checkpoint)
 				checkpoint_service.setCheckpointIndex(player, target_checkpoint)
+				checkpoint_service.spawnPlayerAtTheirBigCheckpoint(player)
 				task.delay(0.1, () => {
-					checkpoint_service.spawnPlayerAtTheirBigCheckpoint(player)
+					ServerEvents.CartService.forceCloseDeathScreen.fire(player)
+					player.LoadCharacterAsync()
 				})
-				ServerEvents.CartService.forceCloseDeathScreen.fire(player)
 				ServerEvents.NotificationService.sendNotification.fire(player, {
 					description: `<font color="rgb(0, 255, 0)">${data?.name || "Unknown Island"}</font>`,
 					title: "Island Skipped",
