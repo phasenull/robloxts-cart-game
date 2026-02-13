@@ -33,7 +33,6 @@ export default function PopGui(props: {
 	
 	
 	if (value === 0) return undefined
-	print("open_gui:", open_gui, "is_open:", is_open)
 	
 	// If frame wrapper is disabled, just render children directly
 
@@ -45,6 +44,7 @@ export default function PopGui(props: {
 			Position={props.Position || new UDim2(0.5, 0, 0.5 + (1-value), 0)}
 			Size={(props.Size || new UDim2(0.6, 0, 0.6, 0)).Lerp(UIDIM.ZERO, (1-value))}
 			ZIndex={props.ZIndex}
+			key={`pop-gui-${props.id}`}
 		>
 			{!props.disable_aspect_ratio && <uiaspectratioconstraint AspectRatio={(props.Size?.X.Scale||2)/(props.Size?.Y.Scale||1)} />}
 			{ !props.hide_title && <textlabel

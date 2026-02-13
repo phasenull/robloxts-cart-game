@@ -14,8 +14,9 @@ export default function BlurGui() {
 		new_blur.Size = 0
 		new_blur.Parent = camera
 	}
+	const blacklisted = ["carts"]
 	const blur_amount = useAnimateValue({
-		target_value: open_gui ? 1 : 0,
+		target_value: open_gui && !blacklisted.includes(open_gui) ? 1 : 0,
 		tween_info: new TweenInfo(0.2)
 	})
 	blur.Size = blur_amount * 15

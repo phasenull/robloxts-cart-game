@@ -1,9 +1,11 @@
-import React from "@rbxts/react"
+import React, { useEffect } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { ClientFunctions } from "shared/network.helper"
 import { ShopCartEntry } from "./shop-cart-entry"
+import { __IS_EDIT__ } from "shared/config.helper"
 import { LoadingIndicator } from "client/ui/components/loading-indicator"
 import { IShopItem } from "shared/type.helper"
+import { useNavigator } from "client/ui/hooks/useNavigator"
 
 interface ShopCartListProps {
 	selectedItem: IShopItem | undefined
@@ -15,24 +17,43 @@ export function ShopCartList({ selectedItem, onSelectItem }: ShopCartListProps) 
 	const { data: cartItems, isLoading: isLoadingItems } = useQuery({
 		queryKey: ["shop-items", "cart"],
 		queryFn: async () => {
+			if (__IS_EDIT__) {
+				return [
+					{ name: "Cart", price: 0 },
+					{ name: "Fast Cart", price: 100 },
+					{ name: "Spiky Cart", price: 250 },
+					{ name: "V8 Cart", price: 500 },
+					{ name: "Rainbow Cart", price: 1000 }
+				] as IShopItem[]
+			}
 			const [items, itemsError] = await ClientFunctions.ShopService.getShopItems.invoke("cart")
 			if (itemsError || !items) {
 				throw itemsError || "Failed to load cart items"
 			}
 			return items
-		}
+		},
 	})
-
+	const navigator = useNavigator()
+	useEffect(() => {
+		navigator.setIsSidebarOpen(false)
+		return () => {
+			navigator.setIsSidebarOpen(true)
+		}
+	}, [])
 	// Fetch player inventory
 	const { data: inventory } = useQuery({
 		queryKey: ["player-inventory", "cart"],
 		queryFn: async () => {
+			if (__IS_EDIT__) {
+				return { cart: ["Cart", "Fast Cart"] }
+			}
 			const [inv, inventoryError] = await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
 			if (inventoryError || !inv) {
 				return { cart: [] }
 			}
 			return inv
-		}
+		},
+		enabled: !__IS_EDIT__
 	})
 
 	const ownedCarts = inventory?.cart || []

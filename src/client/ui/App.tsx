@@ -68,7 +68,6 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										<PopGui id={"settings"}>
 											<SettingsGui />
 										</PopGui>
-										<ShopGui />
 										<PopGui hide_title disable_default_close id={"teleport"}>
 											<TPGui />
 										</PopGui>
@@ -94,6 +93,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										</PopGui>
 
 										<PopGui
+											Size={UDim2.fromScale(1, 1)}
 											id="carts"
 											hide_title={true}
 											disable_default_close={true}

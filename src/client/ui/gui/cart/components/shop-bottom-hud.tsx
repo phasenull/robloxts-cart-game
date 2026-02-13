@@ -3,6 +3,7 @@ import { useMutation } from "@rbxts/react-query"
 import { IShopItem } from "shared/type.helper"
 import { ClientFunctions } from "shared/network.helper"
 import { UIHelper } from "client/ui.helper"
+import { __IS_EDIT__ } from "shared/config.helper"
 import { A } from "shared/assets"
 import { useNavigator } from "client/ui/hooks/useNavigator"
 
@@ -19,6 +20,8 @@ export function ShopBottomHud({ selectedItem, isOwned, onPurchaseSuccess }: Shop
 		queryKey: ["purchase-item", selectedItem?.name || "none"],
 		mutationFn: async () => {
 			if (!selectedItem) return false
+
+			if (__IS_EDIT__) return true
 
 			const [success, err] = await ClientFunctions.ShopService.makePlayerPurchaseItem.invoke(
 				"cart",
