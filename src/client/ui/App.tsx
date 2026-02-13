@@ -23,6 +23,7 @@ import { RightSidebar } from "./components/right-sidebar"
 import { TPGui } from "./gui/main/tp-gui"
 import Sidebar from "./gui/sidebar"
 import { NotificationsGui } from "./gui/main/notifications/notifications-gui"
+import { ShopGui } from "./gui/cart/shop-gui"
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 	const { showError } = useErrorPage()
 	const query_client = new QueryClient({
@@ -67,7 +68,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										<PopGui id={"settings"}>
 											<SettingsGui />
 										</PopGui>
-
+										<ShopGui />
 										<PopGui hide_title disable_default_close id={"teleport"}>
 											<TPGui />
 										</PopGui>
@@ -90,6 +91,15 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										</PopGui>
 										<PopGui id={"cart"}>
 											<CartGui />
+										</PopGui>
+
+										<PopGui
+											id="carts"
+											hide_title={true}
+											disable_default_close={true}
+											disable_aspect_ratio={true}
+										>
+											<ShopGui />
 										</PopGui>
 										<NotificationsGui />
 									</SettingsProvider>

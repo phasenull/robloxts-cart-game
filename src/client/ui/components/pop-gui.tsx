@@ -17,6 +17,7 @@ export default function PopGui(props: {
 	onClose?: () => void
 	disable_default_close?: boolean
 	hide_title?: boolean
+	disable_aspect_ratio?: boolean
 }) {
 	const open_gui = React.useContext(GuiContext).open_gui
 	const is_open = open_gui === props.id || props.Visible
@@ -29,7 +30,14 @@ export default function PopGui(props: {
 			Enum.EasingDirection.InOut
 		)
 	})
+	
+	
 	if (value === 0) return undefined
+	print("open_gui:", open_gui, "is_open:", is_open)
+	
+	// If frame wrapper is disabled, just render children directly
+
+	
 	return (
 		<frame
 			BackgroundTransparency={1}
@@ -38,7 +46,7 @@ export default function PopGui(props: {
 			Size={(props.Size || new UDim2(0.6, 0, 0.6, 0)).Lerp(UIDIM.ZERO, (1-value))}
 			ZIndex={props.ZIndex}
 		>
-			<uiaspectratioconstraint AspectRatio={(props.Size?.X.Scale||2)/(props.Size?.Y.Scale||1)} />
+			{!props.disable_aspect_ratio && <uiaspectratioconstraint AspectRatio={(props.Size?.X.Scale||2)/(props.Size?.Y.Scale||1)} />}
 			{ !props.hide_title && <textlabel
 				Size={new UDim2(0.3, 0, 0.1, 0)}
 				TextColor3={new Color3(1, 1, 1)}
