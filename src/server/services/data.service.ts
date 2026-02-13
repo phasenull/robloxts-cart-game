@@ -19,8 +19,9 @@ const PROFILE_TEMPLATE = {
 	revives: 999,
 	flips: 999,
 	collected_checkpoints: [0] as number[],
-	inventory: [] as string[],
+	inventory: {} as Record<string, string[]>,
 	vehicles: [] as string[],
+	customization: {} as Record<string, string[]>,
 };
 type PurchaseHistoryEntry = {
 	purchase_type: "robux" | "cash";

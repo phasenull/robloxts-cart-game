@@ -44,7 +44,7 @@ export function normalizeVector3(vec: Vector3,by: number = 1): Vector3 {
 	}
 	return vec.div(mag).mul(by)
 }
-
+const a : BasePart = undefined as unknown as BasePart
 export function calculateSteepDiffFromHumanoid(humanoid: Humanoid): number {
 	assert(humanoid?.RootPart, "Humanoid has no RootPart")
 	const walk_direction = humanoid.MoveDirection

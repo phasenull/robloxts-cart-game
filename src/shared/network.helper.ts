@@ -8,7 +8,7 @@ import {
 	ServerHandler as ServerHandlerFunction
 } from "@flamework/networking/out/functions/types"
 import { __IS_CLIENT__, __IS_EDIT__, __IS_SERVER__ } from "./config.helper"
-import { ButtonModel, ICartConfig, INotification, ProperReturns } from "./type.helper"
+import { ButtonModel, ICart, ICartConfig, INotification, ProperReturns } from "./type.helper"
 /*
 
 	SERVER TO CLIENT
@@ -60,6 +60,7 @@ interface ClientToServerEvents {
 	CartService: {
 		spawnCart: (button: ButtonModel) => void,
 		cleanupCart: () => void
+		honk: () => void
 	}
 	CheckpointService: {
 		setCheckpoint: (index: number) => void

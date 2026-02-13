@@ -42,6 +42,7 @@ export class CartClientComponent
 	private max_velocity = 25
 	honk(): void {
 		print("honk!")
+		ClientEvents.CartService.honk.fire()
 	}
 	public readonly brakeListener = new Signal<(status: boolean) => void>()
 	private readonly brakes: ParticleEmitter[] = []
