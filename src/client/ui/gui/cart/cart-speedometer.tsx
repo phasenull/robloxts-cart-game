@@ -68,7 +68,7 @@ export function SpeedometerHud(props: {
 	if (camera) {
 		const min_degrees = 20
 		const max_degrees = 120
-		const added_fov = 50
+		const added_fov = 30
 		const calculated_fov =
 			default_fov +
 			math.clamp(
