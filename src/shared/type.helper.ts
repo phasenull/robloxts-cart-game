@@ -16,6 +16,7 @@ export type log_base = Model & {
 export type IConfig = {
 	CartConfig: ICartConfig;
 	PurchasableConfig: IPurchasableConfig;
+	ShopConfig: IShopConfig;
 };
 export type INotification = {
 	title: string;
@@ -98,3 +99,9 @@ export type IWheel = Model & {
 		Attachment: Attachment;
 	};
 };
+export type IShopConfig = Record<IShopItemTypes, IShopItem[]>
+export type IShopItem = {
+	name:string,
+	price:number,
+}
+export type IShopItemTypes = "cart" | "honk" | "flips" | "revives" | (string & {})
