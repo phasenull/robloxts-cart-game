@@ -31,9 +31,9 @@ const CartContext = createContext<CartContextValue | undefined>(undefined)
 
 export function CartProvider(props: {
 	children: React.ReactNode
-	__story?: { mock_state: CartState }
+	__story?: { mock_state?: CartState; mock_cart?: CartClientComponent }
 }) {
-	const [cart, setCart] = useState<CartClientComponent | undefined>()
+	const [cart, setCart] = useState<CartClientComponent | undefined>(props.__story?.mock_cart)
 	const [state, setState] = useState<CartState>("none")
 	const [products,setProducts] = useState<Map<string, number>>(new Map())
 	const [spawnPoint, setSpawnPoint] = useState<CFrame | undefined>(undefined)
@@ -44,6 +44,12 @@ export function CartProvider(props: {
 		}
 		changeState(props.__story.mock_state)
 	}, [props.__story?.mock_state])
+	useEffect(() => {
+		if (props.__story?.mock_cart !== undefined) {
+			setCart(props.__story.mock_cart)
+			changeState("alive")
+		}
+	}, [props.__story?.mock_cart])
 	// Listen for cart changes
 	useEffect(() => {
 		if (__IS_EDIT__) {

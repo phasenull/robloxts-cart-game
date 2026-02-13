@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "@rbxts/react"
+import React, { useEffect, useRef, useState } from "@rbxts/react"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useCheckpoint } from "./hooks/useCheckpoint"
-import { Players, Workspace } from "@rbxts/services"
+import { Players, TweenService, Workspace } from "@rbxts/services"
 import { ProgressBarComponent } from "client/ui/components/progressbar-component"
 import { useRendering } from "client/ui/hooks/useRendering"
 import { sphere } from "@rbxts/better-gizmos"
@@ -21,6 +21,63 @@ export function StageProgress() {
 
 	const cart_position = (cart?.instance?.FindFirstChild("Root") as BasePart)
 		?.Position
+	const previous_checkpoint = useRef(
+		getPreviousBigCheckpoint(currentCheckpoint)
+	)
+	const avatarRef = useRef<ImageLabel>()
+	let override_progress = undefined as number | undefined
+	useEffect(() => {
+		// ace'in headshot animation önerisi
+		if (!avatarRef.current) {
+			return
+		}
+		if (
+			previous_checkpoint.current !==
+			getPreviousBigCheckpoint(currentCheckpoint)
+		) {
+			// level changed
+			// print(
+			// 	`Checkpoint changed, play animation! prev: ${previous_checkpoint.current}, new: ${getPreviousBigCheckpoint(currentCheckpoint)}`
+			// )
+			override_progress = 1
+			const tween = TweenService.Create(
+				avatarRef.current,
+				new TweenInfo(
+					0.5,
+					Enum.EasingStyle.Sine,
+					Enum.EasingDirection.In,
+					0,
+					true
+				),
+				{
+					Size: UDim2.fromScale(3, 3),
+					BackgroundColor3: Color3.fromRGB(135, 255, 135),
+					// Position: UDim2.fromScale(0.5, 0.5)
+					Position: UDim2.fromScale(1, 0.5)
+				}
+			)
+			avatarRef.current.Position = UDim2.fromScale(1, 0.5)
+			tween.Completed.Connect(() => {
+				const second = TweenService.Create(
+					avatarRef.current!,
+					new TweenInfo(
+						0.5,
+						Enum.EasingStyle.Quint,
+						Enum.EasingDirection.InOut
+					),
+					{
+						Position: UDim2.fromScale(0, 0.5)
+					}
+				)
+				second.Completed.Connect(() => {
+					override_progress = undefined
+				})
+				second.Play()
+			})
+			tween.Play()
+			previous_checkpoint.current = getPreviousBigCheckpoint(currentCheckpoint)
+		}
+	}, [currentCheckpoint, avatarRef.current])
 	if (!cart_position) {
 		return
 	}
@@ -50,7 +107,9 @@ export function StageProgress() {
 		0,
 		total_distance
 	)
-	const new_progress = 1 - math.clamp(current_distance / total_distance, 0, 1)
+
+	const new_progress =
+		override_progress ?? 1 - math.clamp(current_distance / total_distance, 0, 1)
 	if (next_checkpoint === checkpoint) {
 		return
 	}
@@ -79,13 +138,14 @@ export function StageProgress() {
 				Size={new UDim2(0.15, 0, 0.15, 0)}
 			>
 				<PlayerAvatar
+					ref={avatarRef}
 					img_type={Enum.ThumbnailType.HeadShot}
 					user_id={Players.LocalPlayer.UserId}
 					AnchorPoint={UIDIM.A_CENTER}
 					Position={UDim2.fromScale(new_progress, 0.5)}
 					BackgroundTransparency={0}
 					BackgroundColor3={PRIMARY}
-					Size={UDim2.fromScale(2,2)}
+					Size={UDim2.fromScale(2, 2)}
 					BorderSizePixel={0}
 				>
 					<uicorner CornerRadius={new UDim(1, 0)} />

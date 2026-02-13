@@ -1,16 +1,17 @@
 import { useQuery } from "@rbxts/react-query"
 import { Players } from "@rbxts/services"
 import { LoadingIndicator } from "./loading-indicator"
-import React, { PropsWithChildren, ReactNode } from "@rbxts/react"
+import React, { PropsWithChildren, ReactNode, forwardRef } from "@rbxts/react"
 import { UIDIM } from "../constants"
 
-export function PlayerAvatar(
-	props: {
+export const PlayerAvatar = forwardRef<
+	ImageLabel,
+	{
 		user_id: number
 		children?: ReactNode
 		img_type?: Enum.ThumbnailType
 	} & Partial<PropsWithChildren<ImageLabel>>
-) {
+>((props, ref) => {
 	let img_type = props.img_type ?? Enum.ThumbnailType.AvatarBust
 	const { data, err, isLoading, refetch } = useQuery({
 		queryKey: [`player-avatar-${props.user_id}-${props.Size}`],
@@ -32,6 +33,7 @@ export function PlayerAvatar(
 	})
 	return (
 		<imagelabel
+			ref={ref}
 			BackgroundTransparency={1}
 			{...{ ...props, user_id: undefined,img_type:undefined }}
 			Image={data}
@@ -44,4 +46,4 @@ export function PlayerAvatar(
 			{props.children}
 		</imagelabel>
 	)
-}
+})

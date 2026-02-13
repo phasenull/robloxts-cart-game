@@ -12,8 +12,9 @@ import useAnimateValue from "client/ui/hooks/useAnimateValue"
 
 function KeyboardControls() {
 	const inputType = useInputType()
+	const cart = useCart().cart
 	const value = useAnimateValue({
-		target_value: inputType === "Keyboard" ? 1 : 0,
+		target_value: (inputType === "Keyboard" && cart) ? 1 : 0,
 		tween_info: new TweenInfo(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
 		enabled: true
 	})
