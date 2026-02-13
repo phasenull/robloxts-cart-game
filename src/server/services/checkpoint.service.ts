@@ -178,7 +178,7 @@ export class CheckpointService implements OnStart {
 	attemptToSaveCheckpoint(player: Player, checkpoint_index: number) {
 		const profile_service = Dependency<DataService>()
 		const profile = profile_service.getProfile(player)
-		if (checkpoint_index > 0) {
+		if (checkpoint_index >= 0) {
 			AnalyticsService.LogOnboardingFunnelStepEvent(
 				player,
 				checkpoint_index,
@@ -186,6 +186,7 @@ export class CheckpointService implements OnStart {
 					`unknown_checkpoint-${checkpoint_index}`
 			)
 		}
+		
 		if (!this.isBigCheckpoint(checkpoint_index)) {
 			return
 		}
