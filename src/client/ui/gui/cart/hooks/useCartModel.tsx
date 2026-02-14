@@ -1,5 +1,7 @@
 import { useEffect, useState } from "@rbxts/react"
+import { Workspace } from "@rbxts/services"
 import { assets } from "shared/assets"
+import { CartAnimator, RigCartModel } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
 
 export function useCartModel(cart_name?:string,auto_destroy = true) {
@@ -10,7 +12,6 @@ export function useCartModel(cart_name?:string,auto_destroy = true) {
 		}
 		const cloned = assets.carts.FindFirstChild(cart_name)?.Clone() as ICart | undefined
 		if (cloned) {
-			cloned.Parent = undefined
 			setModel(cloned)
 		}
 		return () => {

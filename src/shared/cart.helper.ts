@@ -248,7 +248,7 @@ animation_in.AnimationId = in_id
 const animation_out = new Instance("Animation")
 animation_out.AnimationId = out_id
 const garage_preview = Workspace.FindFirstChild("GaragePreview")
-const CartAnimator = garage_preview?.FindFirstChild("CartAnimator") as
+export const CartAnimator = garage_preview?.FindFirstChild("CartAnimator") as
 	| (Model & {
 			MovePart: BasePart
 			StandPart: BasePart
@@ -267,6 +267,10 @@ assert(
 )
 const Animator = CartAnimator.AnimationController.Animator as Animator
 assert(Animator, "CartAnimator.AnimationController.Animator not found")
+Animator.GetPlayingAnimationTracks().forEach((track) => {
+	track.Stop()
+	track.Destroy()
+})
 const anim_in = Animator.LoadAnimation(animation_in)
 const anim_out = Animator.LoadAnimation(animation_out)
 export function AnimateGarageMovement(
@@ -283,19 +287,17 @@ export function AnimateGarageMovement(
 		"CartAnimator model not found in workspace.CartPreviewAttachment"
 	)
 	model.Parent = Workspace.CurrentCamera
-	const [bbox, _] = model.GetBoundingBox()
-	model.PivotTo(CartAnimator.MovePart.CFrame.mul(new CFrame(0,-bbox.Y/2,0)))
+	const [_, bbox] = model.GetBoundingBox()
+	model.PivotTo(CartAnimator.MovePart.CFrame.mul(new CFrame(0, bbox.Y / 2, 0)))
 	weld.Part0 = CartAnimator.MovePart
 	weld.Part1 = pp
 	weld.C0 = new CFrame(0, 0, 0)
 	const size_y = bbox.Y
-	weld.C1 = new CFrame(0, size_y / 2, 0)
+	weld.C1 = new CFrame(0, -size_y / 2, 0)
 	if (direction === "in") {
-		print(`PLAYING IN`)
 		anim_out.Stop()
 		anim_in.Play()
 	} else {
-		print(`PLAYING OUT`)
 
 		anim_in.Stop()
 		anim_out.Play()

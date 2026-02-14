@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { ICart, IShopItem } from "shared/type.helper"
 import { ClientFunctions } from "shared/network.helper"
-import { __IS_EDIT__ } from "shared/config.helper"
+import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ShopCartList } from "./components/shop-cart-list"
 import { ShopBottomHud } from "./components/shop-bottom-hud"
 import PopGui from "client/ui/components/pop-gui"
@@ -11,10 +11,11 @@ import { AnimateGarageMovement, RigCartModel } from "shared/cart.helper"
 import { ReplicatedStorage, Workspace } from "@rbxts/services"
 import { assets } from "shared/assets"
 import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation"
+import { MOCK_CART_INVENTORY } from "shared/mocks"
 
 export function ShopGui() {
 	// Fetch player inventory to check ownership
-	const {mutate:mutateGarageAnimation}= useShopGarageAnimation()
+	const { mutate: mutateGarageAnimation } = useShopGarageAnimation()
 	useEffect(() => {
 		mutateGarageAnimation("in")
 		return () => {
@@ -24,8 +25,8 @@ export function ShopGui() {
 	const { data: inventory, refetch: refetchInventory } = useQuery({
 		queryKey: ["player-inventory", "cart"],
 		queryFn: async () => {
-			if (__IS_EDIT__) {
-				return { cart: ["Cart", "Fast Cart"] }
+			if (__IS_EDIT__ || __IS_STUDIO__) {
+				return { cart: MOCK_CART_INVENTORY.map((item) => item.name) }
 			}
 			const [inv, inventoryError] =
 				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
@@ -44,7 +45,6 @@ export function ShopGui() {
 	const isOwned = selectedItem
 		? (inventory?.cart.includes(selectedItem.name) ?? false)
 		: false
-
 
 	const handleSelectItem = (item: IShopItem) => {
 		setSelectedItem(item)

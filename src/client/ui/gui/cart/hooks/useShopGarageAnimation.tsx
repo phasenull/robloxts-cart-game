@@ -1,7 +1,11 @@
 import { useMutation, useQuery } from "@rbxts/react-query"
 import { Workspace } from "@rbxts/services"
 import { assets } from "shared/assets"
-import { AnimateGarageMovement, RigCartModel } from "shared/cart.helper"
+import {
+	AnimateGarageMovement,
+	CartAnimator,
+	RigCartModel
+} from "shared/cart.helper"
 import { __IS_EDIT__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
 import { ICart } from "shared/type.helper"
@@ -26,10 +30,10 @@ export function useShopGarageAnimation() {
 		mutationFn: async (direction: "in" | "out") => {
 			const model =
 				direction === "in"
-					? (assets.carts.FindFirstChild(equipped_cart?.[0] || "")?.Clone() as
+					? (assets.carts.FindFirstChild(equipped_cart?.[0] || "Cart")?.Clone() as
 							| ICart
 							| undefined)
-					: (Workspace.CurrentCamera?.FindFirstChild("GarageAnimation") as
+					: (Workspace.CurrentCamera?.FindFirstChild("GaragePreviewCart") as
 							| ICart
 							| undefined)
 			if (direction === "out") {
@@ -40,9 +44,15 @@ export function useShopGarageAnimation() {
 				throw `Model for equipped cart not found: ${equipped_cart?.[0]}`
 			}
 			print(`mutateGarageAnimation: ${direction}, model: ${model.Name}`)
-			model.Name = `GarageAnimation`
-			model.ScaleTo(1.5)
+			model.Name = `GaragePreviewCart`
+			task.wait(0.1) // Wait for the model to be in the correct position before rigging
+			model.Parent = Workspace.CurrentCamera
 			RigCartModel(model)
+			model.ScaleTo(1.5)
+			const [_, bbox] = model.GetBoundingBox()
+			model.PivotTo(
+				CartAnimator!.MovePart.CFrame.mul(new CFrame(0, bbox.Y / 2, 0))
+			)
 			AnimateGarageMovement(model, direction)
 			return model
 		},
