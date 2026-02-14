@@ -1,16 +1,26 @@
-import React, { useState } from "@rbxts/react"
+import React, { useEffect, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
-import { IShopItem } from "shared/type.helper"
+import { ICart, IShopItem } from "shared/type.helper"
 import { ClientFunctions } from "shared/network.helper"
 import { __IS_EDIT__ } from "shared/config.helper"
 import { ShopCartList } from "./components/shop-cart-list"
 import { ShopBottomHud } from "./components/shop-bottom-hud"
 import PopGui from "client/ui/components/pop-gui"
 import { useShopPreview } from "./hooks/useShopPreview"
+import { AnimateGarageMovement, RigCartModel } from "shared/cart.helper"
+import { ReplicatedStorage, Workspace } from "@rbxts/services"
+import { assets } from "shared/assets"
+import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation"
 
 export function ShopGui() {
-	
 	// Fetch player inventory to check ownership
+	const {mutate:mutateGarageAnimation}= useShopGarageAnimation()
+	useEffect(() => {
+		mutateGarageAnimation("in")
+		return () => {
+			mutateGarageAnimation("out")
+		}
+	}, [])
 	const { data: inventory, refetch: refetchInventory } = useQuery({
 		queryKey: ["player-inventory", "cart"],
 		queryFn: async () => {
@@ -26,11 +36,15 @@ export function ShopGui() {
 		},
 		enabled: !__IS_EDIT__
 	})
-	const [selectedItem, setSelectedItem] = useState<IShopItem | undefined>({"name": "Cart", price: 0})
+	const [selectedItem, setSelectedItem] = useState<IShopItem | undefined>({
+		name: "Cart",
+		price: 0
+	})
 
 	const isOwned = selectedItem
 		? (inventory?.cart.includes(selectedItem.name) ?? false)
 		: false
+
 
 	const handleSelectItem = (item: IShopItem) => {
 		setSelectedItem(item)

@@ -1,4 +1,4 @@
-import { Workspace } from "@rbxts/services"
+import { TweenService, Workspace } from "@rbxts/services"
 import { A, assets } from "./assets"
 import { __IS_STUDIO__ } from "./config.helper"
 import { ICart, IWheel } from "./type.helper"
@@ -239,4 +239,119 @@ export const ISLAND_CONFIG = {
 		name: "Void",
 		image: A.backgrounds.post_magma
 	}
+}
+
+const out_id = "rbxassetid://112110619324038"
+const in_id = "rbxassetid://134817880267461"
+const animation_in = new Instance("Animation")
+animation_in.AnimationId = in_id
+const animation_out = new Instance("Animation")
+animation_out.AnimationId = out_id
+const garage_preview = Workspace.FindFirstChild("GaragePreview")
+const CartAnimator = garage_preview?.FindFirstChild("CartAnimator") as
+	| (Model & {
+			MovePart: BasePart
+			StandPart: BasePart
+			AnimationController: AnimationController & {
+				Animator: Animator
+			}
+	  })
+	| undefined
+assert(
+	CartAnimator,
+	"CartAnimator model not found in workspace.CartPreviewAttachment"
+)
+assert(
+	CartAnimator.AnimationController,
+	"CartAnimator.AnimationController not found"
+)
+const Animator = CartAnimator.AnimationController.Animator as Animator
+assert(Animator, "CartAnimator.AnimationController.Animator not found")
+const anim_in = Animator.LoadAnimation(animation_in)
+const anim_out = Animator.LoadAnimation(animation_out)
+export function AnimateGarageMovement(
+	model: ICart,
+	direction: "in" | "out" = "in"
+) {
+	const pp = model.FindFirstChild("Root") as BasePart
+	if (!pp) {
+		return
+	}
+	const weld = new Instance("Weld", pp)
+	assert(
+		CartAnimator,
+		"CartAnimator model not found in workspace.CartPreviewAttachment"
+	)
+	model.Parent = Workspace.CurrentCamera
+	const [bbox, _] = model.GetBoundingBox()
+	model.PivotTo(CartAnimator.MovePart.CFrame.mul(new CFrame(0,-bbox.Y/2,0)))
+	weld.Part0 = CartAnimator.MovePart
+	weld.Part1 = pp
+	weld.C0 = new CFrame(0, 0, 0)
+	const size_y = bbox.Y
+	weld.C1 = new CFrame(0, size_y / 2, 0)
+	if (direction === "in") {
+		print(`PLAYING IN`)
+		anim_out.Stop()
+		anim_in.Play()
+	} else {
+		print(`PLAYING OUT`)
+
+		anim_in.Stop()
+		anim_out.Play()
+	}
+}
+export function BrickifyModel(
+	model: Model,
+	direction: "in" | "out" = "in",
+	duration = 0.5,
+	style = Enum.EasingStyle.Quad
+) {
+	const parts = model
+		.GetDescendants()
+		.filter((_) => _.IsA("BasePart")) as BasePart[]
+	const pivot = model.GetPivot()
+	return parts.map((part, index) => {
+		const original_transparency = part.Transparency
+		if (direction === "in") {
+			part.Transparency = 1
+		}
+		// const part_offset = part.Position.sub(pivot.Position)
+		part.Anchored = true
+		part.FindFirstAncestorOfClass("WeldConstraint")?.Destroy()
+		const original_cframe = part.CFrame
+		const spawn_cframe = pivot.mul(
+			new CFrame(direction === "in" ? -5 : 0, 5, direction === "in" ? 10 : -10)
+		)
+		if (direction === "in") {
+			part.CFrame = spawn_cframe
+		}
+		const [root_cframe, bounding_box] = model.GetBoundingBox()
+		const y =
+			original_cframe.Position.Y - (root_cframe.Position.Y - bounding_box.Y / 2)
+		// part.CFrame = new CFrame(random_position)
+		const tween = TweenService.Create(
+			part,
+			new TweenInfo(
+				duration,
+				style,
+				// direction === "in" ? Enum.EasingDirection.Out :
+				Enum.EasingDirection.Out,
+				0,
+				false,
+				direction === "in" ? 0.01 * y * 10 : 0.005 * index
+			),
+			{
+				CFrame: direction === "in" ? original_cframe : spawn_cframe,
+				Transparency: direction === "out" ? 1 : original_transparency
+			}
+		)
+		tween.Play()
+		return {
+			part,
+			original_cframe,
+			original_transparency,
+			tween
+		}
+	})
 }
