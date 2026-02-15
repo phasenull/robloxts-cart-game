@@ -25,29 +25,16 @@ import Sidebar from "./gui/sidebar"
 import { NotificationsGui } from "./gui/main/notifications/notifications-gui"
 import { ShopGui } from "./gui/cart/shop-gui"
 import { GlobalHUDGui } from "./gui/global-hud-gui"
+const query_client = new QueryClient({
+	mutations: {
+		onError: (err) => {}
+	},
+	queries: {
+		retry: false,
+		onError: (err) => {}
+	}
+})
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
-	const { showError } = useErrorPage()
-	const query_client = new QueryClient({
-		mutations: {
-			onError: (err) => {
-				showError({
-					message: `${err}`,
-					title: "An unexpected error occurred.",
-					onClose: () => {}
-				})
-			}
-		},
-		queries: {
-			retry: false,
-			onError: (err) => {
-				showError({
-					message: `${err}`,
-					title: "An unexpected error occurred.",
-					onClose: () => {}
-				})
-			}
-		}
-	})
 	return (
 		<ErrorProvider>
 			<QueryClientProvider value={query_client}>
@@ -59,7 +46,6 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 									initial_gui={__IS_EDIT__ ? props.initial_gui : undefined}
 								>
 									<SettingsProvider>
-
 										<Sidebar />
 										<GlobalHUDGui />
 										<FadeGui />
