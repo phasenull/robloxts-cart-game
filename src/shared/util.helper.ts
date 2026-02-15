@@ -104,3 +104,35 @@ export function BuildDeepWeldConstraints(part0: BasePart, part1: BasePart|Model)
 		}
 	})
 }
+
+export function formatCash(cash: number): string {
+	if (cash < 1000) {
+		return `$ ${cash}`;
+	}
+	
+	const suffixes = [
+		{ threshold: 1e42, divisor: 1e41, suffix: "Td" }, // Tredecillions
+		{ threshold: 1e39, divisor: 1e38, suffix: "Dd" }, // Duodecillions
+		{ threshold: 1e36, divisor: 1e35, suffix: "Ud" }, // Undecillions
+		{ threshold: 1e33, divisor: 1e32, suffix: "Dc" }, // Decillions
+		{ threshold: 1e30, divisor: 1e29, suffix: "No" }, // Nonillions
+		{ threshold: 1e27, divisor: 1e26, suffix: "Oc" }, // Octillions
+		{ threshold: 1e24, divisor: 1e23, suffix: "Sp" }, // Septillions
+		{ threshold: 1e21, divisor: 1e20, suffix: "Sx" }, // Sextillions
+		{ threshold: 1e18, divisor: 1e17, suffix: "Qi" }, // Quintillions
+		{ threshold: 1e15, divisor: 1e14, suffix: "Qa" }, // Quadrillions
+		{ threshold: 1e12, divisor: 1e11, suffix: "T" },  // Trillions
+		{ threshold: 1e9, divisor: 1e8, suffix: "B" },    // Billions
+		{ threshold: 1e6, divisor: 1e5, suffix: "M" },    // Millions
+		{ threshold: 1e3, divisor: 1e2, suffix: "K" },    // Thousands
+	];
+	
+	for (const { threshold, divisor, suffix } of suffixes) {
+		if (cash >= threshold) {
+			const value = math.floor(cash / divisor) / 10;
+			return `$ ${value}${suffix}`;
+		}
+	}
+	
+	return `$ ${cash}`;
+}

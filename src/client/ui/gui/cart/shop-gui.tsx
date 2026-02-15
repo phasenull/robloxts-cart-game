@@ -51,9 +51,6 @@ export function ShopGui() {
 		: false
 
 	const handleSelectItem = (item: IShopItem) => {
-		print("selectedItem", item.name, isOwned)
-		print("inventory", inventory?.carts)
-
 		setSelectedItem(item)
 	}
 

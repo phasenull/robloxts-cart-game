@@ -24,6 +24,7 @@ import { TPGui } from "./gui/main/tp-gui"
 import Sidebar from "./gui/sidebar"
 import { NotificationsGui } from "./gui/main/notifications/notifications-gui"
 import { ShopGui } from "./gui/cart/shop-gui"
+import { GlobalHUDGui } from "./gui/global-hud-gui"
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 	const { showError } = useErrorPage()
 	const query_client = new QueryClient({
@@ -58,7 +59,8 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 									initial_gui={__IS_EDIT__ ? props.initial_gui : undefined}
 								>
 									<SettingsProvider>
-										<Sidebar />
+										{/* <Sidebar /> */}
+										<GlobalHUDGui />
 										<FadeGui />
 										<DeathGui />
 										<RightSidebar />

@@ -29,7 +29,7 @@ export function RightSidebar() {
 		<frame
 			key={"right-sidebar"}
 			Size={UDim2.fromScale(0.3, 0.3)}
-			Position={UIDIM.LEFT.add(UDim2.fromOffset(10, 0)).add(
+			Position={UIDIM.LEFT.sub(UDim2.fromScale(0,.15)).add(UDim2.fromOffset(10, 0)).add(
 				UDim2.fromScale(-0.4 * animatedValue, 0)
 			)}
 			AnchorPoint={UIDIM.A_LEFT}

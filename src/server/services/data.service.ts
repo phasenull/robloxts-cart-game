@@ -11,7 +11,7 @@ import {
 } from "@rbxts/services";
 import Signal from "@rbxts/signal";
 import { Logger } from "shared/logger";
-import { ServerEvents } from "shared/network.helper";
+import { ServerEvents, ServerFunctions } from "shared/network.helper";
 const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],
 	cash: 0,
@@ -55,6 +55,15 @@ export class DataService implements OnStart {
 				this.playerRemoving(player);
 			}
 		});
+		
+		// Setup network callbacks
+		ServerFunctions.DataService.getCash.setCallback((player) => {
+			const profile = this.getProfile(player);
+			if (!profile) {
+				return [false, "Profile not loaded"];
+			}
+			return [profile.Data.cash as number];
+		});
 		// ServerFunctions.getDailyRewardData.setCallback((player) => {
 		// 	const profile = this.getProfile(player);
 		// 	const data = profile?.Data.daily_reward;
@@ -89,6 +98,10 @@ export class DataService implements OnStart {
 		const current = profile.Data.cash as number;
 		profile.Data.cash = (current + amount) as any;
 		this.logger.log(`Granted ${amount} cash to player ${player.Name}. Reason: ${reason || "N/A"}`);
+		
+		// Fire network event to update UI
+		ServerEvents.DataService.updatePlayerCash.fire(player, profile.Data.cash as number);
+		
 		if (amount > 0) {
 			ServerEvents.NotificationService.sendNotification(player, {
 				title: "<b>Cash Earned!</b>",
@@ -125,6 +138,11 @@ export class DataService implements OnStart {
 		if (listener) {
 			listener.Fire();
 		}
+		
+		// Send initial cash to client
+		task.delay(0.5, () => {
+			ServerEvents.DataService.updatePlayerCash.fire(player, profile.Data.cash as number);
+		});
 	}
 	// cash, kills, playtime, bounties
 

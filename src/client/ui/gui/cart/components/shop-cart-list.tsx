@@ -46,7 +46,7 @@ export function ShopCartList({
 		queryKey: ["player-inventory", "owned-cart"],
 		queryFn: async () => {
 			if (__IS_EDIT__ || __IS_STUDIO__) {
-				return  {carts:MOCK_INVENTORY}
+				return  {carts:MOCK_INVENTORY  }
 			}
 			const [inv, inventoryError] =
 				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")

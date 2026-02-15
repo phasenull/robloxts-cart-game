@@ -30,6 +30,9 @@ interface ServerToClientEvents {
 	},
 	NotificationService: {
 		sendNotification: (notification: INotification) => void
+	},
+	DataService: {
+		updatePlayerCash: (cash: number) => void
 	}
 }
 
@@ -68,6 +71,10 @@ interface ClientToServerFunctions {
 	CustomizationService: {
 		getPlayerPreference: (item_type: string) => ProperReturns<string[]>
 		setPreference: (key: string, value: string) => ProperReturns<true>
+	}
+
+	DataService: {
+		getCash: () => ProperReturns<number>
 	}
 }
 interface ClientToServerEvents {

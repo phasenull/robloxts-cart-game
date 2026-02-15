@@ -8,3 +8,4 @@ export const MOCK_CART_SHOP = [
 export const MOCK_INVENTORY = MOCK_CART_SHOP.map((item) =>
 	math.random() > 0.6 ? item.name : undefined
 ).filterUndefined()
+export const MOCK_CASH = 67676767
