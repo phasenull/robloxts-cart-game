@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
-import { ICart, IShopItem } from "shared/type.helper"
+import { ICart, IInventoryData, IShopItem } from "shared/type.helper"
 import { ClientFunctions } from "shared/network.helper"
 import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ShopCartList } from "./components/shop-cart-list"
@@ -31,7 +31,7 @@ export function ShopGui() {
 		queryKey: ["player-inventory", "cart"],
 		queryFn: async () => {
 			if (__IS_EDIT__ || __IS_STUDIO__) {
-				return { carts: MOCK_INVENTORY}
+				return { carts: MOCK_INVENTORY }
 			}
 			const [inv, inventoryError] =
 				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
@@ -47,7 +47,7 @@ export function ShopGui() {
 	})
 
 	const isOwned = selectedItem
-		? (inventory?.carts.includes(selectedItem.name) ?? false)
+		? (inventory?.carts?.some((cart) => cart.name === selectedItem.name) ?? false)
 		: false
 
 	const handleSelectItem = (item: IShopItem) => {

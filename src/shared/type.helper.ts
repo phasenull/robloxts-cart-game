@@ -104,3 +104,7 @@ export type IShopItem = {
 	price:number,
 }
 export type IShopItemTypes = "cart" | "honk" | "flips" | "revives" | (string & {})
+export type IInventoryData = {
+	carts?: ICartEntry[]
+	[key: string]: any
+}

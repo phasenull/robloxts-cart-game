@@ -8,7 +8,7 @@ import {
 	ServerHandler as ServerHandlerFunction
 } from "@flamework/networking/out/functions/types"
 import { __IS_CLIENT__, __IS_EDIT__, __IS_SERVER__ } from "./config.helper"
-import { ButtonModel, ICart, ICartConfig, INotification, IShopItem, IShopItemTypes, ProperReturns } from "./type.helper"
+import { ButtonModel, ICart, ICartConfig, IInventoryData, INotification, IShopItem, IShopItemTypes, ProperReturns } from "./type.helper"
 /*
 
 	SERVER TO CLIENT
@@ -64,7 +64,7 @@ interface ClientToServerFunctions {
 		getShopItems: (item_type: IShopItemTypes) => ProperReturns<IShopItem[]>
 		canPlayerAffordItem: (item_type: IShopItemTypes, item_name: string) => ProperReturns<boolean>
 		makePlayerPurchaseItem: (item_type: IShopItemTypes, item_name: string) => ProperReturns<true>
-		getPlayerInventory: (item_type: IShopItemTypes) => ProperReturns<Record<string, string[]>>
+		getPlayerInventory: (item_type: IShopItemTypes) => ProperReturns<IInventoryData>
 		doesPlayerOwnItem: (item_type: IShopItemTypes, item_name: string) => ProperReturns<boolean>
 	}
 

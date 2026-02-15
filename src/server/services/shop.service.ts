@@ -1,6 +1,6 @@
 import { Dependency, OnStart, Service } from "@flamework/core";
 import { Logger } from "shared/logger";
-import { IShopItemTypes, IShopItem, ProperReturns } from "shared/type.helper";
+import { IShopItemTypes, IShopItem, ProperReturns, ICartEntry, IInventoryData } from "shared/type.helper";
 import { DataService } from "./data.service";
 import { CartService } from "./cart.service";
 import { getConfig } from "shared/config.helper";
@@ -145,19 +145,35 @@ export class ShopService implements OnStart {
 	 * Get player inventory for a specific item type
 	 * @param player The player to get inventory for
 	 * @param item_type The type of items to retrieve
-	 * @returns Record of inventory items or error message
+	 * @returns Inventory data with ICartEntry[] for carts or error message
 	 */
-	getPlayerInventory(player: Player, item_type: IShopItemTypes): ProperReturns<Record<string, string[]>> {
+	getPlayerInventory(player: Player, item_type: IShopItemTypes): ProperReturns<IInventoryData> {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
 			this.logger.warn(`Tried to get inventory for player ${player.Name} but profile was not loaded`)
 			return [false, "Profile not loaded"]
 		}
 
-		// Special handling for carts/vehicles
+		// Special handling for carts/vehicles - return full ICartEntry objects
 		if (item_type === "cart") {
-			const vehicles = profile.Data.vehicles || []
-			return [{ cart: vehicles }]
+			const vehicleNames = profile.Data.vehicles || []
+			const config = getConfig()
+			
+			if (!config.CartConfig) {
+				this.logger.warn("CartConfig is missing")
+				return [{ carts: [] }]
+			}
+
+			// Enrich vehicle names with full cart config data
+			const cartEntries: ICartEntry[] = []
+			for (const name of vehicleNames) {
+				const cartEntry = config.CartConfig.find((entry) => entry.name === name)
+				if (cartEntry) {
+					cartEntries.push(cartEntry)
+				}
+			}
+
+			return [{ carts: cartEntries }]
 		}
 
 		// Return specific item type from inventory
@@ -242,12 +258,15 @@ export class ShopService implements OnStart {
 			}
 
 			// Filter cart entries that have a price (not gamepass-only) and convert to IShopItem
-			const cartShopItems: IShopItem[] = config.CartConfig
-				.filter((entry) => "price" in entry)
-				.map((entry) => ({
-					name: entry.name,
-					price: (entry as any).price
-				}))
+			const cartShopItems: IShopItem[] = []
+			for (const entry of config.CartConfig) {
+				if ("price" in entry) {
+					cartShopItems.push({
+						name: entry.name,
+						price: entry.price
+					})
+				}
+			}
 
 			return [cartShopItems]
 		}
@@ -267,12 +286,15 @@ export class ShopService implements OnStart {
 
 		// Add carts from CartConfig
 		if (config.CartConfig) {
-			const cartShopItems: IShopItem[] = config.CartConfig
-				.filter((entry) => "price" in entry)
-				.map((entry) => ({
-					name: entry.name,
-					price: (entry as any).price
-				}))
+			const cartShopItems: IShopItem[] = []
+			for (const entry of config.CartConfig) {
+				if ("price" in entry) {
+					cartShopItems.push({
+						name: entry.name,
+						price: entry.price
+					})
+				}
+			}
 			result.cart = cartShopItems
 		}
 

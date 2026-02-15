@@ -4,7 +4,7 @@ import { ClientFunctions } from "shared/network.helper"
 import { ShopCartEntry } from "./shop-cart-entry"
 import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { LoadingIndicator } from "client/ui/components/loading-indicator"
-import { IShopItem } from "shared/type.helper"
+import { IInventoryData, IShopItem } from "shared/type.helper"
 import { useNavigator } from "client/ui/hooks/useNavigator"
 import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks"
 import { UIDIM } from "client/ui/constants"
@@ -46,7 +46,7 @@ export function ShopCartList({
 		queryKey: ["player-inventory", "owned-cart"],
 		queryFn: async () => {
 			if (__IS_EDIT__ || __IS_STUDIO__) {
-				return  {carts:MOCK_INVENTORY  }
+				return { carts: MOCK_INVENTORY }
 			}
 			const [inv, inventoryError] =
 				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
@@ -174,7 +174,7 @@ export function ShopCartList({
 					</frame>
 				) : (cartItems) ? (
 					cartItems.map((item) => {
-						const isOwned = !!inventory?.carts.includes(item.name)
+						const isOwned = !!inventory?.carts?.some((cart) => cart.name === item.name)
 						const isSelected = selectedItem?.name === item.name
 						return (
 							<ShopCartEntry
