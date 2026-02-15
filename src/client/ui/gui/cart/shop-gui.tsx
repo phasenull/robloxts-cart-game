@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "@rbxts/react"
+import React, { useEffect, useRef, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { ICart, IInventoryData, IShopItem } from "shared/type.helper"
 import { ClientFunctions } from "shared/network.helper"
@@ -17,6 +17,7 @@ import { UIHelper } from "client/ui.helper"
 export function ShopGui() {
 	const cart = useCart().cart
 	const nav = useNavigator()
+	const isFirstRenderRef = useRef(true)
 
 	// Fetch equipped cart preference first (needed for entrance animation)
 	const { data: equippedCart, refetch: refetchEquippedCart } = useQuery({
@@ -44,26 +45,39 @@ export function ShopGui() {
 	useGarageCamera()
 	const { mutate: mutateGarageAnimation } = useShopGarageAnimation(equippedCartName)
 
-	// Handle entrance and exit animations
+	// Handle entrance and exit animations - only play entrance animation on first render
 	useEffect(() => {
 		UIHelper.toggleFade(false)
 
-		// Play entrance animation with equipped cart
-		mutateGarageAnimation("in")
+		// Only play entrance animation on first render
+		if (isFirstRenderRef.current) {
+			mutateGarageAnimation("in")
 
-		// Wait for entrance animation to complete (animation duration ~1.5s)
-		const animationTimer = task.delay(1.5, () => {
+			// Wait for entrance animation to complete (animation duration ~1.5s)
+			const animationTimer = task.delay(1.5, () => {
+				setIsEntranceAnimationComplete(true)
+			})
+
+			isFirstRenderRef.current = false
+
+			return () => {
+				if (animationTimer) {
+					task.cancel(animationTimer)
+				}
+			}
+		} else {
+			// On subsequent renders (after purchase), skip entrance animation
 			setIsEntranceAnimationComplete(true)
-		})
+		}
+	}, [equippedCartName])
 
+	// Handle exit animation on unmount
+	useEffect(() => {
 		return () => {
 			mutateGarageAnimation("out")
 			setIsEntranceAnimationComplete(false)
-			if (animationTimer) {
-				task.cancel(animationTimer)
-			}
 		}
-	}, [equippedCartName])
+	}, [])
 
 	// Fetch player inventory to check ownership
 	const { data: inventory, refetch: refetchInventory } = useQuery({
@@ -85,18 +99,21 @@ export function ShopGui() {
 		name: "Cart",
 		price: 0
 	})
+	const hasSetInitialSelection = useRef(false)
 
-	// Set initial selection to equipped cart when data loads
+	// Set initial selection to equipped cart when data loads (only once)
 	useEffect(() => {
 		if (
 			equippedCart &&
 			equippedCart.size() > 0 &&
-			isEntranceAnimationComplete
+			isEntranceAnimationComplete &&
+			!hasSetInitialSelection.current
 		) {
 			setSelectedItem({
 				name: equippedCart[0],
 				price: 0 // This will be overridden by actual item data
 			})
+			hasSetInitialSelection.current = true
 		}
 	}, [equippedCart, isEntranceAnimationComplete])
 
@@ -113,9 +130,14 @@ export function ShopGui() {
 		setSelectedItem(item)
 	}
 
+	const [refetchShopCartList, setRefetchShopCartList] = useState<(() => void) | undefined>()
+
 	const handlePurchaseSuccess = () => {
 		refetchInventory()
 		refetchEquippedCart()
+		if (refetchShopCartList) {
+			refetchShopCartList()
+		}
 	}
 	
 	// Only show preview after entrance animation completes
@@ -132,6 +154,7 @@ export function ShopGui() {
 				selectedItem={selectedItem}
 				onSelectItem={handleSelectItem}
 				equippedCart={equippedCart?.[0]}
+				onRefetchReady={setRefetchShopCartList}
 			/>
 			<ShopBottomHud
 				selectedItem={selectedItem}
