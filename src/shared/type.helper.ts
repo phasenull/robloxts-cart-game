@@ -50,7 +50,7 @@ export type ICartEntry = {
 	friction: number;
 	max_velocity: number;
 	power: number;
-} & ({ gamepass_id: number } | { price: number });
+} & ({ product_id: number } | { price: number });
 export type Party = {
 	players: Array<Player>;
 	owner: Player;
