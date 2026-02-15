@@ -1,4 +1,4 @@
-import React from "@rbxts/react"
+import React, { useEffect, useRef } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
 import { IShopItem } from "shared/type.helper"
 import { ClientFunctions } from "shared/network.helper"
@@ -19,6 +19,26 @@ export function ShopBottomHud({
 	onPurchaseSuccess
 }: ShopBottomHudProps) {
 	const { closeAll } = useNavigator()
+	const purchaseButtonRef = useRef<ImageButton>()
+	const exitButtonRef = useRef<ImageButton>()
+
+	useEffect(() => {
+		if (purchaseButtonRef.current) {
+			UIHelper.bind(purchaseButtonRef.current)
+		}
+		if (exitButtonRef.current) {
+			UIHelper.bind(exitButtonRef.current)
+		}
+
+		return () => {
+			if (purchaseButtonRef.current) {
+				UIHelper.unbind(purchaseButtonRef.current)
+			}
+			if (exitButtonRef.current) {
+				UIHelper.unbind(exitButtonRef.current)
+			}
+		}
+	}, [])
 
 	const { mutate: mutatePurchase, isLoading: isPurchasing } = useMutation({
 		queryKey: ["purchase-item", selectedItem?.name || "none"],
@@ -63,6 +83,7 @@ export function ShopBottomHud({
 			<uiaspectratioconstraint AspectRatio={2.6} />
 			<imagebutton
 				key="Purchase"
+				ref={purchaseButtonRef}
 				AnchorPoint={new Vector2(0.5, 0.5)}
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 				BorderSizePixel={0}
@@ -148,6 +169,7 @@ export function ShopBottomHud({
 				/>
 			</imagebutton>
 			<imagebutton
+				ref={exitButtonRef}
 				key="Exit Button"
 				AnchorPoint={new Vector2(0.5, 0.5)}
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}

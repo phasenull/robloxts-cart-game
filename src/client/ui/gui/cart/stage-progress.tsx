@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from "@rbxts/react"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useCheckpoint } from "./hooks/useCheckpoint"
-import { Players, TweenService, Workspace } from "@rbxts/services"
+import {
+	MarketplaceService,
+	Players,
+	TweenService,
+	Workspace
+} from "@rbxts/services"
 import { ProgressBarComponent } from "client/ui/components/progressbar-component"
 import { useRendering } from "client/ui/hooks/useRendering"
 import { sphere } from "@rbxts/better-gizmos"
@@ -14,6 +19,8 @@ import {
 	getPreviousBigCheckpoint
 } from "shared/cart.helper"
 import { PlayerAvatar } from "client/ui/components/player-avatar"
+import { RottenButton } from "client/ui/components/buttons/rotten-button"
+import { PRODUCTS } from "shared/purchasables"
 export function StageProgress() {
 	const { cart } = useCart()
 	const { currentCheckpoint } = useCheckpoint()
@@ -110,6 +117,9 @@ export function StageProgress() {
 
 	const new_progress =
 		override_progress ?? 1 - math.clamp(current_distance / total_distance, 0, 1)
+	const data =
+		getCheckpointDataFromIndex(currentCheckpoint + 1) ||
+		getCheckpointDataFromIndex(currentCheckpoint + 2)
 	if (next_checkpoint === checkpoint) {
 		return
 	}
@@ -150,7 +160,24 @@ export function StageProgress() {
 				>
 					<uicorner CornerRadius={new UDim(1, 0)} />
 				</PlayerAvatar>
+				{data ? (
+					<RottenButton
+						Color={new Color3(1, 0.9, 0)}
+						Size={UDim2.fromScale(0.5, 2.5)}
+						AnchorPoint={new Vector2(0.5, .5)}
+						Position={UIDIM.RIGHT.add(new UDim2(0.17, 0, 0, 0))}
+						LayoutOrder={1}
+						Text="Skip Island"
+						onClick={() =>
+							MarketplaceService.PromptProductPurchase(
+								Players.LocalPlayer,
+								PRODUCTS.skip_island
+							)
+						}
+					/>
+				) : undefined}
 			</ProgressBarComponent>
+
 			<GoofyText
 				Size={UDim2.fromScale(0.3, 0.2)}
 				Text={`${getCheckpointDataFromIndex(tonumber(checkpoint.Name) || 0)?.name}`}

@@ -126,7 +126,7 @@ export function RottenButton(props: {
 				ImageTransparency={0.7}
 			/>
 			<textlabel
-				Size={new UDim2(0.9, 0, 0.7, 0)}
+				Size={new UDim2(0.9, 0, 0.5, 0)}
 				BackgroundTransparency={1}
 				FontFace={
 					new Font(buildFontAssetId("GothamSSm"), Enum.FontWeight.ExtraBold)
@@ -135,7 +135,8 @@ export function RottenButton(props: {
 				Position={UIDIM.CENTER}
 				AnchorPoint={UIDIM.A_CENTER}
 				TextColor3={new Color3(1, 1, 1)}
-				TextScaled
+				TextScaled={true}
+				SizeConstraint={Enum.SizeConstraint.RelativeXX}
 				key={"text"}
 			>
 				<uistroke

@@ -15,9 +15,6 @@ export function RightSidebar() {
 	const navigator = useNavigator()
 	const cart = useCart().cart
 	const { currentCheckpoint } = useCheckpoint()
-	const data =
-		getCheckpointDataFromIndex(currentCheckpoint + 1) ||
-		getCheckpointDataFromIndex(currentCheckpoint + 2)
 
 	const animatedValue = useAnimateValue({
 		target_value: navigator.isSidebarOpen ? 0 : 1,
@@ -65,19 +62,7 @@ export function RightSidebar() {
 					})
 				}}
 			/>
-			{data ? (
-				<RottenButton
-					Color={new Color3(1, 0.9, 0)}
-					Size={UIDIM.ONE}
-					Text="Skip Island"
-					onClick={() =>
-						MarketplaceService.PromptProductPurchase(
-							Players.LocalPlayer,
-							PRODUCTS.skip_island
-						)
-					}
-				/>
-			) : undefined}
+			
 		</frame>
 	)
 }
