@@ -52,7 +52,6 @@ export function ShopBottomHud({
 			: selectedItem
 				? "Purchase"
 				: "Select Item"
-
 	return (
 		<frame
 			key="BottomFrame"
@@ -78,7 +77,9 @@ export function ShopBottomHud({
 				<uistroke Thickness={5} />
 				<frame
 					key="Bottom"
-					BackgroundColor3={Color3.fromRGB(0, 63, 8)}
+					BackgroundColor3={
+						canPurchase ? Color3.fromRGB(0, 63, 8) : Color3.fromRGB(79, 0, 0)
+					}
 					BackgroundTransparency={0.05}
 					BorderSizePixel={0}
 					Position={new UDim2(0, 0, 0.916, 0)}
@@ -102,7 +103,6 @@ export function ShopBottomHud({
 					BorderSizePixel={0}
 					Position={new UDim2(0.5, 0, 0.457, 0)}
 					Size={new UDim2(1, 0, 0.914, 0)}
-					ZIndex={0}
 				>
 					<uigradient
 						key="Purchase"
@@ -187,6 +187,30 @@ export function ShopBottomHud({
 					Size={new UDim2(1, 0, 0.876, 0)}
 					TileSize={new UDim2(0, 50, 0, 50)}
 				/>
+				<uiaspectratioconstraint
+					AspectRatio={3.932}
+					AspectType={Enum.AspectType.ScaleWithParentSize}
+					DominantAxis={Enum.DominantAxis.Height}
+				/>
+				<frame
+					key="ColorFrame"
+					AnchorPoint={new Vector2(0.5, 0.5)}
+					BackgroundColor3={Color3.fromRGB(255, 255, 255)}
+					BorderSizePixel={0}
+					Position={new UDim2(0.5, 0, 0.5, 0)}
+					Size={new UDim2(1, 0, 1, 0)}
+				>
+					<uigradient
+						key="Stop"
+						Color={
+							new ColorSequence([
+								new ColorSequenceKeypoint(0, Color3.fromRGB(252, 113, 0)),
+								new ColorSequenceKeypoint(1, Color3.fromRGB(199, 0, 0))
+							])
+						}
+						Rotation={90}
+					/>
+				</frame>
 				<textlabel
 					AnchorPoint={new Vector2(1, 0.5)}
 					BackgroundTransparency={1}
@@ -201,31 +225,6 @@ export function ShopBottomHud({
 				>
 					<uistroke Thickness={3} />
 				</textlabel>
-				<uiaspectratioconstraint
-					AspectRatio={3.932}
-					AspectType={Enum.AspectType.ScaleWithParentSize}
-					DominantAxis={Enum.DominantAxis.Height}
-				/>
-				<frame
-					key="ColorFrame"
-					AnchorPoint={new Vector2(0.5, 0.5)}
-					BackgroundColor3={Color3.fromRGB(255, 255, 255)}
-					BorderSizePixel={0}
-					Position={new UDim2(0.5, 0, 0.5, 0)}
-					Size={new UDim2(1, 0, 1, 0)}
-					ZIndex={0}
-				>
-					<uigradient
-						key="Stop"
-						Color={
-							new ColorSequence([
-								new ColorSequenceKeypoint(0, Color3.fromRGB(252, 113, 0)),
-								new ColorSequenceKeypoint(1, Color3.fromRGB(199, 0, 0))
-							])
-						}
-						Rotation={90}
-					/>
-				</frame>
 			</imagebutton>
 			<frame
 				key="PriceFrame"
@@ -311,7 +310,6 @@ export function ShopBottomHud({
 					ImageTransparency={0.84}
 					Position={new UDim2(-0.004, 0, -0.129, 0)}
 					Size={new UDim2(1.001, 0, 1.122, 0)}
-					ZIndex={0}
 				/>
 				<frame
 					BackgroundColor3={Color3.fromRGB(255, 255, 255)}
@@ -357,7 +355,6 @@ export function ShopBottomHud({
 						ImageTransparency={0.84}
 						Position={new UDim2(0, 0, -0.091, 0)}
 						Size={new UDim2(1.001, 0, 1.081, 0)}
-						ZIndex={0}
 					/>
 				</frame>
 			</frame>

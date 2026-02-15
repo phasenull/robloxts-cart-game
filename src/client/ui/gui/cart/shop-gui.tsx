@@ -11,7 +11,7 @@ import { AnimateGarageMovement, RigCartModel } from "shared/cart.helper"
 import { ReplicatedStorage, Workspace } from "@rbxts/services"
 import { assets } from "shared/assets"
 import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation"
-import { MOCK_CART_INVENTORY } from "shared/mocks"
+import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useNavigator } from "client/ui/hooks/useNavigator"
 import { UIHelper } from "client/ui.helper"
@@ -31,30 +31,32 @@ export function ShopGui() {
 		queryKey: ["player-inventory", "cart"],
 		queryFn: async () => {
 			if (__IS_EDIT__ || __IS_STUDIO__) {
-				return { cart: MOCK_CART_INVENTORY.map((item) => item.name) }
+				return { carts: MOCK_INVENTORY}
 			}
 			const [inv, inventoryError] =
 				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
 			if (inventoryError || !inv) {
-				return { cart: [] }
+				return { carts: [] }
 			}
 			return inv
-		},
-		enabled: !__IS_EDIT__
+		}
 	})
 	const [selectedItem, setSelectedItem] = useState<IShopItem | undefined>({
 		name: "Cart",
 		price: 0
 	})
-	
+
 	const isOwned = selectedItem
-	? (inventory?.cart.includes(selectedItem.name) ?? false)
-	: false
-	
+		? (inventory?.carts.includes(selectedItem.name) ?? false)
+		: false
+
 	const handleSelectItem = (item: IShopItem) => {
+		print("selectedItem", item.name, isOwned)
+		print("inventory", inventory?.carts)
+
 		setSelectedItem(item)
 	}
-	
+
 	const handlePurchaseSuccess = () => {
 		refetchInventory()
 	}
@@ -69,7 +71,7 @@ export function ShopGui() {
 			<ShopCartList
 				selectedItem={selectedItem}
 				onSelectItem={handleSelectItem}
-				/>
+			/>
 			<ShopBottomHud
 				selectedItem={selectedItem}
 				isOwned={isOwned}

@@ -6,27 +6,33 @@ import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { LoadingIndicator } from "client/ui/components/loading-indicator"
 import { IShopItem } from "shared/type.helper"
 import { useNavigator } from "client/ui/hooks/useNavigator"
-import { MOCK_CART_INVENTORY } from "shared/mocks"
+import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks"
+import { UIDIM } from "client/ui/constants"
 
 interface ShopCartListProps {
 	selectedItem: IShopItem | undefined
 	onSelectItem: (item: IShopItem) => void
 }
 
-export function ShopCartList({ selectedItem, onSelectItem }: ShopCartListProps) {
+export function ShopCartList({
+	selectedItem,
+	onSelectItem
+}: ShopCartListProps) {
 	// Fetch cart shop items
 	const { data: cartItems, isLoading: isLoadingItems } = useQuery({
 		queryKey: ["shop-items", "cart"],
 		queryFn: async () => {
 			if (__IS_EDIT__ || __IS_STUDIO__) {
-				return MOCK_CART_INVENTORY as IShopItem[]
+				task.wait(1)
+				return MOCK_CART_SHOP as IShopItem[]
 			}
-			const [items, itemsError] = await ClientFunctions.ShopService.getShopItems.invoke("cart")
+			const [items, itemsError] =
+				await ClientFunctions.ShopService.getShopItems.invoke("cart")
 			if (itemsError || !items) {
 				throw itemsError || "Failed to load cart items"
 			}
 			return items
-		},
+		}
 	})
 	const navigator = useNavigator()
 	useEffect(() => {
@@ -37,22 +43,19 @@ export function ShopCartList({ selectedItem, onSelectItem }: ShopCartListProps) 
 	}, [])
 	// Fetch player inventory
 	const { data: inventory } = useQuery({
-		queryKey: ["player-inventory", "cart"],
+		queryKey: ["player-inventory", "owned-cart"],
 		queryFn: async () => {
 			if (__IS_EDIT__ || __IS_STUDIO__) {
-				return { cart: MOCK_CART_INVENTORY.map((item) => item.name) }
+				return  {carts:MOCK_INVENTORY}
 			}
-			const [inv, inventoryError] = await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
+			const [inv, inventoryError] =
+				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
 			if (inventoryError || !inv) {
-				return { cart: [] }
+				throw inventoryError || "Failed to load player inventory"
 			}
 			return inv
-		},
-		enabled: !__IS_EDIT__
+		}
 	})
-
-	const ownedCarts = inventory?.cart || []
-
 	return (
 		<frame
 			key="List"
@@ -111,7 +114,6 @@ export function ShopCartList({ selectedItem, onSelectItem }: ShopCartListProps) 
 					TextScaled={true}
 					TextSize={14}
 					TextWrapped={true}
-					ZIndex={5}
 				>
 					<uistroke Thickness={3} />
 					<uiaspectratioconstraint
@@ -162,12 +164,17 @@ export function ShopCartList({ selectedItem, onSelectItem }: ShopCartListProps) 
 				>
 					<uiaspectratioconstraint />
 				</uigridlayout>
-				<uipadding PaddingRight={new UDim(0.02, 0)} PaddingTop={new UDim(0.01, 0)} />
-				{isLoadingItems ? (
-					<LoadingIndicator />
-				) : (
-					cartItems?.map((item) => {
-						const isOwned = ownedCarts.includes(item.name)
+				<uipadding
+					PaddingRight={new UDim(0.02, 0)}
+					PaddingTop={new UDim(0.01, 0)}
+				/>
+				{(isLoadingItems) ? (
+					<frame Size={UIDIM.ONE} BackgroundTransparency={1}>
+						<LoadingIndicator Size={UIDIM.ONE} />
+					</frame>
+				) : (cartItems) ? (
+					cartItems.map((item) => {
+						const isOwned = !!inventory?.carts.includes(item.name)
 						const isSelected = selectedItem?.name === item.name
 						return (
 							<ShopCartEntry
@@ -179,7 +186,7 @@ export function ShopCartList({ selectedItem, onSelectItem }: ShopCartListProps) 
 							/>
 						)
 					})
-				)}
+				) : undefined}
 			</scrollingframe>
 			<uiaspectratioconstraint
 				AspectRatio={0.6}

@@ -43,7 +43,6 @@ export function useShopGarageAnimation() {
 			if (!model) {
 				throw `Model for equipped cart not found: ${equipped_cart?.[0]}`
 			}
-			print(`mutateGarageAnimation: ${direction}, model: ${model.Name}`)
 			model.Name = `GaragePreviewCart`
 			task.wait(0.1) // Wait for the model to be in the correct position before rigging
 			model.Parent = Workspace.CurrentCamera
