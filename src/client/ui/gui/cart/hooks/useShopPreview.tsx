@@ -100,10 +100,6 @@ export function useShopPreview(cart_name?: string) {
 		)
 		.mul(new CFrame(-10, 2, -15))
 		.mul(new CFrame(0, math.rad(180), 0)).Position
-	const target_cframe = new CFrame(
-		camera_position,
-		GaragePivot.WorldPosition.add(new Vector3(0, 2, 0))
-	)
 	camera.CFrame = new CFrame(
 		camera_position,
 		GaragePivot.WorldPosition.add(new Vector3(0, 2, 0))
