@@ -7,79 +7,18 @@ import { ShopCartList } from "./components/shop-cart-list"
 import { ShopBottomHud } from "./components/shop-bottom-hud"
 import PopGui from "client/ui/components/pop-gui"
 import { useShopPreview } from "./hooks/useShopPreview"
-import { AnimateGarageMovement, RigCartModel } from "shared/cart.helper"
-import { ReplicatedStorage, Workspace } from "@rbxts/services"
-import { assets } from "shared/assets"
 import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation"
+import { useGarageCamera } from "./hooks/useGarageCamera"
 import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useNavigator } from "client/ui/hooks/useNavigator"
 import { UIHelper } from "client/ui.helper"
 
 export function ShopGui() {
-	// Fetch player inventory to check ownership
-	const [isEntranceAnimationComplete, setIsEntranceAnimationComplete] =
-		useState(false)
-	const { mutate: mutateGarageAnimation, isLoading: isAnimationLoading } =
-		useShopGarageAnimation()
-	useEffect(() => {
-		UIHelper.toggleFade(false)
-
-		// Set up camera for garage view
-		const camera = Workspace.CurrentCamera
-		const GaragePivot = Workspace.FindFirstChild(
-			"GaragePreview"
-		)?.FindFirstChild("CartPreviewAttachment") as Attachment | undefined
-
-		if (camera && GaragePivot) {
-			camera.CameraType = Enum.CameraType.Scriptable
-			camera.FieldOfView = 50
-			
-			// Position camera to look at garage pivot (static position for entrance animation)
-			const root_cframe = GaragePivot.WorldCFrame
-			const camera_position = root_cframe
-				.mul(new CFrame(-10, 5, -15))
-				.Position
-			camera.CFrame = new CFrame(
-				camera_position,
-				GaragePivot.WorldPosition.add(new Vector3(0, 2, 0))
-			)
-		}
-
-		// Start the entrance animation
-		mutateGarageAnimation("in")
-
-		// Wait for entrance animation to complete
-		task.delay(1.5, () => {
-			setIsEntranceAnimationComplete(true)
-		})
-
-		return () => {
-			mutateGarageAnimation("out")
-			setIsEntranceAnimationComplete(false)
-			if (camera) {
-				camera.FieldOfView = 70
-				camera.CameraType = Enum.CameraType.Custom
-			}
-		}
-	}, [])
 	const cart = useCart().cart
-	const { data: inventory, refetch: refetchInventory } = useQuery({
-		queryKey: ["player-inventory", "cart"],
-		queryFn: async () => {
-			if (__IS_EDIT__) {
-				return { carts: MOCK_INVENTORY }
-			}
-			const [inv, inventoryError] =
-				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
-			if (inventoryError || !inv) {
-				return { carts: [] }
-			}
-			return inv
-		}
-	})
+	const nav = useNavigator()
 
-	// Fetch equipped cart preference
+	// Fetch equipped cart preference first (needed for entrance animation)
 	const { data: equippedCart, refetch: refetchEquippedCart } = useQuery({
 		queryKey: ["player-preference", "cart"],
 		queryFn: async () => {
@@ -96,6 +35,52 @@ export function ShopGui() {
 			return prefs
 		}
 	})
+
+	// Setup garage camera and animation with equipped cart
+	const equippedCartName = equippedCart?.[0] || "Cart"
+	const [isEntranceAnimationComplete, setIsEntranceAnimationComplete] =
+		useState(false)
+	
+	useGarageCamera()
+	const { mutate: mutateGarageAnimation } = useShopGarageAnimation(equippedCartName)
+
+	// Handle entrance and exit animations
+	useEffect(() => {
+		UIHelper.toggleFade(false)
+
+		// Play entrance animation with equipped cart
+		mutateGarageAnimation("in")
+
+		// Wait for entrance animation to complete (animation duration ~1.5s)
+		const animationTimer = task.delay(1.5, () => {
+			setIsEntranceAnimationComplete(true)
+		})
+
+		return () => {
+			mutateGarageAnimation("out")
+			setIsEntranceAnimationComplete(false)
+			if (animationTimer) {
+				task.cancel(animationTimer)
+			}
+		}
+	}, [equippedCartName])
+
+	// Fetch player inventory to check ownership
+	const { data: inventory, refetch: refetchInventory } = useQuery({
+		queryKey: ["player-inventory", "cart"],
+		queryFn: async () => {
+			if (__IS_EDIT__) {
+				return { carts: MOCK_INVENTORY }
+			}
+			const [inv, inventoryError] =
+				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
+			if (inventoryError || !inv) {
+				return { carts: [] }
+			}
+			return inv
+		}
+	})
+
 	const [selectedItem, setSelectedItem] = useState<IShopItem | undefined>({
 		name: "Cart",
 		price: 0
@@ -132,9 +117,11 @@ export function ShopGui() {
 		refetchInventory()
 		refetchEquippedCart()
 	}
+	
 	// Only show preview after entrance animation completes
 	useShopPreview(isEntranceAnimationComplete ? selectedItem?.name : undefined)
-	const nav = useNavigator()
+	
+	// Close shop if player is in a cart
 	if (cart) {
 		nav.closeAll()
 		return

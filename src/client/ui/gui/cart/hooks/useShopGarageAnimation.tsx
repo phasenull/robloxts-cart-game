@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@rbxts/react-query"
+import { useMutation } from "@rbxts/react-query"
 import { Workspace } from "@rbxts/services"
 import { assets } from "shared/assets"
 import {
@@ -6,55 +6,53 @@ import {
 	CartAnimator,
 	RigCartModel
 } from "shared/cart.helper"
-import { __IS_EDIT__ } from "shared/config.helper"
-import { ClientFunctions } from "shared/network.helper"
 import { ICart } from "shared/type.helper"
 
-export function useShopGarageAnimation() {
-	const { data: equipped_cart } = useQuery({
-		queryKey: ["shop-garage-animation-data"],
-		queryFn: async () => {
-			if (__IS_EDIT__) return ["Cart"]
-			const [data, err] =
-				await ClientFunctions.CustomizationService.getPlayerPreference.invokeWithTimeout(
-					5000,
-					"cart"
-				)
-			if (err || !data) {
-				throw err || "Failed to get cart preference"
-			}
-			return data
-		}
-	})
+/**
+ * Hook for managing garage entrance/exit animations
+ * @param cartName - The name of the cart to animate (should be the equipped cart)
+ */
+export function useShopGarageAnimation(cartName: string = "Cart") {
 	return useMutation({
 		mutationFn: async (direction: "in" | "out") => {
-			const model =
-				direction === "in"
-					? (assets.carts.FindFirstChild(equipped_cart?.[0] || "Cart")?.Clone() as
-							| ICart
-							| undefined)
-					: (Workspace.CurrentCamera?.FindFirstChild("GaragePreviewCart") as
-							| ICart
-							| undefined)
+			const GARAGE_CART_NAME = "GaragePreviewCart"
+			
+			// For exit animation, find existing cart in camera
 			if (direction === "out") {
-				model?.Destroy()
+				const existingModel = Workspace.CurrentCamera?.FindFirstChild(
+					GARAGE_CART_NAME
+				) as ICart | undefined
+				existingModel?.Destroy()
 				return true
 			}
-			if (!model) {
-				throw `Model for equipped cart not found: ${equipped_cart?.[0]}`
+
+			// For entrance animation, create and setup new cart model
+			const cartModel = assets.carts.FindFirstChild(cartName)?.Clone() as
+				| ICart
+				| undefined
+				
+			if (!cartModel) {
+				throw `Cart model not found in assets: ${cartName}`
 			}
-			model.GetTags().forEach((tag) => model.RemoveTag(tag))
-			model.Name = `GaragePreviewCart`
-			model.Parent = Workspace.CurrentCamera
-			RigCartModel(model)
-			model.ScaleTo(1.5)
-			const [_, bbox] = model.GetBoundingBox()
-			model.PivotTo(
+
+			// Setup cart for garage display
+			cartModel.GetTags().forEach((tag) => cartModel.RemoveTag(tag))
+			cartModel.Name = GARAGE_CART_NAME
+			cartModel.Parent = Workspace.CurrentCamera
+			
+			RigCartModel(cartModel)
+			cartModel.ScaleTo(1.5)
+			
+			// Position cart at garage pivot
+			const [_, bbox] = cartModel.GetBoundingBox()
+			cartModel.PivotTo(
 				CartAnimator!.MovePart.CFrame.mul(new CFrame(0, bbox.Y / 2, 0))
 			)
-			AnimateGarageMovement(model, direction)
-			return model
+			
+			// Play entrance animation
+			AnimateGarageMovement(cartModel, direction)
+			return cartModel
 		},
-		queryKey: ["shop-garage-animation", `${equipped_cart?.join(",")}`]
+		queryKey: ["shop-garage-animation", cartName]
 	})
 }
