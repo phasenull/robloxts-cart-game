@@ -8,6 +8,7 @@ import {
 	RigCartModel
 } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
+import { SHOP_CAMERA_OFFSET } from "client/ui/constants"
 const GaragePivot = Workspace.FindFirstChild("GaragePreview")?.FindFirstChild(
 	"CartPreviewAttachment"
 ) as Attachment
@@ -121,7 +122,7 @@ export function useShopPreview(cart_name?: string) {
 				math.rad(y_degrees - max_y_degrees / 2)
 			)
 		)
-		.mul(new CFrame(-10, 2, -15))
+		.mul(new CFrame(SHOP_CAMERA_OFFSET))
 		.mul(new CFrame(0, math.rad(180), 0)).Position
 	camera.CFrame = new CFrame(
 		camera_position,

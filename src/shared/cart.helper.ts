@@ -244,7 +244,7 @@ export const ISLAND_CONFIG = {
 }
 
 const out_id = "rbxassetid://112110619324038"
-const in_id = "rbxassetid://134817880267461"
+const in_id = "rbxassetid://108818865060170"
 const animation_in = new Instance("Animation")
 animation_in.AnimationId = in_id
 const animation_out = new Instance("Animation")
@@ -273,15 +273,15 @@ Animator.GetPlayingAnimationTracks().forEach((track) => {
 	track.Stop()
 	track.Destroy()
 })
+Animator.GetPlayingAnimationTracks().forEach((track) => {
+	track.Destroy()
+})
 const anim_in = Animator.LoadAnimation(animation_in)
 const anim_out = Animator.LoadAnimation(animation_out)
 export function AnimateGarageMovement(
 	model: ICart,
 	direction: "in" | "out" = "in"
 ) {
-	Animator.GetPlayingAnimationTracks().forEach((track) => {
-		track.Stop()
-	})
 	const pp = model.FindFirstChild("Root") as BasePart
 	if (!pp) {
 		return
@@ -326,32 +326,55 @@ export function BrickifyModel(
 		if (ancestor_model === model) {
 			return
 		}
-		if (["FL", "FR", "RR", "RL"].includes(ancestor_model?.Name)) {
-			if (direction === "out") {
-				part.Destroy()
-			}
-			return
-		}
-		const ball_socket = part.FindFirstChildOfClass("BallSocketConstraint") as
-			| BallSocketConstraint
-			| undefined
-		// ball_socket?.Destroy()
-		const hinge = part.FindFirstChildOfClass("HingeConstraint") as
-			| HingeConstraint
-			| undefined
-		// hinge?.Destroy()
-		const motor6d = part.FindFirstChildOfClass("Motor6D") as Motor6D | undefined
-		if (motor6d || hinge || ball_socket) {
-			part.Anchored = false
-			return
-		} else {
-			part.Anchored = true
-		}
 
 		const original_transparency = part.Transparency
 		if (direction === "in") {
 			part.Transparency = 1
 		}
+		if (["BALL", "RootPart", "G2"].includes(part.Name)) {
+			part.Anchored = false
+			if (direction === "out") {
+				part.Destroy()
+			}
+			const tween = TweenService.Create(
+				part,
+				new TweenInfo(
+					duration,
+					style,
+					// direction === "in" ? Enum.EasingDirection.Out :
+					Enum.EasingDirection.Out,
+					0,
+					false,
+					math.clamp(
+						direction === "in" ? 0.01 * 3 * 10 : 0.005 * index,
+						0.01,
+						0.5
+					)
+				),
+				{
+					Transparency: direction === "out" ? 1 : original_transparency
+				}
+			)
+			tween.Play()
+			return
+		} else {
+			part.Anchored = true
+		}
+		// const ball_socket = part.FindFirstChildOfClass("BallSocketConstraint") as
+		// 	| BallSocketConstraint
+		// 	| undefined
+		// // ball_socket?.Destroy()
+		// const hinge = part.FindFirstChildOfClass("HingeConstraint") as
+		// 	| HingeConstraint
+		// 	| undefined
+		// // hinge?.Destroy()
+		// const motor6d = part.FindFirstChildOfClass("Motor6D") as Motor6D | undefined
+		// if (motor6d || hinge || ball_socket) {
+		// 	part.Anchored = false
+		// 	return
+		// } else {
+		// 	part.Anchored = true
+		// }
 		// motor6d?.Destroy()
 		const original_cframe = part.CFrame
 		const [root_cframe, bounding_box] = model.GetBoundingBox()
@@ -359,7 +382,7 @@ export function BrickifyModel(
 			original_cframe.Position.Y - (root_cframe.Position.Y - bounding_box.Y / 2)
 
 		const spawn_cframe = pivot.mul(
-			new CFrame(direction === "in" ? -5 : 0, 5, direction === "in" ? 10 : -10)
+			new CFrame(direction === "in" ? 5 : 0, 5, direction === "in" ? 10 : -10)
 		)
 		if (direction === "in") {
 			part.CFrame = spawn_cframe

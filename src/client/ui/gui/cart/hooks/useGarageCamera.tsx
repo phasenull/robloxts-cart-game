@@ -1,9 +1,10 @@
 import { useEffect } from "@rbxts/react"
 import { Workspace } from "@rbxts/services"
+import { SHOP_CAMERA_OFFSET, SHOP_CAMERA_FOV } from "client/ui/constants"
 
 const GARAGE_PIVOT_PATH = ["GaragePreview", "CartPreviewAttachment"] as const
-const GARAGE_FOV = 50
-const GARAGE_CAMERA_OFFSET = new CFrame(-10, 5, -15)
+const GARAGE_FOV = SHOP_CAMERA_FOV
+const GARAGE_CAMERA_OFFSET = SHOP_CAMERA_OFFSET
 const GARAGE_LOOK_AT_OFFSET = new Vector3(0, 2, 0)
 
 /**
@@ -33,7 +34,7 @@ export function useGarageCamera() {
 
 		// Position camera to look at garage
 		const rootCFrame = garagePivot.WorldCFrame
-		const cameraPosition = rootCFrame.mul(GARAGE_CAMERA_OFFSET).Position
+		const cameraPosition = rootCFrame.mul(new CFrame(GARAGE_CAMERA_OFFSET)).Position
 		const lookAtPosition = garagePivot.WorldPosition.add(GARAGE_LOOK_AT_OFFSET)
 		
 		camera.CFrame = new CFrame(cameraPosition, lookAtPosition)
