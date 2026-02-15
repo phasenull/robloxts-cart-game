@@ -257,13 +257,18 @@ export class ShopService implements OnStart {
 				return [[]]
 			}
 
-			// Filter cart entries that have a price (not gamepass-only) and convert to IShopItem
+			// Convert cart entries to IShopItem (with either price or product_id)
 			const cartShopItems: IShopItem[] = []
 			for (const entry of config.CartConfig) {
 				if ("price" in entry) {
 					cartShopItems.push({
 						name: entry.name,
 						price: entry.price
+					})
+				} else if ("product_id" in entry) {
+					cartShopItems.push({
+						name: entry.name,
+						product_id: entry.product_id
 					})
 				}
 			}
@@ -292,6 +297,11 @@ export class ShopService implements OnStart {
 					cartShopItems.push({
 						name: entry.name,
 						price: entry.price
+					})
+				} else if ("product_id" in entry) {
+					cartShopItems.push({
+						name: entry.name,
+						product_id: entry.product_id
 					})
 				}
 			}

@@ -30,7 +30,7 @@ export function ShopGui() {
 	const { data: inventory, refetch: refetchInventory } = useQuery({
 		queryKey: ["player-inventory", "cart"],
 		queryFn: async () => {
-			if (__IS_EDIT__ || __IS_STUDIO__) {
+			if (__IS_EDIT__) {
 				return { carts: MOCK_INVENTORY }
 			}
 			const [inv, inventoryError] =

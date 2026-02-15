@@ -48,7 +48,7 @@ export type ICartConfig = ICartEntry[];
 export type ICartEntry = {
 	name: string;
 	friction: number;
-	max_velocity: number;
+	max_velocity?: number;
 	power: number;
 } & ({ product_id: number } | { price: number });
 export type Party = {
@@ -100,8 +100,9 @@ export type IWheel = Model & {
 };
 export type IShopConfig = Record<IShopItemTypes, IShopItem[]>
 export type IShopItem = {
-	name:string,
-	price:number,
+	name: string
+	price?: number
+	product_id?: number
 }
 export type IShopItemTypes = "cart" | "honk" | "flips" | "revives" | (string & {})
 export type IInventoryData = {

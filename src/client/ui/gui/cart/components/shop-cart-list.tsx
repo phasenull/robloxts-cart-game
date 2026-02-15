@@ -22,7 +22,7 @@ export function ShopCartList({
 	const { data: cartItems, isLoading: isLoadingItems } = useQuery({
 		queryKey: ["shop-items", "cart"],
 		queryFn: async () => {
-			if (__IS_EDIT__ || __IS_STUDIO__) {
+			if (__IS_EDIT__) {
 				task.wait(1)
 				return MOCK_CART_SHOP as IShopItem[]
 			}
@@ -45,7 +45,7 @@ export function ShopCartList({
 	const { data: inventory } = useQuery({
 		queryKey: ["player-inventory", "owned-cart"],
 		queryFn: async () => {
-			if (__IS_EDIT__ || __IS_STUDIO__) {
+			if (__IS_EDIT__) {
 				return { carts: MOCK_INVENTORY }
 			}
 			const [inv, inventoryError] =

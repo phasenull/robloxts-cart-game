@@ -6,6 +6,8 @@ import { UIHelper } from "client/ui.helper"
 import { __IS_EDIT__ } from "shared/config.helper"
 import { A } from "shared/assets"
 import { useNavigator } from "client/ui/hooks/useNavigator"
+import { useProductPrice } from "client/ui/hooks/useProductPrice"
+import { MarketplaceService, Players } from "@rbxts/services"
 
 interface ShopBottomHudProps {
 	selectedItem: IShopItem | undefined
@@ -21,6 +23,15 @@ export function ShopBottomHud({
 	const { closeAll } = useNavigator()
 	const purchaseButtonRef = useRef<ImageButton>()
 	const exitButtonRef = useRef<ImageButton>()
+
+	// Fetch Robux price if item has product_id
+	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
+		productId: selectedItem?.product_id,
+		enabled: !!selectedItem?.product_id && !isOwned
+	})
+
+	// Determine if this is a Robux item
+	const isRobuxItem = selectedItem?.product_id !== undefined
 
 	useEffect(() => {
 		if (purchaseButtonRef.current) {
@@ -47,6 +58,26 @@ export function ShopBottomHud({
 
 			if (__IS_EDIT__) return true
 
+			// Handle Robux purchases
+			if (selectedItem.product_id && !isOwned) {
+				MarketplaceService.PromptProductPurchase(
+					Players.LocalPlayer,
+					selectedItem.product_id
+				)
+
+				// Wait for purchase to finish
+				const [_, __, wasPurchased] =
+					MarketplaceService.PromptProductPurchaseFinished.Wait()
+
+				if (wasPurchased) {
+					UIHelper.playSound(A.sounds.reward_earned)
+					onPurchaseSuccess()
+				}
+
+				return wasPurchased
+			}
+
+			// Handle cash purchases
 			const [success, err] =
 				await ClientFunctions.ShopService.makePlayerPurchaseItem.invoke(
 					"cart",
@@ -91,7 +122,9 @@ export function ShopBottomHud({
 	const canEquip = selectedItem && isOwned && !isEquipping
 	const isLoading = isPurchasing || isEquipping
 	const buttonText = isLoading
-		? isEquipping ? "Equipping..." : "Purchasing..."
+		? isEquipping
+			? "Equipping..."
+			: "Purchasing..."
 		: isOwned
 			? "Equip"
 			: selectedItem
@@ -115,7 +148,9 @@ export function ShopBottomHud({
 				Position={new UDim2(0.215, 0, 0.822, 0)}
 				ScaleType={Enum.ScaleType.Fit}
 				Size={new UDim2(0.43, 0, 0.284, 0)}
-				Active={(canPurchase || canEquip) !== undefined && (canPurchase || canEquip)}
+				Active={
+					(canPurchase || canEquip) !== undefined && (canPurchase || canEquip)
+				}
 				Event={{
 					MouseButton1Click: () => {
 						if (canPurchase) {
@@ -130,7 +165,11 @@ export function ShopBottomHud({
 				<frame
 					key="Bottom"
 					BackgroundColor3={
-						canEquip ? Color3.fromRGB(76, 63, 0) : canPurchase ? Color3.fromRGB(0, 63, 8) : Color3.fromRGB(79, 0, 0)
+						canEquip
+							? Color3.fromRGB(76, 63, 0)
+							: canPurchase
+								? Color3.fromRGB(0, 63, 8)
+								: Color3.fromRGB(79, 0, 0)
 					}
 					BackgroundTransparency={0.05}
 					BorderSizePixel={0}
@@ -318,7 +357,17 @@ export function ShopBottomHud({
 					Font={Enum.Font.GothamBlack}
 					Position={new UDim2(0.842, 0, 0.637, 0)}
 					Size={new UDim2(0.684, 0, 0.373, 0)}
-					Text={selectedItem ? `$ ${selectedItem.price}` : "Select an item"}
+					Text={
+						!selectedItem
+							? "Select an item"
+							: isRobuxItem
+								? isPriceLoading
+									? "Loading..."
+									: priceInRobux !== undefined
+										? `\u{E002} ${priceInRobux}`
+										: "\u{E002} ???"
+								: `$ ${selectedItem.price ?? 0}`
+					}
 					TextColor3={Color3.fromRGB(182, 255, 0)}
 					TextScaled={true}
 					TextSize={14}

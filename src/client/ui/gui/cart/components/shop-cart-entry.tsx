@@ -1,5 +1,6 @@
 import React from "@rbxts/react"
 import { IShopItem } from "shared/type.helper"
+import { useProductPrice } from "client/ui/hooks/useProductPrice"
 
 interface ShopCartEntryProps {
 	item: IShopItem
@@ -9,7 +10,35 @@ interface ShopCartEntryProps {
 }
 
 export function ShopCartEntry({ item, isSelected, isOwned, onClick }: ShopCartEntryProps) {
-	const displayPrice = isOwned ? "OWNED" : `$${item.price}`
+	// Fetch Robux price if item has product_id
+	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
+		productId: item.product_id,
+		enabled: !!item.product_id && !isOwned
+	})
+
+	// Determine display price and colors
+	let displayPrice: string
+	let textColor: Color3
+	
+	if (isOwned) {
+		displayPrice = "OWNED"
+		textColor = Color3.fromRGB(150, 255, 150)
+	} else if (item.product_id !== undefined) {
+		// Robux item
+		if (isPriceLoading) {
+			displayPrice = "..."
+		} else if (priceInRobux !== undefined) {
+			displayPrice = `\u{E002} ${priceInRobux}`
+		} else {
+			displayPrice = "\u{E002} ???"
+		}
+		textColor = Color3.fromRGB(255, 255, 255)
+	} else {
+		// Cash item
+		displayPrice = `$${item.price ?? 0}`
+		textColor = Color3.fromRGB(255, 255, 255)
+	}
+
 	const bgColor = isOwned
 		? Color3.fromRGB(100, 200, 100)
 		: isSelected
@@ -70,7 +99,7 @@ export function ShopCartEntry({ item, isSelected, isOwned, onClick }: ShopCartEn
 				Position={new UDim2(0.24, 0, 0.75, 0)}
 				Size={new UDim2(0.756, 0, 0.252, 0)}
 				Text={displayPrice}
-				TextColor3={isOwned ? Color3.fromRGB(150, 255, 150) : Color3.fromRGB(255, 255, 255)}
+				TextColor3={textColor}
 				TextScaled={true}
 				TextSize={14}
 				TextWrapped={true}

@@ -5,7 +5,7 @@ export const MOCK_CART_SHOP = [
 	{ name: "Fast Cart", price: 100 },
 	{ name: "Spiky Cart", price: 250 },
 	{ name: "V8 Cart", price: 500 },
-	{ name: "Rainbow Cart", price: 1000 }
+	{ name: "Rainbow Cart", product_id: 123456789 }, // Mock Robux item
 ]
 
 // Mock inventory with full ICartEntry objects
