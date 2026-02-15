@@ -11,27 +11,46 @@ import { ICart } from "shared/type.helper"
 const GaragePivot = Workspace.FindFirstChild("GaragePreview")?.FindFirstChild(
 	"CartPreviewAttachment"
 ) as Attachment
+const GARAGE_CART_NAME = "GaragePreviewCart"
 
 export function useShopPreview(cart_name?: string) {
 	const model = useCartModel(cart_name, false)
 	const camera = Workspace.CurrentCamera
 	const { delta, viewportSize } = useMouseDelta()
 	const [is_first_render, setIsFirstRender] = useState(true)
+	const [currentCartName, setCurrentCartName] = useState<string | undefined>(undefined)
+	
 	useEffect(() => {
 		if (!(model && camera)) {
 			return
 		}
 		if (is_first_render) {
 			setIsFirstRender(false)
+			// Check if entrance animation cart is already showing the cart we want
+			const existingCart = camera.FindFirstChild(GARAGE_CART_NAME) as ICart | undefined
+			if (existingCart && cart_name) {
+				// The entrance animation cart is already showing, just keep it
+				setCurrentCartName(cart_name)
+				// Clean up the unused model from useCartModel
+				model.Destroy()
+				return
+			}
+		}
+		
+		// Skip animation if we're trying to show the cart that's already showing
+		if (cart_name === currentCartName) {
+			// Clean up the duplicate model
+			model.Destroy()
 			return
 		}
-		const animator_model = Workspace.CurrentCamera?.FindFirstChild(
-			"GaragePreviewCart"
-		) as ICart | undefined
+		
+		const animator_model = camera.FindFirstChild(GARAGE_CART_NAME) as ICart | undefined
 		const root = model.FindFirstChild("Root") as BasePart
 		if (root) {
 			root.Anchored = true
 		}
+		
+		// Destroy previous cart with brickify out animation
 		if (animator_model) {
 			animator_model.Root.FindFirstChildOfClass("Weld")?.Destroy()
 
@@ -50,16 +69,19 @@ export function useShopPreview(cart_name?: string) {
 				animator_model.Destroy()
 			})
 		}
-		// original_cframe.current = camera.CFrame
+		
+		// Setup new cart
+		model.Name = GARAGE_CART_NAME
 		model.Parent = camera
 		model.ScaleTo(1.5)
 		const [_, bbox] = model.GetBoundingBox()
 		model?.PivotTo(GaragePivot.WorldCFrame.mul(new CFrame(0, bbox.Y / 2, 0)))
-		// task.wait(0.5)
+		
+		// Play brickify in animation
 		BrickifyModel(model, "in", 0.5, Enum.EasingStyle.Quad)
-		// task.wait(0.5)
+		setCurrentCartName(cart_name)
+		
 		return () => {
-			// camera.CFrame = original_cframe.current ?? camera.CFrame
 			task.spawn(() => {
 				const states = BrickifyModel(model, "out", 0.5, Enum.EasingStyle.Quad)
 				states.filterUndefined().map((state) => {
@@ -72,19 +94,20 @@ export function useShopPreview(cart_name?: string) {
 			})
 		}
 	}, [model])
-	useEffect(() => {
-		if (!camera) return
-		camera.CameraType = Enum.CameraType.Scriptable
-		camera.FieldOfView = 50
-		return () => {
-			camera.FieldOfView = 70
-			camera.CameraType = Enum.CameraType.Custom
-		}
-	}, [])
 
-	if (!(model && camera && GaragePivot)) {
+	// Camera is now handled by useGarageCamera hook in ShopGui
+	// This effect just handles the mouse-based camera movement during preview
+
+	if (!(camera && GaragePivot)) {
 		return
 	}
+	
+	// Get the visible cart (either from entrance animation or from useCartModel)
+	const visibleCart = camera.FindFirstChild(GARAGE_CART_NAME) as ICart | undefined
+	if (!visibleCart) {
+		return
+	}
+
 	const root_cframe = GaragePivot.WorldCFrame
 	const max_y_degrees = 10
 	const max_degrees = 15
