@@ -64,10 +64,9 @@ export function ShopCartList({
 	// Pass refetch function up to parent
 	useEffect(() => {
 		if (onRefetchReady) {
-			print("onRefetchReady")
 			onRefetchReady(refetchInventory)
 		}
-	}, [onRefetchReady, refetchInventory])
+	}, [])
 	return (
 		<frame
 			key="List"

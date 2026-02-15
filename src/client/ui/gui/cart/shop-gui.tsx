@@ -135,13 +135,13 @@ export function ShopGui() {
 		setSelectedItem(item)
 	}
 
-	const [refetchShopCartList, setRefetchShopCartList] = useState<(() => void) | undefined>()
+	const refetchShopCartListRef = useRef<(() => void) | undefined>()
 
 	const handlePurchaseSuccess = () => {
 		refetchInventory()
 		refetchEquippedCart()
-		if (refetchShopCartList) {
-			refetchShopCartList()
+		if (refetchShopCartListRef.current) {
+			refetchShopCartListRef.current()
 		}
 	}
 	
@@ -159,7 +159,9 @@ export function ShopGui() {
 				selectedItem={selectedItem}
 				onSelectItem={handleSelectItem}
 				equippedCart={equippedCart?.[0]}
-				onRefetchReady={setRefetchShopCartList}
+				onRefetchReady={(refetch) => {
+					refetchShopCartListRef.current = refetch
+				}}
 			/>
 			<ShopBottomHud
 				selectedItem={selectedItem}
