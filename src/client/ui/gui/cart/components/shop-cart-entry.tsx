@@ -1,6 +1,8 @@
-import React from "@rbxts/react"
+import React, { useEffect, useRef } from "@rbxts/react"
 import { IShopItem } from "shared/type.helper"
 import { useProductPrice } from "client/ui/hooks/useProductPrice"
+import { useCartModel } from "../hooks/useCartModel"
+import { Workspace } from "@rbxts/services"
 
 interface ShopCartEntryProps {
 	item: IShopItem
@@ -10,7 +12,13 @@ interface ShopCartEntryProps {
 	onClick: () => void
 }
 
-export function ShopCartEntry({ item, isSelected, isOwned, isEquipped, onClick }: ShopCartEntryProps) {
+export function ShopCartEntry({
+	item,
+	isSelected,
+	isOwned,
+	isEquipped,
+	onClick
+}: ShopCartEntryProps) {
 	// Fetch Robux price if item has product_id
 	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
 		productId: item.product_id,
@@ -20,7 +28,7 @@ export function ShopCartEntry({ item, isSelected, isOwned, isEquipped, onClick }
 	// Determine display price and colors
 	let displayPrice: string
 	let textColor: Color3
-	
+	const model = useCartModel(item.name)
 	if (isEquipped) {
 		displayPrice = "EQUIPPED"
 		textColor = Color3.fromRGB(255, 215, 0)
@@ -48,7 +56,19 @@ export function ShopCartEntry({ item, isSelected, isOwned, isEquipped, onClick }
 		: isSelected
 			? Color3.fromRGB(255, 200, 0)
 			: Color3.fromRGB(255, 92, 224)
+	const vpf = useRef<ViewportFrame>(undefined)
 
+	if (vpf.current && model) {
+		model.Parent = vpf.current
+		const camera = Workspace.FindFirstChild("ViewportFrameCamera") as Camera
+		assert(camera, "Camera not found in workspace")
+		vpf.current.CurrentCamera = camera
+		model.PivotTo(
+			camera.CFrame.mul(new CFrame(0, 1, -7)).mul(
+				CFrame.Angles(math.rad(20), math.rad(-130), 0)
+			)
+		)
+	}
 	return (
 		<imagebutton
 			key="CartEntry"
@@ -87,15 +107,21 @@ export function ShopCartEntry({ item, isSelected, isOwned, isEquipped, onClick }
 				Size={new UDim2(1, 0, 0.921, 0)}
 				TileSize={new UDim2(0, 50, 0, 50)}
 			/>
-			<uistroke Thickness={isSelected ? 6 : 4} Transparency={isSelected ? 0 : 0.14} />
+			<uistroke
+				Thickness={isSelected ? 6 : 4}
+				Transparency={isSelected ? 0 : 0.14}
+			/>
 			<uiaspectratioconstraint
 				AspectType={Enum.AspectType.ScaleWithParentSize}
 				DominantAxis={Enum.DominantAxis.Height}
 			/>
 			<viewportframe
+				ref={vpf}
 				BackgroundTransparency={1}
-				Position={new UDim2(0, 0, 0.2, 0)}
-				Size={new UDim2(0.996, 0, 0.6, 0)}
+				Position={new UDim2(0, 0, 0.1, 0)}
+				Size={new UDim2(1, 0, 0.9, 0)}
+				LightColor={new Color3(0,0,0)}
+				LightDirection={new Vector3(0,0,0)}
 			/>
 			<textlabel
 				BackgroundTransparency={1}
