@@ -29,7 +29,7 @@ export function ShopBottomHud({
 	// Fetch Robux price if item has product_id
 	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
 		productId: selectedItem?.product_id,
-		enabled: !!selectedItem?.product_id && !isOwned
+		enabled: !!selectedItem?.product_id
 	})
 
 	// Determine if this is a Robux item
