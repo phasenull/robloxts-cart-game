@@ -39,6 +39,10 @@ export class CartService implements OnStart {
 		if (!profile) {
 			return
 		}
+		const vehicles = profile.Data.inventory.vehicles || []
+		if (vehicles.includes(cart_name)) {
+			return
+		}
 		this.logger.log(
 			`Granting player ${player.Name} permanent cart: ${cart_name}`
 		)
@@ -48,11 +52,8 @@ export class CartService implements OnStart {
 			soundId: A.sounds.party,
 			description: `<font color='#00D4FF'>${cart_name}</font>`,
 		})
-		const vehicles = profile.Data.inventory.vehicles || []
-		if (!vehicles.includes(cart_name)) {
-			vehicles.push(cart_name)
-			profile.Data.inventory.vehicles = vehicles
-		}
+		vehicles.push(cart_name)
+		profile.Data.inventory.vehicles = vehicles
 	}
 	doesPlayerOwnCart(player: Player, cart_name: string): boolean {
 		const player_carts = this.getPlayerCarts(player)

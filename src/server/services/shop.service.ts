@@ -1,11 +1,17 @@
-import { Dependency, OnStart, Service } from "@flamework/core";
-import { Logger } from "shared/logger";
-import { IShopItemTypes, IShopItem, ProperReturns, ICartEntry, IInventoryData } from "shared/type.helper";
-import { DataService } from "./data.service";
-import { CartService } from "./cart.service";
-import { getConfig } from "shared/config.helper";
-import { ServerEvents, ServerFunctions } from "shared/network.helper";
-import { A } from "shared/assets";
+import { Dependency, OnStart, Service } from "@flamework/core"
+import { Logger } from "shared/logger"
+import {
+	IShopItemTypes,
+	IShopItem,
+	ProperReturns,
+	ICartEntry,
+	IInventoryData
+} from "shared/type.helper"
+import { DataService } from "./data.service"
+import { CartService } from "./cart.service"
+import { getConfig } from "shared/config.helper"
+import { ServerEvents, ServerFunctions } from "shared/network.helper"
+import { A } from "shared/assets"
 
 @Service()
 export class ShopService implements OnStart {
@@ -22,35 +28,55 @@ export class ShopService implements OnStart {
 			return this.getShopConfig()
 		})
 
-		ServerFunctions.ShopService.getShopItems.setCallback((player, item_type) => {
-			return this.getShopItems(item_type)
-		})
+		ServerFunctions.ShopService.getShopItems.setCallback(
+			(player, item_type) => {
+				return this.getShopItems(item_type)
+			}
+		)
 
-		ServerFunctions.ShopService.canPlayerAffordItem.setCallback((player, item_type, item_name) => {
-			return this.canPlayerAffordItem(player, item_type, item_name)
-		})
+		ServerFunctions.ShopService.canPlayerAffordItem.setCallback(
+			(player, item_type, item_name) => {
+				return this.canPlayerAffordItem(player, item_type, item_name)
+			}
+		)
 
-		ServerFunctions.ShopService.makePlayerPurchaseItem.setCallback((player, item_type, item_name) => {
-			return this.makePlayerPurchaseItem(player, item_type, item_name)
-		})
+		ServerFunctions.ShopService.makePlayerPurchaseItem.setCallback(
+			(player, item_type, item_name) => {
+				return this.makePlayerPurchaseItem(player, item_type, item_name)
+			}
+		)
 
-		ServerFunctions.ShopService.getPlayerInventory.setCallback((player, item_type) => {
-			return this.getPlayerInventory(player, item_type)
-		})
+		ServerFunctions.ShopService.getPlayerInventory.setCallback(
+			(player, item_type) => {
+				return this.getPlayerInventory(player, item_type)
+			}
+		)
 
-		ServerFunctions.ShopService.doesPlayerOwnItem.setCallback((player, item_type, item_name) => {
-			return this.doesPlayerOwnItem(player, item_type, item_name)
-		})
+		ServerFunctions.ShopService.doesPlayerOwnItem.setCallback(
+			(player, item_type, item_name) => {
+				return this.doesPlayerOwnItem(player, item_type, item_name)
+			}
+		)
 	}
-	makePlayerPurchaseItem(player: Player, item_type: IShopItemTypes, item_name: string): ProperReturns<true> {
+	makePlayerPurchaseItem(
+		player: Player,
+		item_type: IShopItemTypes,
+		item_name: string
+	): ProperReturns<true> {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(`Tried to purchase item for player ${player.Name} but profile was not loaded`)
+			this.logger.warn(
+				`Tried to purchase item for player ${player.Name} but profile was not loaded`
+			)
 			return [false, "Profile not loaded"]
 		}
 
 		// Check if player can afford the item
-		const [canAfford, affordError] = this.canPlayerAffordItem(player, item_type, item_name)
+		const [canAfford, affordError] = this.canPlayerAffordItem(
+			player,
+			item_type,
+			item_name
+		)
 		if (!canAfford) {
 			return [false, affordError || "Cannot afford item"]
 		}
@@ -63,28 +89,13 @@ export class ShopService implements OnStart {
 
 		// Deduct currency
 		const currentCash = profile.Data.cash || 0
-		profile.Data.cash = (currentCash - price) as any
 
 		// Handle different item types
 		switch (item_type) {
 			case "cart": {
 				const cartService = Dependency<CartService>()
 				cartService.grantPlayerPermaCart(player, item_name)
-				this.logger.log(`Player ${player.Name} purchased cart: ${item_name} for ${price} cash`)
-				break
-			}
-			case "revives": {
-				const cartService = Dependency<CartService>()
-				const amount = tonumber(item_name) || 1
-				cartService.incrementPlayerRevives(player, amount)
-				this.logger.log(`Player ${player.Name} purchased ${amount} revives for ${price} cash`)
-				break
-			}
-			case "flips": {
-				const cartService = Dependency<CartService>()
-				const amount = tonumber(item_name) || 1
-				cartService.incrementPlayerFlips(player, amount)
-				this.logger.log(`Player ${player.Name} purchased ${amount} flips for ${price} cash`)
+				profile.Data.cash = (currentCash - price) as any
 				break
 			}
 			default: {
@@ -104,26 +115,36 @@ export class ShopService implements OnStart {
 					duration: 4,
 					soundId: A.sounds.reward_earned
 				})
-				this.logger.log(`Player ${player.Name} purchased ${item_type}: ${item_name} for ${price} cash`)
+				this.logger.log(
+					`Player ${player.Name} purchased ${item_type}: ${item_name} for ${price} cash`
+				)
 				break
 			}
 		}
 
 		return [true]
 	}
-	canPlayerAffordItem(player: Player, item_type: IShopItemTypes, item_name: string): ProperReturns<boolean> {
+	canPlayerAffordItem(
+		player: Player,
+		item_type: IShopItemTypes,
+		item_name: string
+	): ProperReturns<boolean> {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(`Tried to check affordability for player ${player.Name} but profile was not loaded`)
+			this.logger.warn(
+				`Tried to check affordability for player ${player.Name} but profile was not loaded`
+			)
 			return [false, "Profile not loaded"]
 		}
 
 		// Check if player already owns the item (for non-consumables)
-		if (item_type !== "revives" && item_type !== "flips") {
-			const [owns, ownsError] = this.doesPlayerOwnItem(player, item_type, item_name)
-			if (owns) {
-				return [false, "Already owned"]
-			}
+		const [owns, ownsError] = this.doesPlayerOwnItem(
+			player,
+			item_type,
+			item_name
+		)
+		if (owns) {
+			return [false, "Already owned"]
 		}
 
 		// Get item price
@@ -147,10 +168,15 @@ export class ShopService implements OnStart {
 	 * @param item_type The type of items to retrieve
 	 * @returns Inventory data with ICartEntry[] for carts or error message
 	 */
-	getPlayerInventory(player: Player, item_type: IShopItemTypes): ProperReturns<IInventoryData> {
+	getPlayerInventory(
+		player: Player,
+		item_type: IShopItemTypes
+	): ProperReturns<IInventoryData> {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(`Tried to get inventory for player ${player.Name} but profile was not loaded`)
+			this.logger.warn(
+				`Tried to get inventory for player ${player.Name} but profile was not loaded`
+			)
 			return [false, "Profile not loaded"]
 		}
 
@@ -158,7 +184,7 @@ export class ShopService implements OnStart {
 		if (item_type === "cart") {
 			const vehicleNames = profile.Data.vehicles || []
 			const config = getConfig()
-			
+
 			if (!config.CartConfig) {
 				this.logger.warn("CartConfig is missing")
 				return [{ carts: [] }]
@@ -185,11 +211,16 @@ export class ShopService implements OnStart {
 		return [{ [item_type]: items }]
 	}
 
-
-	doesPlayerOwnItem(player: Player, item_type: IShopItemTypes, item_name: string): ProperReturns<boolean> {
+	doesPlayerOwnItem(
+		player: Player,
+		item_type: IShopItemTypes,
+		item_name: string
+	): ProperReturns<boolean> {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(`Tried to check ownership for player ${player.Name} but profile was not loaded`)
+			this.logger.warn(
+				`Tried to check ownership for player ${player.Name} but profile was not loaded`
+			)
 			return [false, "Profile not loaded"]
 		}
 
@@ -199,10 +230,6 @@ export class ShopService implements OnStart {
 			return [cartService.doesPlayerOwnCart(player, item_name)]
 		}
 
-		// Consumables (revives, flips) are never "owned" in the traditional sense
-		if (item_type === "revives" || item_type === "flips") {
-			return [false]
-		}
 
 		// Check in inventory
 		if (!profile.Data.inventory || !profile.Data.inventory[item_type]) {
@@ -218,9 +245,12 @@ export class ShopService implements OnStart {
 	 * @param item_name The name of the item
 	 * @returns The price in cash, or undefined if not found
 	 */
-	private getItemPrice(item_type: IShopItemTypes, item_name: string): number | undefined {
+	private getItemPrice(
+		item_type: IShopItemTypes,
+		item_name: string
+	): number | undefined {
 		const config = getConfig()
-		
+
 		// Only carts are supported from CartConfig
 		if (item_type === "cart") {
 			if (!config.CartConfig) {
@@ -228,12 +258,16 @@ export class ShopService implements OnStart {
 				return undefined
 			}
 
-			const cartEntry = config.CartConfig.find((entry) => entry.name === item_name)
+			const cartEntry = config.CartConfig.find(
+				(entry) => entry.name === item_name
+			)
 			if (cartEntry && "price" in cartEntry) {
 				return cartEntry.price
 			}
 
-			this.logger.warn(`Cart ${item_name} not found or has no price in CartConfig`)
+			this.logger.warn(
+				`Cart ${item_name} not found or has no price in CartConfig`
+			)
 			return undefined
 		}
 
@@ -249,7 +283,7 @@ export class ShopService implements OnStart {
 	 */
 	getShopItems(item_type: IShopItemTypes): ProperReturns<IShopItem[]> {
 		const config = getConfig()
-		
+
 		// Only carts are supported from CartConfig
 		if (item_type === "cart") {
 			if (!config.CartConfig) {
@@ -286,7 +320,7 @@ export class ShopService implements OnStart {
 	 */
 	getShopConfig(): ProperReturns<Record<string, IShopItem[]>> {
 		const config = getConfig()
-		
+
 		const result: Record<string, IShopItem[]> = {}
 
 		// Add carts from CartConfig
@@ -309,11 +343,12 @@ export class ShopService implements OnStart {
 		}
 
 		if (!result.cart || result.cart.size() === 0) {
-			this.logger.warn("Shop config is empty - no carts with prices found in CartConfig")
+			this.logger.warn(
+				"Shop config is empty - no carts with prices found in CartConfig"
+			)
 			return [false, "Shop config not found"]
 		}
 
 		return [result]
 	}
-
 }
