@@ -67,6 +67,32 @@ export function ShopCartList({
 			onRefetchReady(refetchInventory)
 		}
 	}, [])
+	
+	// Sort cart items: owned first, then robux items, then by price ascending
+	const sortedCartItems = cartItems ? [...cartItems].sort((a, b) => {
+		const aOwned = !!inventory?.carts?.some((cart) => cart.name === a.name)
+		const bOwned = !!inventory?.carts?.some((cart) => cart.name === b.name)
+		
+		// Owned carts come first
+		if (aOwned !== bOwned) {
+			return aOwned // true if a is owned (a comes first)
+		}
+		
+		// If both owned or both not owned, check for robux items (product_id)
+		const aIsRobux = a.product_id !== undefined
+		const bIsRobux = b.product_id !== undefined
+		
+		// Among non-owned items, robux items come first
+		if (!aOwned && aIsRobux !== bIsRobux) {
+			return aIsRobux // true if a is robux (a comes first)
+		}
+		
+		// Finally, sort by price ascending
+		const aPrice = a.price ?? 0
+		const bPrice = b.price ?? 0
+		return aPrice < bPrice // true if a has lower price (a comes first)
+	}) : undefined
+	
 	return (
 		<frame
 			key="List"
@@ -183,8 +209,8 @@ export function ShopCartList({
 					<frame Size={UIDIM.ONE} BackgroundTransparency={1}>
 						<LoadingIndicator Size={UIDIM.ONE} />
 					</frame>
-				) : (cartItems) ? (
-					cartItems.map((item) => {
+				) : (sortedCartItems) ? (
+					sortedCartItems.map((item) => {
 						const isOwned = !!inventory?.carts?.some((cart) => cart.name === item.name)
 						const isSelected = selectedItem?.name === item.name
 						const isEquipped = equippedCart === item.name
