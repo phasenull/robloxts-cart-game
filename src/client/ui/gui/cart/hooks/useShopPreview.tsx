@@ -15,7 +15,6 @@ const GaragePivot = Workspace.FindFirstChild("GaragePreview")?.FindFirstChild(
 export function useShopPreview(cart_name?: string) {
 	const model = useCartModel(cart_name, false)
 	const camera = Workspace.CurrentCamera
-	const original_cframe = useRef<CFrame>()
 	const { delta, viewportSize } = useMouseDelta()
 	const [is_first_render, setIsFirstRender] = useState(true)
 	useEffect(() => {
@@ -29,30 +28,46 @@ export function useShopPreview(cart_name?: string) {
 		const animator_model = Workspace.CurrentCamera?.FindFirstChild(
 			"GaragePreviewCart"
 		) as ICart | undefined
-		if (animator_model) {
-			animator_model.Root.FindFirstChildOfClass("Weld")?.Destroy()
-			BrickifyModel(animator_model, "out", 0.5, Enum.EasingStyle.Quad)
-		}
-		// original_cframe.current = camera.CFrame
-		model.Parent = camera
-		RigCartModel(model)
-		model.ScaleTo(1.5)
-		const [_, bbox] = model.GetBoundingBox()
-		model?.PivotTo(GaragePivot.WorldCFrame.mul(new CFrame(0, bbox.Y / 2, 0)))
 		const root = model.FindFirstChild("Root") as BasePart
 		if (root) {
 			root.Anchored = true
 		}
+		if (animator_model) {
+			animator_model.Root.FindFirstChildOfClass("Weld")?.Destroy()
+
+			const states = BrickifyModel(
+				animator_model,
+				"out",
+				0.5,
+				Enum.EasingStyle.Quad
+			)
+			states.filterUndefined().map((state) => {
+				if (state.tween.PlaybackState === Enum.PlaybackState.Playing) {
+					state.tween.Completed.Wait()
+				}
+			})
+			task.delay(1, () => {
+				animator_model.Destroy()
+			})
+		}
+		// original_cframe.current = camera.CFrame
+		model.Parent = camera
+		model.ScaleTo(1.5)
+		const [_, bbox] = model.GetBoundingBox()
+		model?.PivotTo(GaragePivot.WorldCFrame.mul(new CFrame(0, bbox.Y / 2, 0)))
+		// task.wait(0.5)
 		BrickifyModel(model, "in", 0.5, Enum.EasingStyle.Quad)
+		// task.wait(0.5)
 		return () => {
 			// camera.CFrame = original_cframe.current ?? camera.CFrame
 			task.spawn(() => {
 				const states = BrickifyModel(model, "out", 0.5, Enum.EasingStyle.Quad)
-				states.map((state) => {
+				states.filterUndefined().map((state) => {
 					if (state.tween.PlaybackState === Enum.PlaybackState.Playing) {
 						state.tween.Completed.Wait()
 					}
 				})
+				task.wait(1)
 				model.Destroy()
 			})
 		}
@@ -85,5 +100,12 @@ export function useShopPreview(cart_name?: string) {
 		)
 		.mul(new CFrame(-10, 2, -15))
 		.mul(new CFrame(0, math.rad(180), 0)).Position
-	camera.CFrame = new CFrame(camera_position, GaragePivot.WorldPosition)
+	const target_cframe = new CFrame(
+		camera_position,
+		GaragePivot.WorldPosition.add(new Vector3(0, 2, 0))
+	)
+	camera.CFrame = new CFrame(
+		camera_position,
+		GaragePivot.WorldPosition.add(new Vector3(0, 2, 0))
+	)
 }

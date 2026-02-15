@@ -29,7 +29,9 @@ export default function BlurGui() {
 		}
 	},[])
 	if (camera) {
-		camera.FieldOfView = default_fov + blur_amount * 10
+		if (!blacklisted.includes(open_gui||"")) {
+			camera.FieldOfView = default_fov + blur_amount * 10
+		}
 	}
 	return undefined
 }

@@ -12,16 +12,21 @@ import { ReplicatedStorage, Workspace } from "@rbxts/services"
 import { assets } from "shared/assets"
 import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation"
 import { MOCK_CART_INVENTORY } from "shared/mocks"
+import { useCart } from "client/ui/contexts/cart.context"
+import { useNavigator } from "client/ui/hooks/useNavigator"
+import { UIHelper } from "client/ui.helper"
 
 export function ShopGui() {
 	// Fetch player inventory to check ownership
 	const { mutate: mutateGarageAnimation } = useShopGarageAnimation()
 	useEffect(() => {
+		UIHelper.toggleFade(false)
 		mutateGarageAnimation("in")
 		return () => {
 			mutateGarageAnimation("out")
 		}
 	}, [])
+	const cart = useCart().cart
 	const { data: inventory, refetch: refetchInventory } = useQuery({
 		queryKey: ["player-inventory", "cart"],
 		queryFn: async () => {
@@ -41,25 +46,30 @@ export function ShopGui() {
 		name: "Cart",
 		price: 0
 	})
-
+	
 	const isOwned = selectedItem
-		? (inventory?.cart.includes(selectedItem.name) ?? false)
-		: false
-
+	? (inventory?.cart.includes(selectedItem.name) ?? false)
+	: false
+	
 	const handleSelectItem = (item: IShopItem) => {
 		setSelectedItem(item)
 	}
-
+	
 	const handlePurchaseSuccess = () => {
 		refetchInventory()
 	}
 	useShopPreview(selectedItem?.name)
+	const nav = useNavigator()
+	if (cart) {
+		nav.closeAll()
+		return
+	}
 	return (
 		<>
 			<ShopCartList
 				selectedItem={selectedItem}
 				onSelectItem={handleSelectItem}
-			/>
+				/>
 			<ShopBottomHud
 				selectedItem={selectedItem}
 				isOwned={isOwned}

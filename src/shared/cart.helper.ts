@@ -277,6 +277,9 @@ export function AnimateGarageMovement(
 	model: ICart,
 	direction: "in" | "out" = "in"
 ) {
+	Animator.GetPlayingAnimationTracks().forEach((track) => {
+		track.Stop()
+	})
 	const pp = model.FindFirstChild("Root") as BasePart
 	if (!pp) {
 		return
@@ -298,14 +301,13 @@ export function AnimateGarageMovement(
 		anim_out.Stop()
 		anim_in.Play()
 	} else {
-
 		anim_in.Stop()
 		anim_out.Play()
 	}
 }
 export function BrickifyModel(
 	model: Model,
-	direction: "in" | "out" = "in",
+	direction: "in" | "out",
 	duration = 0.5,
 	style = Enum.EasingStyle.Quad
 ) {
@@ -314,24 +316,52 @@ export function BrickifyModel(
 		.filter((_) => _.IsA("BasePart")) as BasePart[]
 	const pivot = model.GetPivot()
 	return parts.map((part, index) => {
+		// const weld = part.FindFirstChildOfClass("Weld") as Weld | undefined
+		// weld?.Destroy()
+		// const weld_constraints = part.FindFirstChildOfClass("WeldConstraint") as WeldConstraint | undefined
+		// weld_constraints?.Destroy()
+		const ancestor_model = part.FindFirstAncestorOfClass("Model") as Model
+		if (ancestor_model === model) {
+			return
+		}
+		if (["FL", "FR", "RR", "RL"].includes(ancestor_model?.Name)) {
+			if (direction === "out") {
+				part.Destroy()
+			}
+			return
+		}
+		const ball_socket = part.FindFirstChildOfClass("BallSocketConstraint") as
+			| BallSocketConstraint
+			| undefined
+		// ball_socket?.Destroy()
+		const hinge = part.FindFirstChildOfClass("HingeConstraint") as
+			| HingeConstraint
+			| undefined
+		// hinge?.Destroy()
+		const motor6d = part.FindFirstChildOfClass("Motor6D") as Motor6D | undefined
+		if (motor6d || hinge || ball_socket) {
+			part.Anchored = false
+			return
+		} else {
+			part.Anchored = true
+		}
+
 		const original_transparency = part.Transparency
 		if (direction === "in") {
 			part.Transparency = 1
 		}
-		// const part_offset = part.Position.sub(pivot.Position)
-		part.Anchored = true
-		part.FindFirstAncestorOfClass("WeldConstraint")?.Destroy()
+		// motor6d?.Destroy()
 		const original_cframe = part.CFrame
+		const [root_cframe, bounding_box] = model.GetBoundingBox()
+		const y =
+			original_cframe.Position.Y - (root_cframe.Position.Y - bounding_box.Y / 2)
+
 		const spawn_cframe = pivot.mul(
 			new CFrame(direction === "in" ? -5 : 0, 5, direction === "in" ? 10 : -10)
 		)
 		if (direction === "in") {
 			part.CFrame = spawn_cframe
 		}
-		const [root_cframe, bounding_box] = model.GetBoundingBox()
-		const y =
-			original_cframe.Position.Y - (root_cframe.Position.Y - bounding_box.Y / 2)
-		// part.CFrame = new CFrame(random_position)
 		const tween = TweenService.Create(
 			part,
 			new TweenInfo(
@@ -341,7 +371,11 @@ export function BrickifyModel(
 				Enum.EasingDirection.Out,
 				0,
 				false,
-				direction === "in" ? 0.01 * y * 10 : 0.005 * index
+				math.clamp(
+					direction === "in" ? 0.01 * y * 10 : 0.005 * index,
+					0.01,
+					0.5
+				)
 			),
 			{
 				CFrame: direction === "in" ? original_cframe : spawn_cframe,

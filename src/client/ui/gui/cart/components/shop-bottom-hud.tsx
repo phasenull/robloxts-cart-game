@@ -13,7 +13,11 @@ interface ShopBottomHudProps {
 	onPurchaseSuccess: () => void
 }
 
-export function ShopBottomHud({ selectedItem, isOwned, onPurchaseSuccess }: ShopBottomHudProps) {
+export function ShopBottomHud({
+	selectedItem,
+	isOwned,
+	onPurchaseSuccess
+}: ShopBottomHudProps) {
 	const { closeAll } = useNavigator()
 
 	const { mutate: mutatePurchase, isLoading: isPurchasing } = useMutation({
@@ -23,10 +27,11 @@ export function ShopBottomHud({ selectedItem, isOwned, onPurchaseSuccess }: Shop
 
 			if (__IS_EDIT__) return true
 
-			const [success, err] = await ClientFunctions.ShopService.makePlayerPurchaseItem.invoke(
-				"cart",
-				selectedItem.name
-			)
+			const [success, err] =
+				await ClientFunctions.ShopService.makePlayerPurchaseItem.invoke(
+					"cart",
+					selectedItem.name
+				)
 
 			if (err || !success) {
 				print(`Purchase failed: ${err || "Unknown error"}`)
@@ -151,7 +156,15 @@ export function ShopBottomHud({ selectedItem, isOwned, onPurchaseSuccess }: Shop
 				ScaleType={Enum.ScaleType.Fit}
 				Size={new UDim2(0.432, 0, 0.286, 0)}
 				Event={{
-					MouseButton1Click: () => closeAll()
+					MouseButton1Click: () => {
+						task.spawn(() => {
+							UIHelper.toggleFade(true)
+							task.wait(0.5)
+							closeAll()
+							task.wait(0.3)
+							UIHelper.toggleFade(false)
+						})
+					}
 				}}
 			>
 				<uistroke Thickness={5} />
