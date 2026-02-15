@@ -49,10 +49,30 @@ export class MonetizationService implements OnStart {
 		const purchasables = this.getPurchasables()
 		const product_id = reciept.ProductId
 		const purchasable = purchasables.find((p) => p.product_id === product_id)
+		
+		// If not found in PurchasableConfig, check CartConfig
 		if (!purchasable) {
+			const cart_config = getConfig().CartConfig
+			const cart_entry = cart_config.find((cart) => 
+				"product_id" in cart && cart.product_id === product_id
+			)
+			
+			if (cart_entry) {
+				// Create virtual reward for cart purchase
+				const virtual_reward: IReward<"cart"> = {
+					type: "cart",
+					descriptor: cart_entry.name,
+					value: undefined as never,
+					handler: undefined
+				}
+				this.giveRewardToPlayer(player, virtual_reward, `cart_purchase_${product_id}`)
+				return Enum.ProductPurchaseDecision.PurchaseGranted
+			}
+			
 			this.logger.warn(`No purchasable found for product id ${product_id}`)
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		}
+		
 		const rewards = purchasable.rewards
 		for (const reward of rewards) {
 			this.giveRewardToPlayer(
@@ -153,6 +173,7 @@ export class MonetizationService implements OnStart {
 					player,
 					reward.descriptor
 				)
+				break
 			default:
 				this.logger.warn(`Unknown reward type ${reward.type}`)
 		}
