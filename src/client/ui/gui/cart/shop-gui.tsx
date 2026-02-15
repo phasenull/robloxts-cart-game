@@ -15,7 +15,6 @@ import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks"
 import { useCart } from "client/ui/contexts/cart.context"
 import { useNavigator } from "client/ui/hooks/useNavigator"
 import { UIHelper } from "client/ui.helper"
-import { useMouseDelta } from "client/ui/hooks/useMouseDelta"
 
 export function ShopGui() {
 	// Fetch player inventory to check ownership
@@ -23,7 +22,6 @@ export function ShopGui() {
 		useState(false)
 	const { mutate: mutateGarageAnimation, isLoading: isAnimationLoading } =
 		useShopGarageAnimation()
-	const { delta, viewportSize } = useMouseDelta()
 	useEffect(() => {
 		UIHelper.toggleFade(false)
 
@@ -36,23 +34,12 @@ export function ShopGui() {
 		if (camera && GaragePivot) {
 			camera.CameraType = Enum.CameraType.Scriptable
 			camera.FieldOfView = 50
+			
+			// Position camera to look at garage pivot (static position for entrance animation)
 			const root_cframe = GaragePivot.WorldCFrame
-			const max_y_degrees = 10
-			const max_degrees = 15
-			const degrees = (delta.X / viewportSize.X) * max_degrees
-			const y_degrees = (delta.Y / viewportSize.Y) * max_y_degrees
 			const camera_position = root_cframe
-				.mul(
-					CFrame.Angles(
-						0,
-						math.rad(degrees - max_degrees / 2),
-						math.rad(y_degrees - max_y_degrees / 2)
-					)
-				)
-				.mul(new CFrame(-10, 2, -15))
-				.mul(new CFrame(0, math.rad(180), 0)).Position
-			// Position camera to look at garage pivot
-
+				.mul(new CFrame(-10, 5, -15))
+				.Position
 			camera.CFrame = new CFrame(
 				camera_position,
 				GaragePivot.WorldPosition.add(new Vector3(0, 2, 0))
