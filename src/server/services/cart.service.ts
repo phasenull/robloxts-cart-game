@@ -32,7 +32,7 @@ export class CartService implements OnStart {
 		if (!profile) {
 			return []
 		}
-		return profile.Data.vehicles || []
+		return profile.Data.inventory.vehicles || []
 	}
 	grantPlayerPermaCart(player: Player, cart_name: string) {
 		const profile = this.DataService.getProfile(player)

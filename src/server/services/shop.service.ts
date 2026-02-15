@@ -182,7 +182,7 @@ export class ShopService implements OnStart {
 
 		// Special handling for carts/vehicles - return full ICartEntry objects
 		if (item_type === "cart") {
-			const vehicleNames = profile.Data.vehicles || []
+			const vehicleNames = profile.Data.inventory.vehicles || []
 			const config = getConfig()
 
 			if (!config.CartConfig) {
