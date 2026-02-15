@@ -64,11 +64,36 @@ export function ShopBottomHud({
 		}
 	})
 
+	const { mutate: mutateEquip, isLoading: isEquipping } = useMutation({
+		queryKey: ["equip-item", selectedItem?.name || "none"],
+		mutationFn: async () => {
+			if (!selectedItem) return false
+
+			if (__IS_EDIT__) return true
+
+			const [success, err] =
+				await ClientFunctions.CustomizationService.setPreference.invoke(
+					"cart",
+					selectedItem.name
+				)
+
+			if (err || !success) {
+				print(`Equip failed: ${err || "Unknown error"}`)
+				return false
+			}
+
+			UIHelper.playSound(A.sounds.pop_success)
+			return true
+		}
+	})
+
 	const canPurchase = selectedItem && !isOwned && !isPurchasing
-	const buttonText = isPurchasing
-		? "Purchasing..."
+	const canEquip = selectedItem && isOwned && !isEquipping
+	const isLoading = isPurchasing || isEquipping
+	const buttonText = isLoading
+		? isEquipping ? "Equipping..." : "Purchasing..."
 		: isOwned
-			? "Owned"
+			? "Equip"
 			: selectedItem
 				? "Purchase"
 				: "Select Item"
@@ -90,16 +115,22 @@ export function ShopBottomHud({
 				Position={new UDim2(0.215, 0, 0.822, 0)}
 				ScaleType={Enum.ScaleType.Fit}
 				Size={new UDim2(0.43, 0, 0.284, 0)}
-				Active={canPurchase !== undefined && canPurchase}
+				Active={(canPurchase || canEquip) !== undefined && (canPurchase || canEquip)}
 				Event={{
-					MouseButton1Click: () => canPurchase && mutatePurchase()
+					MouseButton1Click: () => {
+						if (canPurchase) {
+							mutatePurchase()
+						} else if (canEquip) {
+							mutateEquip()
+						}
+					}
 				}}
 			>
 				<uistroke Thickness={5} />
 				<frame
 					key="Bottom"
 					BackgroundColor3={
-						canPurchase ? Color3.fromRGB(0, 63, 8) : Color3.fromRGB(79, 0, 0)
+						canEquip ? Color3.fromRGB(76, 63, 0) : canPurchase ? Color3.fromRGB(0, 63, 8) : Color3.fromRGB(79, 0, 0)
 					}
 					BackgroundTransparency={0.05}
 					BorderSizePixel={0}
@@ -137,6 +168,17 @@ export function ShopBottomHud({
 						Enabled={canPurchase}
 					/>
 					<uigradient
+						key="Equip"
+						Color={
+							new ColorSequence([
+								new ColorSequenceKeypoint(0, Color3.fromRGB(255, 230, 0)),
+								new ColorSequenceKeypoint(1, Color3.fromRGB(255, 165, 0))
+							])
+						}
+						Rotation={90}
+						Enabled={canEquip}
+					/>
+					<uigradient
 						key="Not Enough"
 						Color={
 							new ColorSequence([
@@ -144,7 +186,7 @@ export function ShopBottomHud({
 								new ColorSequenceKeypoint(1, Color3.fromRGB(199, 0, 0))
 							])
 						}
-						Enabled={!canPurchase}
+						Enabled={!canPurchase && !canEquip}
 						Rotation={90}
 					/>
 				</frame>

@@ -4,6 +4,7 @@ import { Logger } from "shared/logger"
 import { ProperReturns } from "shared/type.helper"
 import { DataService } from "./data.service"
 import { ServerFunctions } from "shared/network.helper"
+import { ShopService } from "./shop.service"
 
 export type ICustomizable = "cart" | "honk" | (string & {})
 
@@ -73,9 +74,30 @@ export class CustomizationService implements OnStart {
 			return [false, "Profile not loaded"]
 		}
 
+		// Validate ownership for carts
+		if (key === "cart") {
+			const shopService = Dependency<ShopService>()
+			const [ownsItem, ownError] = shopService.doesPlayerOwnItem(player, "cart", value)
+			if (!ownsItem) {
+				this.logger.warn(
+					`Player ${player.Name} tried to equip cart "${value}" but doesn't own it`
+				)
+				return [false, "You don't own this item"]
+			}
+		}
+
 		// Initialize customization if it doesn't exist
 		if (!profile.Data.customization) {
 			profile.Data.customization = {}
+		}
+
+		// For cart preference, replace the existing value (only one cart can be equipped)
+		if (key === "cart") {
+			profile.Data.customization[key] = [value]
+			this.logger.log(
+				`Set cart preference to "${value}" for player ${player.Name}`
+			)
+			return [true]
 		}
 
 		// Initialize the key array if it doesn't exist

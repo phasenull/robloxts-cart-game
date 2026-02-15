@@ -205,21 +205,24 @@ export class ShopService implements OnStart {
 	private getItemPrice(item_type: IShopItemTypes, item_name: string): number | undefined {
 		const config = getConfig()
 		
-		// Check if the item type exists in ShopConfig
-		if (!config.ShopConfig || !config.ShopConfig[item_type]) {
-			this.logger.warn(`ShopConfig missing for item type: ${item_type}`)
+		// Only carts are supported from CartConfig
+		if (item_type === "cart") {
+			if (!config.CartConfig) {
+				this.logger.warn(`CartConfig is missing`)
+				return undefined
+			}
+
+			const cartEntry = config.CartConfig.find((entry) => entry.name === item_name)
+			if (cartEntry && "price" in cartEntry) {
+				return cartEntry.price
+			}
+
+			this.logger.warn(`Cart ${item_name} not found or has no price in CartConfig`)
 			return undefined
 		}
 
-		// Find the item in the shop config
-		const shopItems = config.ShopConfig[item_type]
-		const shopItem = shopItems.find((item) => item.name === item_name)
-		
-		if (shopItem) {
-			return shopItem.price
-		}
-
-		this.logger.warn(`Item ${item_name} not found in ShopConfig for type ${item_type}`)
+		// Other item types are not supported in CartConfig
+		this.logger.warn(`Item type ${item_type} is not supported in shop config`)
 		return undefined
 	}
 
@@ -231,11 +234,26 @@ export class ShopService implements OnStart {
 	getShopItems(item_type: IShopItemTypes): ProperReturns<IShopItem[]> {
 		const config = getConfig()
 		
-		if (!config.ShopConfig || !config.ShopConfig[item_type]) {
-			return [[]]
+		// Only carts are supported from CartConfig
+		if (item_type === "cart") {
+			if (!config.CartConfig) {
+				this.logger.warn("CartConfig is missing")
+				return [[]]
+			}
+
+			// Filter cart entries that have a price (not gamepass-only) and convert to IShopItem
+			const cartShopItems: IShopItem[] = config.CartConfig
+				.filter((entry) => "price" in entry)
+				.map((entry) => ({
+					name: entry.name,
+					price: (entry as any).price
+				}))
+
+			return [cartShopItems]
 		}
 
-		return [config.ShopConfig[item_type]]
+		// Other item types not supported in CartConfig
+		return [[]]
 	}
 
 	/**
@@ -245,12 +263,25 @@ export class ShopService implements OnStart {
 	getShopConfig(): ProperReturns<Record<string, IShopItem[]>> {
 		const config = getConfig()
 		
-		if (!config.ShopConfig) {
-			this.logger.warn("ShopConfig is missing from game config")
+		const result: Record<string, IShopItem[]> = {}
+
+		// Add carts from CartConfig
+		if (config.CartConfig) {
+			const cartShopItems: IShopItem[] = config.CartConfig
+				.filter((entry) => "price" in entry)
+				.map((entry) => ({
+					name: entry.name,
+					price: (entry as any).price
+				}))
+			result.cart = cartShopItems
+		}
+
+		if (!result.cart || result.cart.size() === 0) {
+			this.logger.warn("Shop config is empty - no carts with prices found in CartConfig")
 			return [false, "Shop config not found"]
 		}
 
-		return [config.ShopConfig]
+		return [result]
 	}
 
 }

@@ -16,7 +16,6 @@ export type log_base = Model & {
 export type IConfig = {
 	CartConfig: ICartConfig;
 	PurchasableConfig: IPurchasableConfig;
-	ShopConfig: IShopConfig;
 };
 export type INotification = {
 	title: string;
