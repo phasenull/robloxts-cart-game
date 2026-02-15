@@ -13,12 +13,14 @@ interface ShopCartListProps {
 	selectedItem: IShopItem | undefined
 	onSelectItem: (item: IShopItem) => void
 	equippedCart?: string
+	onRefetchReady?: (refetch: () => void) => void
 }
 
 export function ShopCartList({
 	selectedItem,
 	onSelectItem,
-	equippedCart
+	equippedCart,
+	onRefetchReady
 }: ShopCartListProps) {
 	// Fetch cart shop items
 	const { data: cartItems, isLoading: isLoadingItems } = useQuery({
@@ -44,7 +46,7 @@ export function ShopCartList({
 		}
 	}, [])
 	// Fetch player inventory
-	const { data: inventory } = useQuery({
+	const { data: inventory, refetch: refetchInventory } = useQuery({
 		queryKey: ["player-inventory", "owned-cart"],
 		queryFn: async () => {
 			if (__IS_EDIT__) {
@@ -58,6 +60,14 @@ export function ShopCartList({
 			return inv
 		}
 	})
+	
+	// Pass refetch function up to parent
+	useEffect(() => {
+		if (onRefetchReady) {
+			print("onRefetchReady")
+			onRefetchReady(refetchInventory)
+		}
+	}, [onRefetchReady, refetchInventory])
 	return (
 		<frame
 			key="List"

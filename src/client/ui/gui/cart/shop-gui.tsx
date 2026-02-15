@@ -49,6 +49,11 @@ export function ShopGui() {
 	useEffect(() => {
 		UIHelper.toggleFade(false)
 
+		// Wait for equipped cart data to load before playing animation
+		if (!equippedCart) {
+			return
+		}
+
 		// Only play entrance animation on first render
 		if (isFirstRenderRef.current) {
 			mutateGarageAnimation("in")
@@ -69,7 +74,7 @@ export function ShopGui() {
 			// On subsequent renders (after purchase), skip entrance animation
 			setIsEntranceAnimationComplete(true)
 		}
-	}, [equippedCartName])
+	}, [equippedCartName, equippedCart])
 
 	// Handle exit animation on unmount
 	useEffect(() => {
