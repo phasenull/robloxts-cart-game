@@ -120,3 +120,5 @@ export type GUI_KEYS =
 	| "index"
 	| "plot"
 	| (string & {})
+export const SHOP_CAMERA_OFFSET = new Vector3(20, 5, -30)
+export const SHOP_CAMERA_FOV = 30

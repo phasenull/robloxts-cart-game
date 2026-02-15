@@ -68,7 +68,7 @@ export function RightSidebar() {
 					}
 					task.spawn(() => {
 						UIHelper.toggleFade(true)
-						task.wait(0.5)
+						task.wait(0.4)
 						navigator.setOpenGui("carts")
 					})
 				}}

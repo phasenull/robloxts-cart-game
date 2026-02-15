@@ -60,7 +60,10 @@ export function ShopCartEntry({
 
 	if (vpf.current && model) {
 		model.Parent = vpf.current
-		const camera = Workspace.FindFirstChild("ViewportFrameCamera") as Camera
+		const camera =
+			(Workspace.FindFirstChild("ViewportFrameCamera") as Camera) ||
+			new Instance("Camera", Workspace)
+		camera.Name = "ViewportFrameCamera"
 		assert(camera, "Camera not found in workspace")
 		vpf.current.CurrentCamera = camera
 		model.PivotTo(
@@ -115,14 +118,6 @@ export function ShopCartEntry({
 				AspectType={Enum.AspectType.ScaleWithParentSize}
 				DominantAxis={Enum.DominantAxis.Height}
 			/>
-			<viewportframe
-				ref={vpf}
-				BackgroundTransparency={1}
-				Position={new UDim2(0, 0, 0.1, 0)}
-				Size={new UDim2(1, 0, 0.9, 0)}
-				LightColor={new Color3(0,0,0)}
-				LightDirection={new Vector3(0,0,0)}
-			/>
 			<textlabel
 				BackgroundTransparency={1}
 				Font={Enum.Font.GothamBlack}
@@ -155,6 +150,14 @@ export function ShopCartEntry({
 			>
 				<uistroke Thickness={4} Transparency={0.63} />
 			</frame>
+			<viewportframe
+				ref={vpf}
+				BackgroundTransparency={1}
+				Position={new UDim2(0, 0, 0.1, 0)}
+				Size={new UDim2(1, 0, 0.9, 0)}
+				LightColor={new Color3(0, 0, 0)}
+				LightDirection={new Vector3(0, 0, 0)}
+			/>
 		</imagebutton>
 	)
 }
