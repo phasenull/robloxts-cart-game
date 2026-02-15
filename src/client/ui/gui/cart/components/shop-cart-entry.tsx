@@ -80,7 +80,7 @@ export function ShopCartEntry({
 			BackgroundTransparency={isOwned ? 0.2 : 0.35}
 			BorderSizePixel={0}
 			Size={new UDim2(0.227, 0, 0.18, 0)}
-			ZIndex={isSelected ? 10 : 5}
+			// ZIndex={isSelected ? 10 : 5}
 			Event={{
 				MouseButton1Click: onClick
 			}}

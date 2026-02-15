@@ -31,7 +31,7 @@ export function RightSidebar() {
 		<frame
 			key={"right-sidebar"}
 			Size={UDim2.fromScale(0.3, 0.3)}
-			Position={UIDIM.LEFT.sub(UDim2.fromScale(0, 0.15))
+			Position={UIDIM.LEFT.sub(UDim2.fromScale(0, 0.05))
 				.add(UDim2.fromOffset(10, 0))
 				.add(UDim2.fromScale(-0.4 * animatedValue, 0))}
 			AnchorPoint={UIDIM.A_LEFT}
@@ -61,7 +61,7 @@ export function RightSidebar() {
 						ClientEvents.NotificationService.sendNotification.predict({
 							description: "Can't open shop while in a cart!",
 							duration: 5,
-							title: "<font color='rgb(255,0,0)'>Error:</font>",
+							title: "<font color='rgb(255,0,0)'>Error</font>",
 							soundId: A.sounds.error
 						})
 						return
