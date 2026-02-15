@@ -41,6 +41,22 @@ export function ShopGui() {
 			return inv
 		}
 	})
+	
+	// Fetch equipped cart preference
+	const { data: equippedCart, refetch: refetchEquippedCart } = useQuery({
+		queryKey: ["player-preference", "cart"],
+		queryFn: async () => {
+			if (__IS_EDIT__) {
+				return ["Cart"]
+			}
+			const [prefs, err] =
+				await ClientFunctions.CustomizationService.getPlayerPreference.invoke("cart")
+			if (err || !prefs) {
+				return []
+			}
+			return prefs
+		}
+	})
 	const [selectedItem, setSelectedItem] = useState<IShopItem | undefined>({
 		name: "Cart",
 		price: 0
@@ -49,6 +65,10 @@ export function ShopGui() {
 	const isOwned = selectedItem
 		? (inventory?.carts?.some((cart) => cart.name === selectedItem.name) ?? false)
 		: false
+	
+	const isEquipped = selectedItem
+		? (equippedCart?.includes(selectedItem.name) ?? false)
+		: false
 
 	const handleSelectItem = (item: IShopItem) => {
 		setSelectedItem(item)
@@ -56,6 +76,7 @@ export function ShopGui() {
 
 	const handlePurchaseSuccess = () => {
 		refetchInventory()
+		refetchEquippedCart()
 	}
 	useShopPreview(selectedItem?.name)
 	const nav = useNavigator()
@@ -68,10 +89,12 @@ export function ShopGui() {
 			<ShopCartList
 				selectedItem={selectedItem}
 				onSelectItem={handleSelectItem}
+				equippedCart={equippedCart?.[0]}
 			/>
 			<ShopBottomHud
 				selectedItem={selectedItem}
 				isOwned={isOwned}
+				isEquipped={isEquipped}
 				onPurchaseSuccess={handlePurchaseSuccess}
 			/>
 		</>

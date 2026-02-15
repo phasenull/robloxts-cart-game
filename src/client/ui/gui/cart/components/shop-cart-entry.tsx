@@ -6,10 +6,11 @@ interface ShopCartEntryProps {
 	item: IShopItem
 	isSelected: boolean
 	isOwned: boolean
+	isEquipped: boolean
 	onClick: () => void
 }
 
-export function ShopCartEntry({ item, isSelected, isOwned, onClick }: ShopCartEntryProps) {
+export function ShopCartEntry({ item, isSelected, isOwned, isEquipped, onClick }: ShopCartEntryProps) {
 	// Fetch Robux price if item has product_id
 	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
 		productId: item.product_id,
@@ -20,7 +21,10 @@ export function ShopCartEntry({ item, isSelected, isOwned, onClick }: ShopCartEn
 	let displayPrice: string
 	let textColor: Color3
 	
-	if (isOwned) {
+	if (isEquipped) {
+		displayPrice = "EQUIPPED"
+		textColor = Color3.fromRGB(255, 215, 0)
+	} else if (isOwned) {
 		displayPrice = "OWNED"
 		textColor = Color3.fromRGB(150, 255, 150)
 	} else if (item.product_id !== undefined) {

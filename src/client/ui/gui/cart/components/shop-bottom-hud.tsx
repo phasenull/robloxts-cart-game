@@ -12,12 +12,14 @@ import { MarketplaceService, Players } from "@rbxts/services"
 interface ShopBottomHudProps {
 	selectedItem: IShopItem | undefined
 	isOwned: boolean
+	isEquipped: boolean
 	onPurchaseSuccess: () => void
 }
 
 export function ShopBottomHud({
 	selectedItem,
 	isOwned,
+	isEquipped,
 	onPurchaseSuccess
 }: ShopBottomHudProps) {
 	const { closeAll } = useNavigator()
@@ -119,17 +121,19 @@ export function ShopBottomHud({
 	})
 
 	const canPurchase = selectedItem && !isOwned && !isPurchasing
-	const canEquip = selectedItem && isOwned && !isEquipping
+	const canEquip = selectedItem && isOwned && !isEquipped && !isEquipping
 	const isLoading = isPurchasing || isEquipping
 	const buttonText = isLoading
 		? isEquipping
 			? "Equipping..."
 			: "Purchasing..."
-		: isOwned
-			? "Equip"
-			: selectedItem
-				? "Purchase"
-				: "Select Item"
+		: isEquipped
+			? "Equipped"
+			: isOwned
+				? "Equip"
+				: selectedItem
+					? "Purchase"
+					: "Select Item"
 	return (
 		<frame
 			key="BottomFrame"
@@ -397,7 +401,7 @@ export function ShopBottomHud({
 					Font={Enum.Font.GothamBlack}
 					Position={new UDim2(0.827, 0, 0.299, 0)}
 					Size={new UDim2(0.658, 0, 0.185, 0)}
-					Text={isOwned ? "Owned" : "Available"}
+					Text={isEquipped ? "Equipped" : isOwned ? "Owned" : "Available"}
 					TextColor3={Color3.fromRGB(200, 200, 203)}
 					TextScaled={true}
 					TextSize={14}

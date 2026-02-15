@@ -15,6 +15,7 @@ import { ButtonModel, ICart } from "shared/type.helper"
 import { DataService } from "./data.service"
 import { PRODUCTS } from "shared/purchasables"
 import { CheckpointService } from "./checkpoint.service"
+import { CustomizationService } from "./customization.service"
 import { arrow } from "@rbxts/better-gizmos"
 import StringUtils from "@rbxts/string-utils"
 import { isTester } from "shared/role.utils"
@@ -67,6 +68,17 @@ export class CartService implements OnStart {
 				this.incrementPlayerFlips(player, 25)
 			})
 		}
+		
+		// Set default cart preference if none exists
+		task.delay(1, () => {
+			const customizationService = Dependency<CustomizationService>()
+			const [prefs, err] = customizationService.getPlayerPreference(player, "cart")
+			if (!err && (!prefs || prefs.size() === 0)) {
+				// No preference set, set default cart
+				customizationService.setPreference(player, "cart", "Cart")
+			}
+		})
+		
 		player.CharacterAdded.Connect((char) => {
 			char.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
@@ -275,6 +287,14 @@ export class CartService implements OnStart {
 		return undefined
 	}
 	getPlayerSkin(player: Player): string {
+		const customizationService = Dependency<CustomizationService>()
+		const [prefs, err] = customizationService.getPlayerPreference(player, "cart")
+		
+		if (!err && prefs && prefs.size() > 0) {
+			return prefs[0]
+		}
+		
+		// Default to "Cart" if no preference set
 		return "Cart"
 	}
 	refreshPlayerProducts(player: Player) {

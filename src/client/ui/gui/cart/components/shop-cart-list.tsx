@@ -12,11 +12,13 @@ import { UIDIM } from "client/ui/constants"
 interface ShopCartListProps {
 	selectedItem: IShopItem | undefined
 	onSelectItem: (item: IShopItem) => void
+	equippedCart?: string
 }
 
 export function ShopCartList({
 	selectedItem,
-	onSelectItem
+	onSelectItem,
+	equippedCart
 }: ShopCartListProps) {
 	// Fetch cart shop items
 	const { data: cartItems, isLoading: isLoadingItems } = useQuery({
@@ -176,12 +178,14 @@ export function ShopCartList({
 					cartItems.map((item) => {
 						const isOwned = !!inventory?.carts?.some((cart) => cart.name === item.name)
 						const isSelected = selectedItem?.name === item.name
+						const isEquipped = equippedCart === item.name
 						return (
 							<ShopCartEntry
 								key={item.name}
 								item={item}
 								isSelected={isSelected}
 								isOwned={isOwned}
+								isEquipped={isEquipped}
 								onClick={() => onSelectItem(item)}
 							/>
 						)
