@@ -62,6 +62,16 @@ export function ShopGui() {
 		price: 0
 	})
 
+	// Set initial selection to equipped cart when data loads
+	useEffect(() => {
+		if (equippedCart && equippedCart.size() > 0) {
+			setSelectedItem({
+				name: equippedCart[0],
+				price: 0 // This will be overridden by actual item data
+			})
+		}
+	}, [equippedCart])
+
 	const isOwned = selectedItem
 		? (inventory?.carts?.some((cart) => cart.name === selectedItem.name) ?? false)
 		: false

@@ -116,6 +116,7 @@ export function ShopBottomHud({
 			}
 
 			UIHelper.playSound(A.sounds.pop_success)
+			onPurchaseSuccess()
 			return true
 		}
 	})

@@ -63,7 +63,8 @@ export function RigCartModel(cart_model: ICart) {
 		ball.CFrame = model.GetPivot()
 		ball.CanCollide = true
 		ball.Transparency = 1
-		const wheel = model.WHEEL
+		const wheel = model.FindFirstChild("WHEEL")
+		if (!wheel) return
 		ball.Destroying.Once(() => {
 			wheel?.Destroy()
 		})
@@ -89,7 +90,8 @@ export function RigCartModel(cart_model: ICart) {
 	wheels.GetChildren().forEach((_) => {
 		if (!_.IsA("Model")) return
 		const model = _ as IWheel
-		const wheel = model.WHEEL
+		const wheel = model.FindFirstChild("WHEEL") as Part | undefined
+		if (!wheel) return
 		const connection = model.CONNECTION
 		connection.Size = new Vector3(0.7, 0.5, 0.875)
 		const ball = model.BALL
