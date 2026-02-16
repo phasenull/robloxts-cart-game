@@ -1,4 +1,5 @@
 import { Component } from "@flamework/components"
+import { Dependency } from "@flamework/core"
 import { Players } from "@rbxts/services"
 import { CartTouch } from "shared/components/cart-touch.component"
 import { ServerEvents } from "shared/network.helper"
@@ -8,6 +9,7 @@ import {
 	MasslessPart,
 	TweenValue
 } from "shared/util.helper"
+import { CartService } from "server/services/cart.service"
 
 @Component({
 	tag: "BoxingGlovesComponent"
@@ -70,6 +72,12 @@ export class BoxingGlovesComponent extends CartTouch<Model> {
 		this.instance.Destroy()
 	}
 	onTouch(other_part: BasePart, cart_model: ICart): void {
+		// Check shield protection
+		const cart_service = Dependency<CartService>()
+		if (cart_service.hasShield(cart_model)) {
+			return
+		}
+		
 		// Check debounce
 		const now = tick()
 		const last_hit = this.debounce_map.get(cart_model)

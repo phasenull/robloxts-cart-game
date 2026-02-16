@@ -187,6 +187,14 @@ export class CartService implements OnStart {
 				// )
 				const cart_skin = this.getPlayerSkin(player)
 				const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
+				
+				if (!cart) {
+					return [false, "Failed to spawn cart"] as [false, string]
+				}
+				
+				// Add shield immediately to prevent race condition with damage parts
+				this.addShield(cart, 10)
+				
 				const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
 
 				const char = player.Character
@@ -199,32 +207,6 @@ export class CartService implements OnStart {
 				}
 				const checkpoint_service = Dependency<CheckpointService>()
 				checkpoint_service.setCheckpointIndex(player, stage)
-				if (!cart) {
-					return [false, "Failed to spawn cart"] as [false, string]
-				}
-
-				// Wait for cart to be ready and add shield (with 30 second timeout)
-				task.spawn(() => {
-					const startTime = tick()
-					const timeout = 30
-
-					// Poll for cart existence and readiness
-					while (tick() - startTime < timeout) {
-						const playerCart = this.getPlayerCart(player)
-						if (playerCart && playerCart === cart) {
-							// Cart exists and is tracked, add shield
-							this.addShield(cart, 10)
-
-							return
-						}
-						task.wait(0.1) // Check every 0.1 seconds
-					}
-
-					// Timeout reached, try to add shield anyway if cart still exists
-					if (cart.Parent) {
-						this.addShield(cart, 10)
-					}
-				})
 
 				return [true] as [true]
 			}
@@ -249,12 +231,13 @@ export class CartService implements OnStart {
 		const hitbox_group = PhysicsService.RegisterCollisionGroup("Hitbox")
 		const invincible_group = PhysicsService.RegisterCollisionGroup("Invincible")
 		PhysicsService.RegisterCollisionGroup("Players")
-		PhysicsService.CollisionGroupSetCollidable("Spike", "Players", true)
+		PhysicsService.CollisionGroupSetCollidable("Spike", "Players", false)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Players", false)
 		PhysicsService.CollisionGroupSetCollidable("Players", "Players", false)
 		PhysicsService.CollisionGroupSetCollidable("Spike", "Hitbox", false)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Hitbox", true)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Invincible", false)
+		PhysicsService.CollisionGroupSetCollidable("Players", "Invincible", false)
 		PhysicsService.CollisionGroupSetCollidable("Spike", "Default", false)
 		PhysicsService.CollisionGroupSetCollidable(
 			"Invincible",
