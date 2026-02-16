@@ -8,7 +8,7 @@ import { useCart } from "client/ui/contexts/cart.context"
 import { assets } from "shared/assets"
 import { RigCartModel } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
-import { ClientEvents } from "shared/network.helper"
+import { ClientEvents, ClientFunctions } from "shared/network.helper"
 import { __IS_EDIT__ } from "shared/config.helper"
 
 interface UseDeathPreviewProps {
@@ -72,7 +72,7 @@ export function useDeathPreview() {
 	const { data, isLoading } = useQuery({
 		queryKey: [`death-preview-cart::${spawnPoint}`],
 		queryFn: async () => {
-			const cart = buildPreviewCart(spawnPoint!)
+			const cart = await buildPreviewCart(spawnPoint!)
 			if (!cart) {throw `Failed to build preview cart for spawn point ${spawnPoint}`}
 			// Only set preview model if we're still in death screen
 			if (state === "death_screen" && !Dependency<CartController>().getMyCart()) {
@@ -91,8 +91,20 @@ export function useDeathPreview() {
 	
 	return { data, isLoading }
 }
-function buildPreviewCart(spawnPoint: CFrame) {
-	const example_cart = assets.carts.FindFirstChild("Cart")?.Clone() as ICart
+async function buildPreviewCart(spawnPoint: CFrame) {
+	// Get player's cart preference from customization service
+	let cartSkin = "Cart" // Default
+	if (!__IS_EDIT__) {
+		const [prefs, err] =
+			await ClientFunctions.CustomizationService.getPlayerPreference.invoke(
+				"cart"
+			)
+		if (!err && prefs && prefs.size() > 0) {
+			cartSkin = prefs[0]
+		}
+	}
+	
+	const example_cart = assets.carts.FindFirstChild(cartSkin)?.Clone() as ICart
 	if (!example_cart) {
 		return
 	}
