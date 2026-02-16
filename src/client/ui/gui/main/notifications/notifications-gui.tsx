@@ -13,7 +13,7 @@ export function NotificationsGui() {
 			AnchorPoint={new Vector2(0.5, 0.5)}
 			BackgroundTransparency={1}
 			Position={new UDim2(0.5, 0, 0.5, 0)}
-			Size={new UDim2(0.5, 0, 0.5, 0)}
+			Size={new UDim2(0.7, 0, 0.7, 0)}
 		>
 			<uilistlayout
 				HorizontalAlignment={Enum.HorizontalAlignment.Center}
