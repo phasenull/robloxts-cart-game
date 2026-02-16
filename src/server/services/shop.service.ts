@@ -110,7 +110,7 @@ export class ShopService implements OnStart {
 					profile.Data.inventory[item_type].push(item_name)
 				}
 				ServerEvents.NotificationService.sendNotification(player, {
-					title: "<b>Item Purchased!</b>",
+					title: "<b>Item Purchased</b>",
 					description: `<font color='#00D4FF'>${item_name}</font>`,
 					duration: 4,
 					soundId: A.sounds.reward_earned

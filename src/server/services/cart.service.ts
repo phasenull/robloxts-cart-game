@@ -386,7 +386,7 @@ export class CartService implements OnStart {
 		const player = this.getPlayerFromCart(cart)
 		if (player) {
 			ServerEvents.NotificationService.sendNotification(player, {
-				title: "<b>Shield Activated!</b>",
+				title: "<b>Shield Activated</b>",
 				description: `<font color='#00D4FF'>${duration}</font> seconds of protection`,
 				duration: 3
 			})
@@ -541,7 +541,7 @@ export class CartService implements OnStart {
 			`Incrementing revives for player ${player.Name}, new total: ${profile.Data.revives}`
 		)
 		ServerEvents.NotificationService.sendNotification(player, {
-			title: "<b>Revives Earned!</b>",
+			title: "<b>Revives Earned</b>",
 			description: `<font color='#00FF88'>+${amount}</font> ${amount === 1 ? "revive" : "revives"}`,
 			duration: 4
 		})
@@ -556,7 +556,7 @@ export class CartService implements OnStart {
 		this.logger.log(`Incrementing flips for player ${player.Name}`)
 		profile.Data.flips = (profile.Data.flips || 0) + amount
 		ServerEvents.NotificationService.sendNotification(player, {
-			title: "<b>Flips Earned!</b>",
+			title: "<b>Flips Earned</b>",
 			description: `<font color='#FFD700'>+${amount}</font> ${amount === 1 ? "flip" : "flips"}`,
 			duration: 4
 		})

@@ -5,6 +5,7 @@ import { formatCash } from "shared/util.helper"
 import { useQuery } from "@rbxts/react-query"
 import { __IS_EDIT__ } from "shared/config.helper"
 import { MOCK_CASH } from "shared/mocks"
+import { useInputType } from "../hooks/useInputType"
 
 function CashLabel() {
 	const [cash, setCash] = useState<number | undefined>(MOCK_CASH)
@@ -34,8 +35,8 @@ function CashLabel() {
 			BorderSizePixel={0}
 			AnchorPoint={new Vector2(1, 0)}
 			Position={new UDim2(1, -10, 0, 10)}
-			Size={UDim2.fromScale(.07,.07)}
-	>
+			Size={UDim2.fromScale(0.07, 0.07)}
+		>
 			<textlabel
 				key="CashText"
 				AnchorPoint={new Vector2(1, 0.5)}
@@ -160,9 +161,26 @@ function CashLabel() {
 }
 
 export function GlobalHUDGui() {
+	const device = useInputType()
 	return (
 		<frame Size={UIDIM.ONE} BackgroundTransparency={1}>
 			<CashLabel />
+			<textlabel
+				BackgroundTransparency={1}
+
+				Size={UDim2.fromScale(0.2, .03)}
+				TextScaled={true}
+				TextXAlignment={Enum.TextXAlignment.Left}
+				Position={new UDim2(0, 5, 1, -5)}
+				Interactable={false}
+				Font={Enum.Font.GothamMedium}
+				TextColor3={new Color3(1,1,1)}
+				AnchorPoint={new Vector2(0, 1)}
+				TextStrokeTransparency={0}
+				Text={`v${game.PlaceVersion}-${device.sub(0,1)}`}
+			>
+				<uiaspectratioconstraint AspectRatio={5} />
+			</textlabel>
 		</frame>
 	)
 }

@@ -105,7 +105,7 @@ export class DataService implements OnStart {
 		
 		if (amount > 0) {
 			ServerEvents.NotificationService.sendNotification(player, {
-				title: "<b>Cash Earned!</b>",
+				title: "<b>Cash Earned</b>",
 				description: `<font color='#00FF00'>+$${amount}</font>${reason ? ` - ${reason}` : ""}`,
 				duration: 4
 			});
