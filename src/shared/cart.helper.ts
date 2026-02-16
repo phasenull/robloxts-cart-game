@@ -217,6 +217,21 @@ export const getNextBigCheckpoint = (current: number) => {
 	}
 	return found
 }
+
+export const getNextSmallCheckpoint = (current: number) => {
+	let i = current
+	while (true) {
+		i += 1
+		const checkpoint = getCheckpointModelByIndex(i)
+		if (!checkpoint) {
+			return undefined
+		}
+		// Small checkpoints don't have "Spawn" child
+		if (!checkpoint.FindFirstChild("Spawn")) {
+			return checkpoint
+		}
+	}
+}
 export function getCheckpointDataFromIndex(index: number) {
 	const config = ISLAND_CONFIG[`${index}` as keyof typeof ISLAND_CONFIG]
 	if (!config) {

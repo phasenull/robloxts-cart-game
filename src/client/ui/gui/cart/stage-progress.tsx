@@ -180,7 +180,7 @@ export function StageProgress() {
 
 			<GoofyText
 				Size={UDim2.fromScale(0.3, 0.2)}
-				Text={`${getCheckpointDataFromIndex(tonumber(checkpoint.Name) || 0)?.name}`}
+				Text={`Stage: ${getCheckpointDataFromIndex(tonumber(checkpoint.Name) || 0)?.name}`}
 			/>
 		</frame>
 	)
