@@ -51,7 +51,7 @@ export class CartService implements OnStart {
 			title: "<b>New Cart Unlocked!</b>",
 			duration: 5,
 			soundId: A.sounds.party,
-			description: `<font color='#00D4FF'>${cart_name}</font>`,
+			description: `<font color='#00D4FF'>${cart_name}</font>`
 		})
 		vehicles.push(cart_name)
 		profile.Data.inventory.vehicles = vehicles
@@ -68,17 +68,20 @@ export class CartService implements OnStart {
 				this.incrementPlayerFlips(player, 25)
 			})
 		}
-		
+
 		// Set default cart preference if none exists
 		task.delay(1, () => {
 			const customizationService = Dependency<CustomizationService>()
-			const [prefs, err] = customizationService.getPlayerPreference(player, "cart")
+			const [prefs, err] = customizationService.getPlayerPreference(
+				player,
+				"cart"
+			)
 			if (!err && (!prefs || prefs.size() === 0)) {
 				// No preference set, set default cart
 				customizationService.setPreference(player, "cart", "Cart")
 			}
 		})
-		
+
 		player.CharacterAdded.Connect((char) => {
 			char.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
@@ -94,7 +97,7 @@ export class CartService implements OnStart {
 		})
 		let cooldowns = new Map<Player, number>()
 		ServerEvents.CartService.honk.connect((player) => {
-			if (cooldowns.has(player) && tick() - cooldowns.get(player)! < .5) {
+			if (cooldowns.has(player) && tick() - cooldowns.get(player)! < 0.5) {
 				return
 			}
 			cooldowns.set(player, tick())
@@ -152,12 +155,6 @@ export class CartService implements OnStart {
 						const cart2 = this.getPlayerCart(player)
 						if (cart2) {
 							this.addShield(cart2, 10)
-							ServerEvents.NotificationService.sendNotification(player, {
-								title: "<b>Shield Activated!</b>",
-								description:
-									"<font color='#00D4FF'>10 seconds</font> of protection",
-								duration: 3
-							})
 						}
 						this.refreshPlayerProducts(player)
 						return [true]
@@ -258,12 +255,14 @@ export class CartService implements OnStart {
 		PhysicsService.CollisionGroupSetCollidable("Spike", "Hitbox", false)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Hitbox", true)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Invincible", false)
+		PhysicsService.CollisionGroupSetCollidable("Spike", "Default", false)
 		PhysicsService.CollisionGroupSetCollidable(
 			"Invincible",
 			"Invincible",
 			false
 		)
 		PhysicsService.CollisionGroupSetCollidable("Invincible", "Spike", false)
+		PhysicsService.CollisionGroupSetCollidable("Invincible", "Players", false)
 	}
 	destroyPlayerCart(player: Player) {}
 	getPlayerCart(player: Player): ICart | undefined {
@@ -288,12 +287,15 @@ export class CartService implements OnStart {
 	}
 	getPlayerSkin(player: Player): string {
 		const customizationService = Dependency<CustomizationService>()
-		const [prefs, err] = customizationService.getPlayerPreference(player, "cart")
-		
+		const [prefs, err] = customizationService.getPlayerPreference(
+			player,
+			"cart"
+		)
+
 		if (!err && prefs && prefs.size() > 0) {
 			return prefs[0]
 		}
-		
+
 		// Default to "Cart" if no preference set
 		return "Cart"
 	}
@@ -370,7 +372,7 @@ export class CartService implements OnStart {
 	private readonly MAX_PARTS_DROP_PER_SECOND = 30 // Configurable limit for dropped parts
 
 	/**
-	 * Sets the collision group for Hitbox and BALL parts in a cart
+	 * Sets the collision group for all BaseParts in a cart
 	 */
 	private setCartCollisionGroup(cart: Model, group: string) {
 		cart.GetDescendants().forEach((descendant) => {
@@ -401,10 +403,9 @@ export class CartService implements OnStart {
 		const player = this.getPlayerFromCart(cart)
 		if (player) {
 			ServerEvents.NotificationService.sendNotification(player, {
-				title: "<b>Shield Extended</b>",
-				description: `<font color='#00D4FF'>+${duration}s</font>`,
-				duration: 3,
-				soundId: A.sounds.reward_earned
+				title: "<b>Shield Activated!</b>",
+				description: `<font color='#00D4FF'>${duration}</font> seconds of protection`,
+				duration: 3
 			})
 		}
 		if (wasShielded) {
