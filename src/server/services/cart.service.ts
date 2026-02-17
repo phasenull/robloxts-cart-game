@@ -350,6 +350,10 @@ export class CartService implements OnStart {
 				cart.cleanup()
 				this.PLAYER_CARTS.delete(player)
 			})
+			const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
+			if (vehicle_seat) {
+				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
+			}
 		})
 		ServerEvents.CartService.clearDeathPreview(player)
 		return cart_model
@@ -592,15 +596,15 @@ export class CartService implements OnStart {
 	spawnPlayerCart(player: Player, button: ButtonModel): Model {
 		if (this.DEBOUNCE_TABLE.has(player)) {
 			const last_time = this.DEBOUNCE_TABLE.get(player)!
-			if (tick() - last_time < 2) {
+			const existing_cart = this.PLAYER_CARTS.get(player)
+			if (tick() - last_time < 2 && existing_cart) {
 				// this.logger.warn(`Debouncing cart spawn for player ${player.Name}`)
-				return this.PLAYER_CARTS.get(player)!
+				return existing_cart
 			}
 		}
 		this.DEBOUNCE_TABLE.set(player, tick())
 		this.refreshPlayerProducts(player)
-		const existing = this.PLAYER_CARTS.get(player)
-		existing?.Destroy()
+		this.destroyExistingCartsIfAny(player)
 		const cart_skin = this.getPlayerSkin(player)
 		const orig_cart = assets.carts.FindFirstChild(cart_skin) as Model
 		assert(orig_cart, `Cart model ${cart_skin} not found in assets`)
