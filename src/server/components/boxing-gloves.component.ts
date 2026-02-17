@@ -64,7 +64,6 @@ export class BoxingGlovesComponent extends CartTouch<Model> {
 				task.wait(5)
 			}
 		})
-		const highlight = OutlineHighlight(this.instance)
 	}
 	private readonly thread: thread
 	cleanup(): void {

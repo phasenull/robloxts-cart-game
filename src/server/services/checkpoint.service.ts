@@ -51,7 +51,7 @@ export class CheckpointService implements OnStart {
 				const cart_service = Dependency<CartService>()
 				const player_cart = cart_service.getPlayerCartComponent(player)
 				player_cart?.cleanup()
-				cart_service.destroyExistingCardsIfAny(player)
+				cart_service.destroyExistingCartsIfAny(player)
 				cart_service.destroyPlayerCart(player)
 				if (typeOf(checkpoint_index) !== "number") {
 					return [false, "Invalid checkpoint index"]
@@ -101,6 +101,7 @@ export class CheckpointService implements OnStart {
 	}
 	spawnPlayerAtTheirBigCheckpoint(player: Player) {
 		const cart_service = Dependency<CartService>()
+		cart_service.destroyExistingCartsIfAny(player)
 		const player_cart = cart_service.getPlayerCartComponent(player)
 		if (player_cart) {
 			player_cart.cleanup()
@@ -131,6 +132,9 @@ export class CheckpointService implements OnStart {
 		}
 	}
 	spawnPlayerAtTheirCheckpoint(player: Player) {
+		const cart_service = Dependency<CartService>()
+		cart_service.destroyExistingCartsIfAny(player)
+
 		const checkpoint_index = this.getCheckpointIndex(player)
 		const checkpoint = this.checkpoints?.find(
 			(checkpoint) => checkpoint.Name === tostring(checkpoint_index)
@@ -161,7 +165,6 @@ export class CheckpointService implements OnStart {
 		// SMALL CHECKPOINT
 		cframe = (checkpoint.FindFirstChild("Trigger") as BasePart)?.CFrame
 		char.PivotTo(cframe)
-		const cart_service = Dependency<CartService>()
 		cart_service.spawnPlayerCartAtLocation(player, cframe)
 	}
 	getPlayerCheckpoints(player: Player): number[] {
@@ -181,12 +184,12 @@ export class CheckpointService implements OnStart {
 		if (checkpoint_index > 0) {
 			AnalyticsService.LogOnboardingFunnelStepEvent(
 				player,
-				checkpoint_index+1,
+				checkpoint_index + 1,
 				getCheckpointDataFromIndex(checkpoint_index)?.name ||
 					`unknown_checkpoint-${checkpoint_index}`
 			)
 		}
-		
+
 		if (!this.isBigCheckpoint(checkpoint_index)) {
 			return
 		}

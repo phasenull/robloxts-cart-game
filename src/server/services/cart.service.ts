@@ -299,11 +299,11 @@ export class CartService implements OnStart {
 		products.set("flips", profile.Data.flips || 0)
 		ServerEvents.CartService.playerProductsUpdated(player, products)
 	}
-	destroyExistingCardsIfAny(player: Player) {
+	destroyExistingCartsIfAny(player: Player) {
 		const existing = this.PLAYER_CARTS.get(player)
 		const dep = Dependency<Components>()
 		const all_carts = dep.getAllComponents<CartServerComponent>()
-		const my_cart = all_carts.filter((c) => c.resolvePlayer() === player)
+		const my_cart = all_carts.filter((c) => c.resolvePlayer() === player || c.instance.Name.split("_")[1] === player.Name)
 		if (existing) {
 			existing.Destroy()
 		}
@@ -320,6 +320,7 @@ export class CartService implements OnStart {
 		})
 		my_cart.forEach((cart) => {
 			cart.cleanup()
+			cart.instance?.Destroy()
 		})
 	}
 	spawnPlayerCartAtLocation(
@@ -328,13 +329,13 @@ export class CartService implements OnStart {
 		cart_skin?: string
 	): Model {
 		this.refreshPlayerProducts(player)
-		this.destroyExistingCardsIfAny(player)
+		this.destroyExistingCartsIfAny(player)
 		const target_skin = cart_skin ?? this.getPlayerSkin(player)
 		const orig_cart = assets.carts.FindFirstChild(target_skin) as Model
 		assert(orig_cart, `Cart model ${target_skin} not found in assets`)
 		const cart_model = orig_cart.Clone() as ICart
 
-		cart_model.Parent = Workspace
+		cart_model.Parent = Workspace.FindFirstChild("Carts") || Workspace
 		cart_model.PivotTo(cframe.mul(new CFrame(0, 2, 0)))
 		this.PLAYER_CARTS.set(player, cart_model)
 		const dependecy = Dependency<Components>()
@@ -615,7 +616,7 @@ export class CartService implements OnStart {
 				.mul(new CFrame(0, cart_model.GetExtentsSize().Y / 2, 0))
 				.mul(CFrame.Angles(0, math.rad(-90), 0))
 		)
-		cart_model.Parent = Workspace
+		cart_model.Parent = Workspace.FindFirstChild("Carts") || Workspace
 		this.PLAYER_CARTS.set(player, cart_model)
 		const dependecy = Dependency<Components>()
 		cart_model.Name = `${cart_model.Name}_${player.Name}`
