@@ -1,4 +1,4 @@
-import React, { Fragment } from "@rbxts/react"
+import React, { Fragment, useContext } from "@rbxts/react"
 import { useCart } from "client/ui/contexts/cart.context"
 import { CartButtons } from "./cart-buttons"
 import { SpeedometerHud } from "./cart-speedometer"
@@ -9,6 +9,7 @@ import { GoofyText } from "client/ui/components/goofy-text"
 import { MOUSE_KEYBOARD_BUTTONS, UIDIM } from "client/ui/constants"
 import Object from "@rbxts/object-utils"
 import useAnimateValue from "client/ui/hooks/useAnimateValue"
+import { GuiContext } from "client/ui/contexts/gui-manager.context"
 
 function KeyboardControls() {
 	const inputType = useInputType()
@@ -70,6 +71,14 @@ export function CartHud(props: {
 	}
 }) {
 	const {cart}= useCart()
+	const guiContext = useContext(GuiContext)
+	const isShopOpen = guiContext.open_gui === "carts"
+	
+	// Hide cart HUD when shop is open
+	if (isShopOpen) {
+		return <Fragment />
+	}
+	
 	return (
 		<Fragment>
 			{cart ? <StageProgress/> : undefined}
