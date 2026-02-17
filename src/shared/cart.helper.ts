@@ -5,7 +5,8 @@ import { ICart, IWheel } from "./type.helper"
 import {
 	BuildDeepWeldConstraints,
 	BuildWeldConstraints,
-	MasslessPart
+	MasslessPart,
+	OutlineHighlight
 } from "./util.helper"
 import StringUtils from "@rbxts/string-utils"
 export type IHandBrake = Model & {
@@ -179,6 +180,8 @@ export function RigCartModel(cart_model: ICart) {
 	motor6d.C0 = new CFrame()
 	motor6d.MaxVelocity = 0.025
 	motor6d.C1 = new CFrame(1.9, 0, 0.7).mul(CFrame.Angles(0, math.rad(90), 0))
+
+	OutlineHighlight(cart_model)
 }
 
 export const getPreviousBigCheckpoint = (current: number) => {

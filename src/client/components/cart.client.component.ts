@@ -548,7 +548,6 @@ export class CartClientComponent
 	private __is_bootstrapped = false
 	async bootstrap() {
 		if (this.__is_bootstrapped) return
-		OutlineHighlight(this.instance)
 
 		this.__is_bootstrapped = true
 		const brake_original = this.instance.WaitForChild("Brake", 1) as

@@ -84,7 +84,12 @@ export class CartService implements OnStart {
 		})
 
 		player.CharacterAdded.Connect((char) => {
+			this.logger.log(`Player ${player.Name} spawned in the world`)
 			OutlineHighlight(char)
+			const humanoid = char.WaitForChild("Humanoid") as Humanoid
+			if (humanoid) {
+				humanoid.WalkSpeed = 32
+			}
 			char.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
 					descendant.Massless = true
@@ -189,14 +194,14 @@ export class CartService implements OnStart {
 				// )
 				const cart_skin = this.getPlayerSkin(player)
 				const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
-				
+
 				if (!cart) {
 					return [false, "Failed to spawn cart"] as [false, string]
 				}
-				
+
 				// Add shield immediately to prevent race condition with damage parts
 				this.addShield(cart, 10)
-				
+
 				const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
 
 				const char = player.Character
@@ -523,6 +528,23 @@ export class CartService implements OnStart {
 
 		// Update tracker
 		tracker.droppedThisSecond += droppedCount
+
+		// Check if cart still has any BALL parts remaining
+		const remainingBalls = cart
+			.FindFirstChild("Wheels")
+			?.GetDescendants()
+			.filter((d) => d.IsA("BasePart") && d.Name === "BALL")
+
+		if ((remainingBalls?.size() || 0) < 1) {
+			// No wheels left, cleanup the cart
+			const player = this.getPlayerFromCart(cart)
+			if (player) {
+				const component = this.getPlayerCartComponent(player)
+				if (component) {
+					component.cleanup()
+				}
+			}
+		}
 	}
 	getPlayerRevives(player: Player): number {
 		const profile = this.DataService.getProfile(player)
