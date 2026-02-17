@@ -30,8 +30,12 @@ export class ElevatorComponent
 		root.Name = "ElevatorRoot"
 		root.Transparency = 1
 		root.CanCollide = false
-		root.Anchored = false
+		root.Anchored = true // Keep anchored until constraints are ready
 		root.Massless = false
+		const temp_root = this.instance.Animate.FindFirstChild("Root")
+		if (temp_root && temp_root.IsA("BasePart")) {
+			temp_root.Anchored = false
+		}
 		this.root = root
 		this.root.PivotTo(this.instance.Animate.GetPivot())
 		this.instance.Animate.GetDescendants().forEach((descendant) => {
@@ -74,22 +78,13 @@ export class ElevatorComponent
 	private readonly tween_duration = 10
 
 	onStart() {
+		// Start at the target position immediately to avoid initial delay
+		this.align_target.WorldCFrame = this.target_cframe.mul(CFrame.Angles(0, math.rad(90), 0))
+		
+		// Wait a frame for constraints to initialize, then unanchor
+		
+		
 		while (true) {
-			const tween_to_target = TweenService.Create(
-				this.align_target,
-				new TweenInfo(
-					this.tween_duration,
-					Enum.EasingStyle.Quad,
-					Enum.EasingDirection.InOut
-				),
-				{
-					WorldCFrame: this.target_cframe.mul(CFrame.Angles(0, math.rad(90), 0))
-				}
-			)
-			tween_to_target.Play()
-			tween_to_target.Completed.Wait()
-			task.wait(this.wait_duration)
-
 			const tween_to_initial = TweenService.Create(
 				this.align_target,
 				new TweenInfo(
@@ -103,6 +98,21 @@ export class ElevatorComponent
 			)
 			tween_to_initial.Play()
 			tween_to_initial.Completed.Wait()
+			task.wait(this.wait_duration)
+
+			const tween_to_target = TweenService.Create(
+				this.align_target,
+				new TweenInfo(
+					this.tween_duration,
+					Enum.EasingStyle.Quad,
+					Enum.EasingDirection.InOut
+				),
+				{
+					WorldCFrame: this.target_cframe.mul(CFrame.Angles(0, math.rad(90), 0))
+				}
+			)
+			tween_to_target.Play()
+			tween_to_target.Completed.Wait()
 			task.wait(this.wait_duration)
 		}
 	}
