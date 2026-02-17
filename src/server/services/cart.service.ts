@@ -350,11 +350,16 @@ export class CartService implements OnStart {
 				cart.cleanup()
 				this.PLAYER_CARTS.delete(player)
 			})
-			const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
-			if (vehicle_seat) {
-				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
-			}
 		})
+		// Sit player after a short delay to ensure seat is ready
+		const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
+		if (vehicle_seat && player.Character) {
+			const humanoid = player.Character.FindFirstChildOfClass("Humanoid")
+			if (humanoid) {
+				task.wait(0.1)
+				vehicle_seat.Sit(humanoid)
+			}
+		}
 		ServerEvents.CartService.clearDeathPreview(player)
 		return cart_model
 	}
@@ -632,15 +637,20 @@ export class CartService implements OnStart {
 			component.instance.Destroying.Once(() => {
 				this.PLAYER_CARTS.delete(player)
 			})
-			const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
-			if (vehicle_seat) {
-				vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
-			} else {
-				this.logger.warn(
-					`Could not find vehicle seat for cart ${cart_model.GetFullName()}`
-				)
-			}
 		})
+		// Sit player after a short delay to ensure seat is ready
+		const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
+		if (vehicle_seat && player.Character) {
+			const humanoid = player.Character.FindFirstChildOfClass("Humanoid")
+			if (humanoid) {
+				task.wait(0.1)
+				vehicle_seat.Sit(humanoid)
+			}
+		} else if (!vehicle_seat) {
+			this.logger.warn(
+				`Could not find vehicle seat for cart ${cart_model.GetFullName()}`
+			)
+		}
 		ServerEvents.CartService.clearDeathPreview(player)
 		return cart_model
 	}
