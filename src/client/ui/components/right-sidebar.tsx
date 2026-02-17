@@ -10,8 +10,6 @@ import { useCheckpoint } from "../gui/cart/hooks/useCheckpoint"
 import { getCheckpointDataFromIndex } from "shared/cart.helper"
 import useAnimateValue from "../hooks/useAnimateValue"
 import { UIHelper } from "client/ui.helper"
-import { ClientEvents } from "shared/network.helper"
-import { A } from "shared/assets"
 
 export function RightSidebar() {
 	const navigator = useNavigator()
@@ -57,15 +55,6 @@ export function RightSidebar() {
 				Size={UIDIM.ONE}
 				Text="Carts"
 				onClick={() => {
-					if (cart) {
-						ClientEvents.NotificationService.sendNotification.predict({
-							description: "Can't open shop while in a cart!",
-							duration: 5,
-							title: "<font color='rgb(255,0,0)'>Error</font>",
-							soundId: A.sounds.error
-						})
-						return
-					}
 					task.spawn(() => {
 						UIHelper.toggleFade(true)
 						task.wait(0.4)

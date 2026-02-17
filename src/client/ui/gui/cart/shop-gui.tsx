@@ -10,13 +10,9 @@ import { useShopPreview } from "./hooks/useShopPreview"
 import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation"
 import { useGarageCamera } from "./hooks/useGarageCamera"
 import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks"
-import { useCart } from "client/ui/contexts/cart.context"
-import { useNavigator } from "client/ui/hooks/useNavigator"
 import { UIHelper } from "client/ui.helper"
 
 export function ShopGui() {
-	const cart = useCart().cart
-	const nav = useNavigator()
 	const isFirstRenderRef = useRef(true)
 
 	// Fetch equipped cart preference first (needed for entrance animation)
@@ -148,11 +144,6 @@ export function ShopGui() {
 	// Only show preview after entrance animation completes
 	useShopPreview(isEntranceAnimationComplete ? selectedItem?.name : undefined)
 	
-	// Close shop if player is in a cart
-	if (cart) {
-		nav.closeAll()
-		return
-	}
 	return (
 		<>
 			<ShopCartList
