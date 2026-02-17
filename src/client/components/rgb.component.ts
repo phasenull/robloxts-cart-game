@@ -12,6 +12,7 @@ export class RgbComponent extends BaseComponent<{}, Model> implements OnStart {
 		// if (this.instance.Parent === Workspace) {
 		// 	task.wait(0.05);
 		// }
+		task.wait(.3);
 		this.instance.GetDescendants().forEach((descendant) => {
 			if (descendant.IsA("BasePart")) {
 				this.parts.push(descendant);

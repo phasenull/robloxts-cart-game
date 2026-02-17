@@ -388,7 +388,8 @@ export class CartService implements OnStart {
 			ServerEvents.NotificationService.sendNotification(player, {
 				title: "<b>Shield Activated</b>",
 				description: `<font color='#00D4FF'>${duration}</font> seconds of protection`,
-				duration: 3
+				duration: 3,
+				soundId: A.sounds.mission_success
 			})
 		}
 		if (wasShielded) {
