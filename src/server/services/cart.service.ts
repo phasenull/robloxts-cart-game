@@ -19,6 +19,7 @@ import { CustomizationService } from "./customization.service"
 import { arrow } from "@rbxts/better-gizmos"
 import StringUtils from "@rbxts/string-utils"
 import { isTester } from "shared/role.utils"
+import { OutlineHighlight } from "shared/util.helper"
 
 @Service()
 export class CartService implements OnStart {
@@ -83,6 +84,7 @@ export class CartService implements OnStart {
 		})
 
 		player.CharacterAdded.Connect((char) => {
+			OutlineHighlight(char)
 			char.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
 					descendant.Massless = true

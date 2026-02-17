@@ -104,6 +104,26 @@ export function CartButtons(props: {
 		),
 		enabled: IS_BRAKING
 	})
+
+	// Check if cart should shake flip button
+	const stuck_at = cart?.getStuckAt()
+	const speed = cart?.getSpeed() ?? 0
+	const should_shake_flip =
+		stuck_at !== undefined && tick() - stuck_at > 3 && speed < 2
+
+	const flip_shake = useAnimateValue({
+		target_value: should_shake_flip ? 1 : 0,
+		initial_value: 0,
+		tween_info: new TweenInfo(
+			0.15,
+			Enum.EasingStyle.Sine,
+			Enum.EasingDirection.InOut,
+			-1,
+			true
+		),
+		enabled: should_shake_flip
+	})
+
 	useEffect(() => {
 		if (!cart) {
 			return
@@ -139,7 +159,7 @@ export function CartButtons(props: {
 			Size={new UDim2(0.5, 0, isMobile ? 0.4 : 0.15, 0)}
 		>
 			<uiaspectratioconstraint AspectRatio={isMobile ? 1 : 5} />
-			<uiscale Scale={isMobile ? 1.3 * (value) : 1.3 - value * 0.3} />
+			<uiscale Scale={isMobile ? 1.3 * value : 1.3 - value * 0.3} />
 			<uilistlayout
 				ItemLineAlignment={
 					isMobile ? Enum.ItemLineAlignment.End : Enum.ItemLineAlignment.Center
@@ -189,8 +209,8 @@ export function CartButtons(props: {
 				<frame
 					BackgroundTransparency={1}
 					Size={isMobile ? UDim2.fromScale(1, 2) : UIDIM.ONE}
-						Position={UIDIM.CENTER}
-						AnchorPoint={UIDIM.A_CENTER}
+					Position={UIDIM.CENTER}
+					AnchorPoint={UIDIM.A_CENTER}
 				>
 					<uiaspectratioconstraint AspectRatio={isMobile ? 0.7 : 2} />
 					<RottenButton
@@ -220,15 +240,26 @@ export function CartButtons(props: {
 					FillDirection={Enum.FillDirection.Vertical}
 					Padding={new UDim(0.2, 0)}
 				/>
-				<RottenButton
+				<frame
+					BackgroundTransparency={1}
 					Size={UIDIM.ONE}
-					Ratio={2}
-					Text={`FLIP ${products.get("flips") || 0}x`}
-					onClick={() => mutateFlip()}
-					Color={new Color3(0.11, 0.75, 0.95)}
-					action="FLIP"
-					overrideDevice={props.__story?.override_device}
-				/>
+					Position={UIDIM.CENTER}
+					AnchorPoint={UIDIM.A_CENTER}
+				>
+					<uiaspectratioconstraint AspectRatio={2} />
+					<RottenButton
+						Size={UIDIM.ONE}
+						Ratio={2}
+						Text={`FLIP ${products.get("flips") || 0}x`}
+						onClick={() => mutateFlip()}
+						Color={new Color3(0.11, 0.75, 0.95)}
+						action="FLIP"
+						overrideDevice={props.__story?.override_device}
+						Rotation={should_shake_flip ? (flip_shake - 0.5) * 10 : 0}
+						Position={UIDIM.CENTER.add(new UDim2(0, 0, should_shake_flip ? -0.1 : 0, 0))}
+						AnchorPoint={UIDIM.A_CENTER}
+					/>
+				</frame>
 				<RottenButton
 					onClick={() => mutateSwitchToResetScreen()}
 					Size={UIDIM.ONE}

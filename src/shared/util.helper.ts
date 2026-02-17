@@ -136,3 +136,13 @@ export function formatCash(cash: number): string {
 	
 	return `$ ${cash}`;
 }
+export function OutlineHighlight(parent: Instance) {
+	const highlight = new Instance("Highlight")
+	highlight.FillTransparency = 1
+	highlight.Name = "OutlineHighlight"
+	highlight.OutlineTransparency = .5
+	highlight.OutlineColor = new Color3(0,0,0)
+	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	highlight.Parent = parent
+	return highlight
+}
