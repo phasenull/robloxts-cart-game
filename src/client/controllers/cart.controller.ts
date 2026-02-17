@@ -131,7 +131,7 @@ export class CartController implements OnStart {
 			const cart_position = cart_cframe.Position
 			const look_at = CFrame.lookAt(cart_position, checkpoint_position)
 				.mul(new CFrame(0, 0, -5))
-				.mul(CFrame.Angles(math.rad(90), math.rad(-90), math.rad(180)))
+				.mul(CFrame.Angles(math.rad(0), math.rad(0), math.rad(90)))
 			arrow_model.PivotTo(look_at)
 		})
 
