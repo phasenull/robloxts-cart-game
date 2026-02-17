@@ -32,24 +32,26 @@ export class ElevatorComponent
 		root.CanCollide = false
 		root.Anchored = true // Keep anchored until constraints are ready
 		root.Massless = false
-		const temp_root = this.instance.Animate.FindFirstChild("Root")
-		if (temp_root && temp_root.IsA("BasePart")) {
-			temp_root.Anchored = false
-		}
 		this.root = root
 		this.root.PivotTo(this.instance.Animate.GetPivot())
+		
+		// Make all other parts massless and weld them to root
+		// This ensures root is the physics assembly root
 		this.instance.Animate.GetDescendants().forEach((descendant) => {
 			if (descendant.IsA("BasePart") && descendant !== this.root) {
-				BuildWeldConstraints(this.root, descendant)
 				descendant.Anchored = false
+				descendant.Massless = true // Make massless so root is the physics root
+				BuildWeldConstraints(this.root, descendant)
 			}
 		})
+		
 		this.instance.Animate.PrimaryPart = this.root
 
 		// Setup AlignPosition
 		this.align_position = new Instance("AlignPosition", this.root)
 		this.align_position.Attachment0 = new Instance("Attachment", this.root)
 		this.align_position.Attachment0.Name = "AlignPositionAttachment"
+		this.align_position.Attachment0.CFrame = new CFrame(0, 0, 0)
 		// Parent to a BasePart so the constraint solver can resolve it
 		this.align_target = new Instance(
 			"Attachment",
@@ -62,6 +64,7 @@ export class ElevatorComponent
 		this.align_position.Responsiveness = 5
 		this.align_position.MaxVelocity = 20
 		this.align_position.RigidityEnabled = true
+		this.align_position.Enabled = true
 
 		// Setup AlignOrientation
 		const align_orientation = new Instance("AlignOrientation", this.root)
@@ -81,8 +84,20 @@ export class ElevatorComponent
 		// Start at the target position immediately to avoid initial delay
 		this.align_target.WorldCFrame = this.target_cframe.mul(CFrame.Angles(0, math.rad(90), 0))
 		
-		// Wait a frame for constraints to initialize, then unanchor
+		// Wait a frame for constraints to initialize
+		task.wait()
 		
+		// Double-check all parts are unanchored
+		this.instance.Animate.GetDescendants().forEach((descendant) => {
+			if (descendant.IsA("BasePart") && descendant !== this.root) {
+				descendant.Anchored = false
+			}
+		})
+		
+		this.root.Anchored = false
+		this.logger.log(`Elevator unanchored, root mass: ${this.root.Mass}`)
+		
+		task.wait(this.wait_duration)
 		
 		while (true) {
 			const tween_to_initial = TweenService.Create(
