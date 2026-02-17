@@ -3,8 +3,7 @@ import { OnStart } from "@flamework/core"
 import { TweenService, Workspace } from "@rbxts/services"
 import { Logger } from "shared/logger"
 import {
-	BuildWeldConstraints,
-	MasslessPart
+	BuildWeldConstraints
 } from "shared/util.helper"
 
 @Component({
@@ -25,10 +24,18 @@ export class ElevatorComponent
 
 	constructor(private logger: Logger) {
 		super()
-		this.root = MasslessPart(this.instance.Animate, "ElevatorRoot")
+		// Create root part with mass so it becomes the physics assembly root
+		const root = new Instance("Part", this.instance.Animate)
+		root.Size = new Vector3(1, 1, 1)
+		root.Name = "ElevatorRoot"
+		root.Transparency = 1
+		root.CanCollide = false
+		root.Anchored = false
+		root.Massless = false
+		this.root = root
 		this.root.PivotTo(this.instance.Animate.GetPivot())
 		this.instance.Animate.GetDescendants().forEach((descendant) => {
-			if (descendant.IsA("BasePart")) {
+			if (descendant.IsA("BasePart") && descendant !== this.root) {
 				BuildWeldConstraints(this.root, descendant)
 				descendant.Anchored = false
 			}
@@ -39,9 +46,10 @@ export class ElevatorComponent
 		this.align_position = new Instance("AlignPosition", this.root)
 		this.align_position.Attachment0 = new Instance("Attachment", this.root)
 		this.align_position.Attachment0.Name = "AlignPositionAttachment"
+		// Parent to a BasePart so the constraint solver can resolve it
 		this.align_target = new Instance(
 			"Attachment",
-			Workspace.FindFirstChild("runtime") as Folder
+			Workspace.FindFirstChild("runtime") as BasePart
 		)
 		this.align_target.Name = "ElevatorAlignTarget"
 		this.align_target.WorldCFrame = this.initial_cframe
