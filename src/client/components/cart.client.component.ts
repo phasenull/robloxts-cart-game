@@ -680,9 +680,6 @@ export class CartClientComponent
 				return false
 			}
 			if (ray.Instance.Name === "AntiRevive") {
-				if (!this.stuck_at) {
-					this.stuck_at = tick()
-				}
 				return false
 			}
 		}
