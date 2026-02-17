@@ -32,6 +32,7 @@ export class ElevatorComponent
 		root.CanCollide = false
 		root.Anchored = true // Keep anchored until constraints are ready
 		root.Massless = false
+		root.CollisionGroup = "Default"
 		this.root = root
 		this.root.PivotTo(this.instance.Animate.GetPivot())
 		
@@ -41,6 +42,15 @@ export class ElevatorComponent
 			if (descendant.IsA("BasePart") && descendant !== this.root) {
 				descendant.Anchored = false
 				descendant.Massless = true // Make massless so root is the physics root
+				descendant.CollisionGroup = "Default" // Use default collision
+				// Set physical properties to prevent bouncing
+				descendant.CustomPhysicalProperties = new PhysicalProperties(
+					0.7, // Density
+					0.5, // Friction (some friction to keep cart on platform)
+					0, // Elasticity (no bounce)
+					1, // FrictionWeight
+					1 // ElasticityWeight
+				)
 				BuildWeldConstraints(this.root, descendant)
 			}
 		})
@@ -61,8 +71,8 @@ export class ElevatorComponent
 		this.align_target.WorldCFrame = this.initial_cframe
 		this.align_position.Attachment1 = this.align_target
 		this.align_position.MaxForce = math.huge
-		this.align_position.Responsiveness = 5
-		this.align_position.MaxVelocity = 20
+		this.align_position.Responsiveness = 20 // Higher for very smooth movement
+		this.align_position.MaxVelocity = 15 // Reduced to prevent physics issues
 		this.align_position.RigidityEnabled = true
 		this.align_position.Enabled = true
 
@@ -104,7 +114,7 @@ export class ElevatorComponent
 				this.align_target,
 				new TweenInfo(
 					this.tween_duration,
-					Enum.EasingStyle.Quad,
+					Enum.EasingStyle.Sine, // Smoother than Quad for moving platforms
 					Enum.EasingDirection.InOut
 				),
 				{
@@ -119,7 +129,7 @@ export class ElevatorComponent
 				this.align_target,
 				new TweenInfo(
 					this.tween_duration,
-					Enum.EasingStyle.Quad,
+					Enum.EasingStyle.Sine, // Smoother than Quad for moving platforms
 					Enum.EasingDirection.InOut
 				),
 				{
