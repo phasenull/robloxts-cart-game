@@ -1,33 +1,33 @@
-import React, { InstanceProps } from "react"
+import React, { InstanceProps } from "react";
 export function GoofyText(
 	props: React.InstanceProps<TextLabel> & {
-		MaxTextSize?: number
-		MinTextSize?: number
-		Text: string
-		Ratio?: number
-		children?: any
-		Thickness?: number
-		Font?: Enum.Font
-		IgnoreTextSizing?: boolean
-		ZIndex?: number
-		Selectable?: boolean
-		Italic?: boolean
-		TextTransparency?: number
-		TextXAlignment?: Enum.TextXAlignment
-		TextYAlignment?: Enum.TextYAlignment
-		FontWeight?: Enum.FontWeight
-		RichText?: boolean
-	}
+		MaxTextSize?: number;
+		MinTextSize?: number;
+		Text: string;
+		Ratio?: number;
+		children?: any;
+		Thickness?: number;
+		Font?: Enum.Font;
+		IgnoreTextSizing?: boolean;
+		ZIndex?: number;
+		Selectable?: boolean;
+		Italic?: boolean;
+		TextTransparency?: number;
+		TextXAlignment?: Enum.TextXAlignment;
+		TextYAlignment?: Enum.TextYAlignment;
+		FontWeight?: Enum.FontWeight;
+		RichText?: boolean;
+	},
 ) {
 	const TargetComponent = props.Selectable
 		? (props: InstanceProps<TextBox>) => <textbox {...props} />
-		: (props: InstanceProps<TextLabel>) => <textlabel {...props} />
+		: (props: InstanceProps<TextLabel>) => <textlabel {...props} />;
 	return (
 		<TargetComponent
 			{...(props.Selectable
 				? {
 						TextEditable: false,
-						ClearTextOnFocus: false
+						ClearTextOnFocus: false,
 					}
 				: {})}
 			RichText={props.RichText || false}
@@ -41,6 +41,7 @@ export function GoofyText(
 					props.Italic ? Enum.FontStyle.Italic : Enum.FontStyle.Normal,
 				)
 			}
+			Rotation={props.Rotation}
 			ZIndex={props.ZIndex || 1}
 			Size={props.Size || new UDim2(0.3, 0, 0.3, 0)}
 			TextColor3={props.TextColor3 || new Color3(1, 1, 1)}
@@ -68,5 +69,5 @@ export function GoofyText(
 			)}
 			{props.children}
 		</TargetComponent>
-	)
+	);
 }

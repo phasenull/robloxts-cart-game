@@ -6,7 +6,7 @@ export default function useAnimateValue(args: {
 	tween_info?: TweenInfo
 	ignore_settings?: boolean
 	initial_value?: number
-	enabled?: boolean
+	enabled?: boolean,
 }) {
 	const settings = useSettings()
 	const [value, setValue] = useState(args.initial_value || 0)

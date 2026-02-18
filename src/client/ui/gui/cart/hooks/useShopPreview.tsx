@@ -61,6 +61,7 @@ export function useShopPreview(cart_name?: string) {
 				0.5,
 				Enum.EasingStyle.Quad
 			)
+			animator_model.Name = "__old_temp"
 			states.filterUndefined().map((state) => {
 				if (state.tween.PlaybackState === Enum.PlaybackState.Playing) {
 					state.tween.Completed.Wait()

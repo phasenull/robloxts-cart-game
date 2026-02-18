@@ -1,18 +1,18 @@
-import React from "@rbxts/react"
-import { UIDIM } from "../constants"
+import React from "@rbxts/react";
+import { UIDIM } from "../constants";
 
 export function ProgressBarComponent(props: {
-	progress: number
-	total_duration?: number
-	Color?: Color3
-	Size?: UDim2
-	Position?: UDim2
-	Text?: string
-	AnchorPoint?: Vector2
-	children?: React.ReactNode
+	progress: number;
+	total_duration?: number;
+	Color?: Color3;
+	Size?: UDim2;
+	Position?: UDim2;
+	Text?: string;
+	AnchorPoint?: Vector2;
+	children?: React.ReactNode;
 }) {
-	const target_color = props.Color ?? Color3.fromRGB(249, 65, 0)
-	const tinted_color = target_color.Lerp(Color3.fromRGB(255, 255, 255), 0.8)
+	const target_color = props.Color ?? Color3.fromRGB(249, 65, 0);
+	const tinted_color = target_color.Lerp(Color3.fromRGB(255, 255, 255), 0.8);
 	return (
 		<frame
 			key="Countdown"
@@ -34,7 +34,7 @@ export function ProgressBarComponent(props: {
 						Color={
 							new ColorSequence([
 								new ColorSequenceKeypoint(0, tinted_color),
-								new ColorSequenceKeypoint(1, target_color)
+								new ColorSequenceKeypoint(1, target_color),
 							])
 						}
 						Rotation={90}
@@ -46,7 +46,7 @@ export function ProgressBarComponent(props: {
 				Transparency={
 					new NumberSequence([
 						new NumberSequenceKeypoint(0, 0.6, 0),
-						new NumberSequenceKeypoint(1, 0.256, 0)
+						new NumberSequenceKeypoint(1, 0.256, 0),
 					])
 				}
 			/>
@@ -59,7 +59,7 @@ export function ProgressBarComponent(props: {
 					new Font(
 						"rbxasset://fonts/families/GothamSSm.json",
 						Enum.FontWeight.Regular,
-						Enum.FontStyle.Normal
+						Enum.FontStyle.Normal,
 					)
 				}
 				Position={new UDim2(0.932, 0, 0.5, 0)}
@@ -85,7 +85,9 @@ export function ProgressBarComponent(props: {
 				TileSize={new UDim2(0, 50, 0, 50)}
 			/>
 			<uiaspectratioconstraint
-				AspectRatio={24.197}
+				AspectRatio={
+					props.Size ? props.Size.X.Scale / props.Size.Y.Scale : 24.197
+				}
 				AspectType={Enum.AspectType.ScaleWithParentSize}
 				DominantAxis={Enum.DominantAxis.Height}
 			/>
@@ -102,5 +104,5 @@ export function ProgressBarComponent(props: {
 			{props.children}
 			<uistroke Color={Color3.fromRGB(41, 41, 41)} Thickness={4} />
 		</frame>
-	)
+	);
 }
