@@ -2,7 +2,7 @@ import { Dependency, OnStart, Service } from "@flamework/core"
 import { AnalyticsService, MarketplaceService, Players } from "@rbxts/services"
 import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
-import { PRODUCTS, ISLAND_SKIP_PRODUCTS } from "shared/purchasables"
+import { PRODUCTS, ISLAND_SKIP_PRODUCTS, getAllBigCheckpoints } from "shared/purchasables"
 import { IPurchasableConfig, IReward, IRewardType } from "shared/type.helper"
 import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
@@ -65,7 +65,7 @@ export class MonetizationService implements OnStart {
 			const highest_unlocked = collected.sort((a, b) => a > b)[0] || 0
 			
 			// Calculate target checkpoint based on skip count
-			const big_checkpoints = [0, 2, 4, 6]
+			const big_checkpoints = getAllBigCheckpoints()
 			const current_index = big_checkpoints.indexOf(highest_unlocked)
 			
 			if (current_index !== -1 && current_index + skip_count < big_checkpoints.size()) {

@@ -1,3 +1,5 @@
+import { ISLAND_CONFIG } from "./cart.helper"
+
 export const purchasables = {
 	gamepasses: [
 		// 1694311829,1691413212
@@ -34,9 +36,32 @@ export function getIslandSkipProduct(skipCount: number): number | undefined {
 	return ISLAND_SKIP_PRODUCTS.get(skipCount)
 }
 
+// Cache for big checkpoint indices
+let cachedCheckpoints: number[] | undefined
+
+// Helper function to get all big checkpoint indices dynamically
+export function getAllBigCheckpoints(): number[] {
+	if (cachedCheckpoints) {
+		return cachedCheckpoints
+	}
+	
+	const checkpoints: number[] = []
+	
+	for (const [key] of pairs(ISLAND_CONFIG)) {
+		const num = tonumber(key)
+		if (num !== undefined) {
+			checkpoints.push(num)
+		}
+	}
+	checkpoints.sort((a: number, b: number) => a < b)
+	
+	cachedCheckpoints = checkpoints
+	return checkpoints
+}
+
 // Helper function to calculate how many big checkpoints between two indices
 export function calculateBigCheckpointSkips(from: number, to: number): number {
-	const checkpoints = [0, 2, 4, 6] // Big checkpoint indices
+	const checkpoints = getAllBigCheckpoints()
 	const fromIndex = checkpoints.indexOf(from)
 	const toIndex = checkpoints.indexOf(to)
 	
