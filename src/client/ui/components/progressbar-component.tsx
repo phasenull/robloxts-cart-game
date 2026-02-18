@@ -9,6 +9,7 @@ export function ProgressBarComponent(props: {
 	Position?: UDim2;
 	Text?: string;
 	AnchorPoint?: Vector2;
+	text_size_multiplier?:number
 	children?: React.ReactNode;
 }) {
 	const target_color = props.Color ?? Color3.fromRGB(249, 65, 0);
@@ -63,12 +64,10 @@ export function ProgressBarComponent(props: {
 					)
 				}
 				Position={new UDim2(0.932, 0, 0.5, 0)}
-				Size={new UDim2(0.863, 0, 0.782, 0)}
+				Size={new UDim2(0.863 * (props.text_size_multiplier ?? 1), 0, 0.782 * (props.text_size_multiplier ?? 1), 0)}
 				Text={props.Text ?? ""}
 				TextColor3={Color3.fromRGB(255, 255, 255)}
 				TextScaled={true}
-				TextSize={14}
-				TextWrapped={true}
 				ZIndex={2}
 			>
 				<uistroke Thickness={3} />

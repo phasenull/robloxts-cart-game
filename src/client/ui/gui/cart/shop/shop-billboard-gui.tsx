@@ -70,6 +70,7 @@ export function ShopBillboardGui(props: {
 								GroupTransparency={1 - animated_value}
 							>
 								<ProgressBarComponent
+									text_size_multiplier={2}
 									Text={props.text}
 									Color={
 										progress < 0.15
