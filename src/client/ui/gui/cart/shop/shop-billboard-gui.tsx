@@ -63,14 +63,15 @@ export function ShopBillboardGui(props: {
 							ClipsDescendants={false}
 							Rotation={-(180 + 70)}
 						>
-							<canvasgroup
+							<frame
 								Size={UDim2.fromScale(10, 5)}
 								AnchorPoint={UIDIM.A_BOTTOM}
 								Position={UIDIM.CENTER}
-								GroupTransparency={1 - animated_value}
+								ClipsDescendants={false}
+								BackgroundTransparency={1}
 							>
 								<ProgressBarComponent
-									text_size_multiplier={2}
+									text_size_multiplier={1}
 									Text={props.text}
 									Color={
 										progress < 0.15
@@ -82,9 +83,9 @@ export function ShopBillboardGui(props: {
 													: new Color3(0, 1, 0)
 									}
 									progress={props.progress}
-									Size={UDim2.fromScale(300, 20)}
+									Size={UDim2.fromScale(600,120)}
 								/>
-							</canvasgroup>
+							</frame>
 						</frame>
 					</Line>
 				</Line>
