@@ -70,16 +70,26 @@ export class CartService implements OnStart {
 			})
 		}
 
-		// Set default cart preference if none exists
+		// Set default cart and honk preferences if none exist
 		task.delay(1, () => {
 			const customizationService = Dependency<CustomizationService>()
-			const [prefs, err] = customizationService.getPlayerPreference(
+			
+			// Set default cart
+			const [cartPrefs, cartErr] = customizationService.getPlayerPreference(
 				player,
 				"cart"
 			)
-			if (!err && (!prefs || prefs.size() === 0)) {
-				// No preference set, set default cart
+			if (!cartErr && (!cartPrefs || cartPrefs.size() === 0)) {
 				customizationService.setPreference(player, "cart", "Cart")
+			}
+			
+			// Set default honk
+			const [honkPrefs, honkErr] = customizationService.getPlayerPreference(
+				player,
+				"honk"
+			)
+			if (!honkErr && (!honkPrefs || honkPrefs.size() === 0)) {
+				customizationService.setPreference(player, "honk", "Pizza Scream")
 			}
 		})
 
@@ -108,8 +118,29 @@ export class CartService implements OnStart {
 				return
 			}
 			cooldowns.set(player, tick())
-			const sound = assets.FindFirstChild("Honk") as Sound
-			assert(sound, "Honk sound not found in assets")
+			
+			// Get player's honk preference
+			const customizationService = Dependency<CustomizationService>()
+			const [honkPrefs] = customizationService.getPlayerPreference(player, "honk")
+			const honkName = (honkPrefs && honkPrefs.size() > 0) ? honkPrefs[0] : "Pizza Scream"
+			
+			const sound = assets.honks.FindFirstChild(honkName) as Sound
+			if (!sound) {
+				this.logger.warn(`Honk sound "${honkName}" not found in assets, using default`)
+				const defaultSound = assets.honks.FindFirstChild("Pizza Scream") as Sound
+				if (!defaultSound) return
+				const cart = this.getPlayerCart(player)
+				if (cart) {
+					const cloned = defaultSound.Clone()
+					cloned.Parent = cart.FindFirstChild("Root")
+					cloned.Play()
+					cloned.Ended.Once(() => {
+						cloned.Destroy()
+					})
+				}
+				return
+			}
+			
 			const cart = this.getPlayerCart(player)
 			if (cart) {
 				const cloned = sound.Clone()

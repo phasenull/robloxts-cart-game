@@ -93,6 +93,7 @@ export namespace A {
 export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {
 	log_base:log_base,
 	carts: Folder,
+	honks:Folder,
 	CheckpointVisuals:Model & { checkpoint_visual: Part },
 	PointArrow: BasePart
 }
