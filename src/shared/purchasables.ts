@@ -14,8 +14,6 @@ export const PRODUCTS = {
 	
 	// Island unlock products (skip-based)
 	unlock_island_skip_1: 3535471413, // Skip 1 island
-	unlock_island_skip_2: 3539903167, // Skip 2 islands
-	unlock_island_skip_3: 3539903264, // Skip 3 islands
 }
 
 // Map of number of islands to skip to product ID
@@ -23,8 +21,12 @@ export const PRODUCTS = {
 // Value: product ID for that skip amount
 export const ISLAND_SKIP_PRODUCTS: Map<number, number> = new Map([
 	[1, PRODUCTS.unlock_island_skip_1],
-	[2, PRODUCTS.unlock_island_skip_2],
-	[3, PRODUCTS.unlock_island_skip_3],
+	[2, 3539903167],
+	[3, 3539903264],
+	[4, 3539906057],
+	[5, 3539906238],
+	[6, 3539906322],
+	[7, 3539906434],
 ])
 
 // Helper function to get product ID based on skip count
