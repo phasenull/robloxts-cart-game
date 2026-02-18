@@ -6,6 +6,7 @@ export function ProgressBarComponent(props: {
 	total_duration?: number;
 	Color?: Color3;
 	Size?: UDim2;
+	Ratio?: number;
 	Position?: UDim2;
 	Text?: string;
 	AnchorPoint?: Vector2;
@@ -85,7 +86,7 @@ export function ProgressBarComponent(props: {
 			/>
 			<uiaspectratioconstraint
 				AspectRatio={
-					props.Size ? props.Size.X.Scale / props.Size.Y.Scale : 24.197
+					props.Ratio ?? 24.197
 				}
 				AspectType={Enum.AspectType.ScaleWithParentSize}
 				DominantAxis={Enum.DominantAxis.Height}

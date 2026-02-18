@@ -2,7 +2,7 @@ import { Dependency, OnStart, Service } from "@flamework/core"
 import { AnalyticsService, MarketplaceService, Players } from "@rbxts/services"
 import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
-import { PRODUCTS } from "shared/purchasables"
+import { PRODUCTS, ISLAND_SKIP_PRODUCTS } from "shared/purchasables"
 import { IPurchasableConfig, IReward, IRewardType } from "shared/type.helper"
 import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
@@ -49,6 +49,43 @@ export class MonetizationService implements OnStart {
 		const purchasables = this.getPurchasables()
 		const product_id = reciept.ProductId
 		const purchasable = purchasables.find((p) => p.product_id === product_id)
+		
+		// Check if it's an island skip product
+		let skip_count: number | undefined
+		ISLAND_SKIP_PRODUCTS.forEach((prod_id, skip_amount) => {
+			if (prod_id === product_id) {
+				skip_count = skip_amount
+			}
+		})
+		
+		if (skip_count !== undefined) {
+			// Get player's highest unlocked checkpoint
+			const checkpoint_service = Dependency<CheckpointService>()
+			const collected = checkpoint_service.getPlayerCheckpoints(player)
+			const highest_unlocked = collected.sort((a, b) => a > b)[0] || 0
+			
+			// Calculate target checkpoint based on skip count
+			const big_checkpoints = [0, 2, 4, 6]
+			const current_index = big_checkpoints.indexOf(highest_unlocked)
+			
+			if (current_index !== -1 && current_index + skip_count < big_checkpoints.size()) {
+				const target_checkpoint = big_checkpoints[current_index + skip_count]
+				
+				// Unlock all checkpoints up to and including target
+				for (let i = current_index + 1; i <= current_index + skip_count; i++) {
+					const checkpoint_to_unlock = big_checkpoints[i]
+					const virtual_reward: IReward<"unlock_island"> = {
+						type: "unlock_island",
+						descriptor: undefined as never,
+						value: checkpoint_to_unlock,
+						handler: undefined
+					}
+					this.giveRewardToPlayer(player, virtual_reward, `island_skip_${skip_count}_purchase`)
+				}
+				
+				return Enum.ProductPurchaseDecision.PurchaseGranted
+			}
+		}
 		
 		// If not found in PurchasableConfig, check CartConfig
 		if (!purchasable) {
@@ -174,6 +211,19 @@ export class MonetizationService implements OnStart {
 					reward.descriptor
 				)
 				break
+			case "unlock_island": {
+				const checkpoint_service = Dependency<CheckpointService>()
+				const checkpoint_index = reward.value
+				checkpoint_service.unlockCheckpointForPlayer(player, checkpoint_index)
+				const data = getCheckpointDataFromIndex(checkpoint_index)
+				ServerEvents.NotificationService.sendNotification.fire(player, {
+					description: `<font color="rgb(255, 215, 0)">${data?.name || "Unknown Island"}</font> is now unlocked!`,
+					title: "Island Unlocked",
+					duration: 5,
+					soundId: A.sounds.reward_earned
+				})
+				break
+			}
 			default:
 				this.logger.warn(`Unknown reward type ${reward.type}`)
 		}
