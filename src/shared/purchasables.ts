@@ -1,3 +1,5 @@
+import { ISLAND_CONFIG } from "./cart.helper"
+
 export const purchasables = {
 	gamepasses: [
 		// 1694311829,1691413212
@@ -10,5 +12,62 @@ export const PRODUCTS = {
 	revives: 3532858318,
 
 	revives_10:3534758322,
-	skip_island:3535471413
+	skip_island:3535471413,
+	
+	// Island unlock products (skip-based)
+	unlock_island_skip_1: 3535471413, // Skip 1 island
+}
+
+// Map of number of islands to skip to product ID
+// Key: number of big checkpoints to skip
+// Value: product ID for that skip amount
+export const ISLAND_SKIP_PRODUCTS: Map<number, number> = new Map([
+	[1, PRODUCTS.unlock_island_skip_1],
+	[2, 3539903167],
+	[3, 3539903264],
+	[4, 3539906057],
+	[5, 3539906238],
+	[6, 3539906322],
+	[7, 3539906434],
+])
+
+// Helper function to get product ID based on skip count
+export function getIslandSkipProduct(skipCount: number): number | undefined {
+	return ISLAND_SKIP_PRODUCTS.get(skipCount)
+}
+
+// Cache for big checkpoint indices
+let cachedCheckpoints: number[] | undefined
+
+// Helper function to get all big checkpoint indices dynamically
+export function getAllBigCheckpoints(): number[] {
+	if (cachedCheckpoints) {
+		return cachedCheckpoints
+	}
+	
+	const checkpoints: number[] = []
+	
+	for (const [key] of pairs(ISLAND_CONFIG)) {
+		const num = tonumber(key)
+		if (num !== undefined) {
+			checkpoints.push(num)
+		}
+	}
+	checkpoints.sort((a: number, b: number) => a < b)
+	
+	cachedCheckpoints = checkpoints
+	return checkpoints
+}
+
+// Helper function to calculate how many big checkpoints between two indices
+export function calculateBigCheckpointSkips(from: number, to: number): number {
+	const checkpoints = getAllBigCheckpoints()
+	const fromIndex = checkpoints.indexOf(from)
+	const toIndex = checkpoints.indexOf(to)
+	
+	if (fromIndex === -1 || toIndex === -1 || toIndex <= fromIndex) {
+		return 0
+	}
+	
+	return toIndex - fromIndex
 }

@@ -34,7 +34,7 @@ export type IPurchasable = {
 };
 
 export type IDescriptableReward = "cart" | "lucky_block";
-export type IValuableReward = "cash" | "revives" | "flips" | "skip_island";
+export type IValuableReward = "cash" | "revives" | "flips" | "skip_island" | "unlock_island";
 export type IRewardType = IDescriptableReward | IValuableReward | "custom";
 export type IReward<
 	T extends IRewardType

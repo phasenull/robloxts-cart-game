@@ -14,6 +14,8 @@ import { Dependency } from "@flamework/core"
 import { CartController } from "client/controllers/cart.controller"
 import { useCart } from "client/ui/contexts/cart.context"
 import { getCheckpointDataFromIndex, ISLAND_CONFIG } from "shared/cart.helper"
+import { calculateBigCheckpointSkips, getIslandSkipProduct } from "shared/purchasables"
+import { MarketplaceService } from "@rbxts/services"
 
 export function TPGui() {
 	const { collectedCheckpoints, refresh } = useCheckpoint()
@@ -86,6 +88,7 @@ export function TPGui() {
 								tonumber(checkpoint_index) as number
 							)
 						}
+						collectedCheckpoints={collectedCheckpoints}
 					/>
 				))}
 
@@ -243,14 +246,32 @@ export function TPGui() {
 function CheckpointEntry(props: {
 	checkpoint_index: number
 	is_locked: boolean
+	collectedCheckpoints: number[]
 }) {
 	const config = getCheckpointDataFromIndex(props.checkpoint_index)
 	const navigator = useNavigator()
+	
+	// Calculate highest unlocked checkpoint
+	const highestUnlocked = props.collectedCheckpoints.sort((a, b) => a > b)[0] || 0
+	
+	// Calculate how many islands need to be skipped
+	const skipCount = calculateBigCheckpointSkips(highestUnlocked, props.checkpoint_index)
+	
 	const { mutate, isLoading } = useMutation({
 		queryKey: [`tpToCheckpoint-${props.checkpoint_index}`],
 		mutationFn: async (checkpoint_index: number) => {
 			if (props.is_locked) {
-				UIHelper.playSound(A.sounds.error)
+				// Prompt purchase based on skip count
+				const product_id = getIslandSkipProduct(skipCount)
+				if (product_id) {
+					MarketplaceService.PromptProductPurchase(
+						game.GetService("Players").LocalPlayer,
+						product_id
+					)
+				} else {
+					UIHelper.playSound(A.sounds.error)
+					warn(`No product found for skip count: ${skipCount}`)
+				}
 				return true
 			}
 			if (__IS_EDIT__) {
@@ -338,14 +359,14 @@ function CheckpointEntry(props: {
 				Size={UDim2.fromScale(0.3, 0.5)}
 				Color={
 					props.is_locked
-						? new Color3(0.29, 0.29, 0.29)
+						? new Color3(1, 0.65, 0) // Orange color for unlock
 						: new Color3(0.01, 1, 0.34)
 				}
 				onClick={() => {
 					if (isLoading) return
 					mutate(props.checkpoint_index)
 				}}
-				Text={props.is_locked ? "LOCKED" : "TP"}
+				Text={props.is_locked ? "UNLOCK" : "TP"}
 				AnchorPoint={UIDIM.A_BOTTOM_RIGHT}
 			/>
 			<frame

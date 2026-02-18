@@ -215,4 +215,27 @@ export class CheckpointService implements OnStart {
 	processPlayerDeath(player: Player) {
 		return this.spawnPlayerAtTheirCheckpoint(player)
 	}
+	unlockCheckpointForPlayer(player: Player, checkpoint_index: number) {
+		const profile_service = Dependency<DataService>()
+		const profile = profile_service.getProfile(player)
+		if (!profile) {
+			this.logger.warn(
+				`Profile not found for player ${player.Name} when unlocking checkpoint`
+			)
+			return false
+		}
+		const collected_checkpoints = profile.Data.collected_checkpoints
+		if (!collected_checkpoints.includes(checkpoint_index)) {
+			collected_checkpoints.push(checkpoint_index)
+			profile.Save()
+			// Notify client of the update
+			ServerEvents.CheckpointService.updateCheckpointState.fire(
+				player,
+				this.getCheckpointIndex(player),
+				collected_checkpoints
+			)
+			return true
+		}
+		return false
+	}
 }
