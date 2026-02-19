@@ -27,13 +27,6 @@ export function useProductPrice({ productId, enabled = true }: UseProductPriceOp
 				return undefined
 			}
 
-			if (__IS_EDIT__ ) {
-				// Mock data for Studio/UI labs
-				return {
-					PriceInRobux: 100 + (productId % 500)
-				} as DeveloperProductInfo
-			}
-
 			const info = MarketplaceService.GetProductInfoAsync(
 				productId,
 				Enum.InfoType.Product

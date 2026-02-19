@@ -5,20 +5,22 @@ interface CurrenciesFrameProps {
 	layoutOrder?: number
 }
 
-export function CurrenciesFrame({ children, layoutOrder = 9 }: CurrenciesFrameProps) {
+export function CurrenciesFrame({ children}: CurrenciesFrameProps) {
 	return (
 		<frame
 			key="CurrenciesPage"
 			BackgroundTransparency={1}
-			LayoutOrder={layoutOrder}
 			Position={new UDim2(0.028, 0, 0.181, 0)}
-			Size={new UDim2(0.9450000000000001, 0, 0.27, 0)}
+			Size={new UDim2(0.94, 0, 0.5, 0)}
 		>
 			<uigridlayout
-				CellPadding={new UDim2(0.02, 0, 0.06, 0)}
-				CellSize={new UDim2(0.32, 0, 0.45, 0)}
+				CellPadding={new UDim2(0.03, 0, 0.07, 0)}
+				CellSize={new UDim2(1, 0, .56, 0)}
 				SortOrder={Enum.SortOrder.LayoutOrder}
-			/>
+				HorizontalAlignment={Enum.HorizontalAlignment.Center}
+			>
+				<uiaspectratioconstraint AspectRatio={1.5} />
+			</uigridlayout>
 			{children}
 		</frame>
 	)

@@ -206,6 +206,7 @@ export function RottenShopGui() {
 				ScrollBarThickness={8}
 				Size={new UDim2(1, 0, 0.866, 0)}
 				ScrollingDirection={Enum.ScrollingDirection.Y}
+				BorderSizePixel={0}
 				ClipsDescendants={true}
 			>
 				<uilistlayout
@@ -214,8 +215,6 @@ export function RottenShopGui() {
 					SortOrder={Enum.SortOrder.LayoutOrder}
 				/>
 				<uipadding
-					PaddingBottom={new UDim(0, 15)}
-					PaddingTop={new UDim(0, 15)}
 					PaddingLeft={new UDim(0, 10)}
 					PaddingRight={new UDim(0, 10)}
 				/>

@@ -8,6 +8,8 @@ import { SoleCartsFrame } from "./pages/carts/sole-carts-frame"
 import { SoleCartEntry } from "./pages/carts/sole-cart-entry"
 import { A } from "shared/assets"
 import { RainbowGradient } from "shared/util.helper"
+import { CurrenciesFrame } from "./pages/currencies/currencies-frame"
+import { CurrencyEntry } from "./pages/currencies/currency-entry"
 
 export function RottenShopList() {
 	return (
@@ -26,6 +28,16 @@ export function RottenShopList() {
 				<SoleCartEntry backgroundImage={A.backgrounds.box_weld} cartName="Spiky Cart" description="Damage others!" />
 			</SoleCartsFrame>
 			<Br H={.05}/>
+			<TileEntry title="Utilities" />
+			<CurrenciesFrame>
+				<CurrencyEntry productId={3540755388} />
+				<CurrencyEntry productId={3540755332} />
+				<CurrencyEntry productId={3535705767} />
+				<CurrencyEntry productId={3534759926} />
+				<CurrencyEntry productId={3534758322} />
+				<CurrencyEntry productId={3535708292}  />
+			</CurrenciesFrame>
+			<Br H={.2}/>
 		</>
 	)
 }

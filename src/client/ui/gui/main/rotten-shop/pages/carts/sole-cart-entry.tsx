@@ -42,6 +42,8 @@ export function SoleCartEntry({
 			: "N/A"
 
 	const model = useCartModel(cartName, true)
+	model?.FindFirstChild("HandBrake")?.Destroy()
+	model?.FindFirstChild("Honk")?.Destroy()
 	const handleBuyClick = () => {
 		if (is_owned) {
 			print(`Cart ${cartName} is already owned!`)
@@ -215,7 +217,7 @@ export function SoleCartEntry({
 						Enum.FontStyle.Normal
 					)
 				}
-				Position={new UDim2(0.034, 0, 0.73, 0)}
+				Position={new UDim2(0.034, 0, 0.7, 0)}
 				Size={new UDim2(0.93, 0, 0.1, 0)}
 				Text={description}
 				RichText={true}
@@ -250,6 +252,7 @@ export function SoleCartEntry({
 				/>
 			</imagelabel>
 			<ViewportHelper
+			position={new UDim2(0, 0, -0.1, 0)}
 				model={model}
 				fieldOfView={50}
 				cameraDistance={15}

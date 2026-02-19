@@ -1,48 +1,63 @@
 import React, { useRef, useEffect } from "@rbxts/react"
+import { useQuery } from "@rbxts/react-query"
+import { MarketplaceService } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
+import { __IS_EDIT__ } from "shared/config.helper"
 
 interface CurrencyEntryProps {
-	title: string
-	price: string
-	icon?: string
+	productId: number
 	gradientColors?: [Color3, Color3, Color3]
 	layoutOrder?: number
-	onClick?: () => void
-	onBuyClick?: () => void
+	onPurchase?: () => void
 }
 
 export function CurrencyEntry({
-	title,
-	price,
-	icon,
+	productId,
 	gradientColors = [
 		Color3.fromRGB(78, 115, 239),
 		Color3.fromRGB(78, 169, 239),
 		Color3.fromRGB(78, 115, 239)
 	],
 	layoutOrder = 1,
-	onClick,
-	onBuyClick
+	onPurchase
 }: CurrencyEntryProps) {
 	const entryButtonRef = useRef<ImageButton>()
-	const buyButtonRef = useRef<ImageButton>()
+
+	// Fetch product info from MarketplaceService
+	const { data: productInfo, isLoading } = useQuery({
+		queryKey: ["product-info", productId],
+		queryFn: async () => {
+			const info = MarketplaceService.GetProductInfoAsync(
+				productId,
+				Enum.InfoType.Product
+			) as DeveloperProductInfo
+
+			return info
+		},
+		staleTime: 300_000 // Cache for 5 minutes
+	})
+
+	const title = productInfo?.Name ?? "..."
+	const price = isLoading ? "..." : productInfo?.PriceInRobux !== undefined ? `${productInfo.PriceInRobux} R$` : "N/A"
+	const icon = productInfo?.IconImageAssetId ? `rbxassetid://${productInfo.IconImageAssetId}` : undefined
 
 	useEffect(() => {
 		const entryButton = entryButtonRef.current
-		const buyButton = buyButtonRef.current
 
 		if (entryButton) {
 			UIHelper.bind(entryButton, 2)
 		}
-		if (buyButton) {
-			UIHelper.bind(buyButton, 3)
-		}
 
 		return () => {
 			if (entryButton) UIHelper.unbind(entryButton)
-			if (buyButton) UIHelper.unbind(buyButton)
 		}
 	}, [])
+
+	const handleClick = () => {
+		if (onPurchase) {
+			onPurchase()
+		}
+	}
 
 	return (
 		<imagebutton
@@ -53,9 +68,9 @@ export function CurrencyEntry({
 			ClipsDescendants={true}
 			LayoutOrder={layoutOrder}
 			Position={new UDim2(0.008, 0, 0.46, 0)}
-			Size={new UDim2(0.32, 0, 0.425, 0)}
+			Size={new UDim2(1, 0, 1, 0)}
 			Event={{
-				MouseButton1Click: onClick
+				MouseButton1Click: handleClick
 			}}
 		>
 			<uistroke Thickness={5} />
@@ -123,7 +138,6 @@ export function CurrencyEntry({
 				</textlabel>
 			</frame>
 			<imagebutton
-				ref={buyButtonRef}
 				key="Buy"
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 				BorderSizePixel={0}
@@ -132,7 +146,7 @@ export function CurrencyEntry({
 				Size={new UDim2(0.419, 0, 0.218, 0)}
 				ZIndex={45}
 				Event={{
-					MouseButton1Click: onBuyClick
+					MouseButton1Click: handleClick
 				}}
 			>
 				<uistroke Thickness={5} />
