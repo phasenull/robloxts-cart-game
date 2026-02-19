@@ -2,7 +2,7 @@ import React, { useEffect } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { ClientFunctions } from "shared/network.helper"
 import { ShopCartEntry } from "./shop-cart-entry"
-import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
+import { __IS_EDIT__, __IS_STUDIO__, getConfig } from "shared/config.helper"
 import { LoadingIndicator } from "client/ui/components/loading-indicator"
 import { IInventoryData, IShopItem } from "shared/type.helper"
 import { useNavigator } from "client/ui/hooks/useNavigator"
@@ -26,6 +26,11 @@ export function ShopCartList({
 	const { data: cartItems, isLoading: isLoadingItems } = useQuery({
 		queryKey: ["shop-items", "cart"],
 		queryFn: async () => {
+			return getConfig().CartConfig.map((cart) => ({
+				name: cart.name,
+				price: cart.price,
+				product_id: cart.product_id,
+			}))
 			if (__IS_EDIT__) {
 				task.wait(1)
 				return MOCK_CART_SHOP as IShopItem[]

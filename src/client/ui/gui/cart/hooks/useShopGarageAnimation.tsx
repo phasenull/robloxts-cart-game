@@ -37,10 +37,10 @@ export function useShopGarageAnimation(cartName: string = "Cart") {
 
 			// Setup cart for garage display
 			cartModel.GetTags().forEach((tag) => cartModel.RemoveTag(tag))
-			cartModel.Name = GARAGE_CART_NAME
 			cartModel.Parent = Workspace.CurrentCamera
 			
 			RigCartModel(cartModel)
+			cartModel.Name = GARAGE_CART_NAME
 			cartModel.ScaleTo(1.5)
 			
 			// Position cart at garage pivot

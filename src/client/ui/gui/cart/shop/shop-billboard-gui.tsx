@@ -10,6 +10,7 @@ export function ShopBillboardGui(props: {
 	progress: number
 	x_distance?: number
 	mirrored?: boolean
+	offset?: Vector3
 }) {
 	const target_instance = props.target_instance
 	if (!target_instance) return
@@ -33,12 +34,19 @@ export function ShopBillboardGui(props: {
 		)
 	})
 	const progress = props.progress
+	
+	// Adjust rotations based on mirrored prop
+	const firstRotation = props.mirrored ? 0 : 180
+	const secondRotation = props.mirrored ? -70 : 70
+	const finalRotation = props.mirrored ? -(0 + (-70)) : -(180 + 70)
+	
 	return (
 		<billboardgui
 			AlwaysOnTop
 			Size={UDim2.fromScale(20, 20)}
 			Adornee={props.target_instance}
 			ClipsDescendants={false}
+			StudsOffset={props.offset ?? new Vector3(0, 0, 0)}
 		>
 			<frame
 				Size={UDim2.fromScale(0.005, 0.005)}
@@ -49,12 +57,12 @@ export function ShopBillboardGui(props: {
 			>
 				<Line
 					root_position={UIDIM.CENTER}
-					Rotation={180}
+					Rotation={firstRotation}
 					Length={(math.clamp(animated_value, 0, 0.7) / 0.7) * (props.x_distance ?? 30)}
 				>
 					<Line
 						root_position={UIDIM.CENTER}
-						Rotation={70}
+						Rotation={secondRotation}
 						Length={(math.clamp(animated_value - 0.7, 0, 0.3) / 0.3) * 5}
 					>
 						<frame
@@ -63,7 +71,7 @@ export function ShopBillboardGui(props: {
 							AnchorPoint={UIDIM.A_CENTER}
 							Position={UIDIM.RIGHT}
 							ClipsDescendants={false}
-							Rotation={-(180 + 70)}
+							Rotation={finalRotation}
 						>
 							<frame
 								Size={UDim2.fromScale(10, 5)}

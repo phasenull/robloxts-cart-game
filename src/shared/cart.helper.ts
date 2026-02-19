@@ -1,6 +1,6 @@
 import { TweenService, Workspace } from "@rbxts/services"
 import { A, assets } from "./assets"
-import { __IS_STUDIO__ } from "./config.helper"
+import { __IS_STUDIO__, getConfig } from "./config.helper"
 import { ICart, IWheel } from "./type.helper"
 import {
 	BuildDeepWeldConstraints,
@@ -18,7 +18,9 @@ export type IHandBrake = Model & {
 export function RigCartModel(cart_model: ICart) {
 	const visuals = cart_model.FindFirstChild("Visuals") as Model
 	// logger.log(`Initializing cart: ${cart_model.GetFullName()}`)
-
+	const sv = new Instance("StringValue", cart_model)
+	sv.Name = "CartIdentifier"
+	sv.Value = cart_model.Name
 	// build required parts
 	const wheels = cart_model.Wheels
 	const [bounding_box, _] = cart_model.GetBoundingBox()
@@ -457,7 +459,9 @@ export function BrickifyModel(
 	})
 }
 
-
+export function getCartConfig(cart_name: string) {
+	return getConfig().CartConfig.find((e)=>e.name === cart_name)
+}
 type ICartHorn = Model & {
 	HornBase: BasePart
 	HornRoot: BasePart

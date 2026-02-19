@@ -594,7 +594,7 @@ export class CartClientComponent
 			this.overrideConfig({
 				power: cart_config.power,
 				friction: cart_config.friction,
-				max_velocity: cart_config.max_velocity ?? 25
+				max_velocity: 25
 			})
 		}
 		this.instance
