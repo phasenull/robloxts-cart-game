@@ -119,9 +119,13 @@ export function Line(props: {
 			AnchorPoint={UIDIM.A_CENTER}
 			Position={props.root_position}
 			ClipsDescendants={false}
-			BackgroundTransparency={1}
+			BackgroundTransparency={0}
+			BorderSizePixel={0}
 			Rotation={props.Rotation}
+			BackgroundColor3={new Color3(1,1,1)}
 		>
+			<uicorner CornerRadius={new UDim(1,0)}/>
+
 			<uiaspectratioconstraint AspectRatio={1} />
 			<frame
 				BorderSizePixel={0}

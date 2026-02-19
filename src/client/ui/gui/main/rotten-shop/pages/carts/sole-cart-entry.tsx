@@ -2,10 +2,8 @@ import React, { useRef, useEffect } from "@rbxts/react"
 import { UIHelper } from "client/ui.helper"
 import { ViewportHelper } from "client/ui/components/viewport-helper"
 import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel"
-import useAnimateValue from "client/ui/hooks/useAnimateValue"
 import { useCartProductId } from "client/ui/hooks/useCartProductId"
 import { useProductPrice } from "client/ui/hooks/useProductPrice"
-import { OutlineHighlight } from "shared/util.helper"
 
 interface SoleCartEntryProps {
 	cartName: string
@@ -63,11 +61,7 @@ export function SoleCartEntry({
 			if (entryButton) UIHelper.unbind(entryButton)
 		}
 	}, [is_owned])
-	const animate_value = useAnimateValue({
-		target_value: 1,
-		tween_info: new TweenInfo(6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true),
-		enabled: !!model
-	})
+
 	if (!model) {
 		return
 	}
@@ -257,14 +251,15 @@ export function SoleCartEntry({
 			</imagelabel>
 			<ViewportHelper
 				model={model}
-				// autoFit={true}
-				// fieldOfView={1}
 				fieldOfView={50}
 				cameraDistance={15}
 				autoFit={true}
-				modelOffset={new CFrame(0,5,0).mul(CFrame.Angles(math.rad(15), math.rad(180+animate_value*60-30), 0))}
+				modelOffset={new CFrame(0, 5, 0).mul(CFrame.Angles(math.rad(10), math.rad(180), 0))}
 				lightDirection={Vector3.zero}
-				
+				enableRotationAnimation={true}
+				rotationSpeed={30}
+				rotationAxis="Y"
+				rotateCameraInsteadOfModel={true}
 			/>
 		</imagebutton>
 	)

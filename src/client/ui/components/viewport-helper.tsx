@@ -37,6 +37,14 @@ export interface ViewportHelperConfig {
 	position?: UDim2
 	/** ZIndex of the ViewportFrame */
 	zIndex?: number
+	/** Enable continuous rotation animation (does not cause rerenders) */
+	enableRotationAnimation?: boolean
+	/** Rotation speed in degrees per second (default: 30) */
+	rotationSpeed?: number
+	/** Rotation axis (default: Y axis) */
+	rotationAxis?: "X" | "Y" | "Z"
+	/** Rotate camera around model instead of rotating the model (default: false) */
+	rotateCameraInsteadOfModel?: boolean
 }
 
 /**
@@ -48,6 +56,7 @@ export interface ViewportHelperConfig {
  * - Model rotation and positioning
  * - Lighting configuration
  * - Entrance animations
+ * - Built-in rotation animation (performance optimized, no rerenders)
  * 
  * @example
  * ```tsx
@@ -66,10 +75,21 @@ export interface ViewportHelperConfig {
  *   fieldOfView={30}     // Smaller FOV = more zoomed in
  * />
  * 
- * // Offset model position
+ * // Offset model position with continuous rotation (NO FPS DROP!)
  * <ViewportHelper
  *   model={myModel}
- *   modelOffset={new CFrame(0, 2, 0)}  // Move model up
+ *   modelOffset={new CFrame(0, 2, 0)}
+ *   enableRotationAnimation={true}
+ *   rotationSpeed={30}  // degrees per second
+ *   rotationAxis="Y"
+ * />
+ * 
+ * // Rotate camera around model instead
+ * <ViewportHelper
+ *   model={myModel}
+ *   enableRotationAnimation={true}
+ *   rotateCameraInsteadOfModel={true}
+ *   rotationSpeed={20}
  * />
  * ```
  */
@@ -91,13 +111,21 @@ export function ViewportHelper(config: ViewportHelperConfig) {
 		size = new UDim2(1, 0, 1, 0),
 		position = new UDim2(0, 0, 0, 0),
 		zIndex = 1,
+		enableRotationAnimation = false,
+		rotationSpeed = 30,
+		rotationAxis = "Y",
+		rotateCameraInsteadOfModel = false,
 	} = config
 
 	const viewportRef = useRef<ViewportFrame>()
 	const cameraRef = useRef<Camera>()
 	const modelCloneRef = useRef<Model>()
 	const animationConnectionRef = useRef<RBXScriptConnection>()
+	const rotationConnectionRef = useRef<RBXScriptConnection>()
 	const isInitializedRef = useRef(false)
+	const baseModelCFrameRef = useRef<CFrame>(new CFrame(0, 0, 0))
+	const baseCameraCFrameRef = useRef<CFrame>(new CFrame(0, 0, 0))
+	const modelPositionRef = useRef<Vector3>(new Vector3(0, 0, 0))
 
 	// Calculate bounding box and camera setup - only when model changes
 	const { boundingBoxSize, boundingBoxCenter, calculatedCameraDistance } = useMemo(() => {
@@ -228,6 +256,10 @@ export function ViewportHelper(config: ViewportHelperConfig) {
 			modelCFrame = modelCFrame.mul(CFrame.Angles(modelRotation.X, modelRotation.Y, modelRotation.Z))
 		}
 
+		// Store base CFrame for rotation animation
+		baseModelCFrameRef.current = modelCFrame
+		modelPositionRef.current = modelPosition
+
 		// Position camera to look at the model
 		let cameraCFrame: CFrame
 		if (customCameraOffset) {
@@ -242,16 +274,79 @@ export function ViewportHelper(config: ViewportHelperConfig) {
 			cameraCFrame = new CFrame(cameraPosition, modelPosition)
 		}
 
-		camera.CFrame = cameraCFrame
-		modelClone.PivotTo(modelCFrame)
+		baseCameraCFrameRef.current = cameraCFrame
+		
+		// Only set positions if rotation animation is disabled
+		if (!enableRotationAnimation) {
+			camera.CFrame = cameraCFrame
+			modelClone.PivotTo(modelCFrame)
+		} else if (rotateCameraInsteadOfModel) {
+			// If rotating camera, set model position now
+			modelClone.PivotTo(modelCFrame)
+		}
 	}, [
 		autoFit, 
 		manualCameraDistance,
 		modelOffset, 
 		customCameraOffset, 
 		modelRotation,
-		cameraDistance
+		cameraDistance,
+		enableRotationAnimation,
+		rotateCameraInsteadOfModel
 	])
+
+	// Continuous rotation animation (runs every frame but doesn't trigger React rerenders)
+	useEffect(() => {
+		if (!enableRotationAnimation || !modelCloneRef.current || !cameraRef.current) return
+
+		const modelClone = modelCloneRef.current
+		const camera = cameraRef.current
+		const startTime = os.clock()
+		const speedRadians = math.rad(rotationSpeed)
+
+		const connection = game.GetService("RunService").RenderStepped.Connect(() => {
+			if (!modelClone.Parent) {
+				connection.Disconnect()
+				return
+			}
+
+			const elapsed = os.clock() - startTime
+			const rotationAngle = elapsed * speedRadians
+			
+			let rotationCFrame: CFrame
+			if (rotationAxis === "X") {
+				rotationCFrame = CFrame.Angles(rotationAngle, 0, 0)
+			} else if (rotationAxis === "Z") {
+				rotationCFrame = CFrame.Angles(0, 0, rotationAngle)
+			} else {
+				// Y axis (default)
+				rotationCFrame = CFrame.Angles(0, rotationAngle, 0)
+			}
+
+			if (rotateCameraInsteadOfModel) {
+				// Rotate camera around the model
+				const modelPos = modelPositionRef.current
+				const baseCameraPos = baseCameraCFrameRef.current.Position
+				const offset = baseCameraPos.sub(modelPos)
+				
+				// Rotate the offset vector around the model position
+				const rotatedOffset = rotationCFrame.mul(new CFrame(offset)).Position
+				const newCameraPos = modelPos.add(rotatedOffset)
+				
+				// Make camera look at the model
+				camera.CFrame = new CFrame(newCameraPos, modelPos)
+			} else {
+				// Rotate the model
+				modelClone.PivotTo(baseModelCFrameRef.current.mul(rotationCFrame))
+			}
+		})
+
+		rotationConnectionRef.current = connection
+
+		return () => {
+			connection.Disconnect()
+		}
+	}, [enableRotationAnimation, rotationSpeed, rotationAxis, rotateCameraInsteadOfModel])
 
 	return (
 		<viewportframe
