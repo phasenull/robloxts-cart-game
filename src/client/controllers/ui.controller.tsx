@@ -18,6 +18,8 @@ export class UIController implements OnStart {
 		screen_gui.IgnoreGuiInset = true
 		screen_gui.Parent = player_gui
 		screen_gui.DisplayOrder = 5
+		screen_gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		
 		root.render(<StrictMode>{createPortal(<App />, screen_gui)}</StrictMode>)
 	}
 }

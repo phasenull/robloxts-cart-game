@@ -12,6 +12,7 @@ import { NotificationListener } from "./components/notification-listener"
 import BlurGui from "./gui/blur-gui"
 import { SettingsGui } from "./gui/main/settings-gui"
 import { PassShopGui } from "./gui/main/pass-shop-gui"
+import { RottenShopGui } from "./gui/main/rotten-shop/rotten-shop-gui"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
 import { CartGui } from "./gui/main/cart-gui"
 import { CartHud } from "./gui/cart/cart-hud"
@@ -80,6 +81,9 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										</PopGui>
 										<PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
 											<PassShopGui />
+										</PopGui>
+										<PopGui Size={UDim2.fromScale(1,1)} disable_default_close hide_title id={"rotten-shop"}>
+											<RottenShopGui />
 										</PopGui>
 										<PopGui id={"cart"}>
 											<CartGui />

@@ -5,7 +5,7 @@ import { App } from "client/ui/App"
 import { GUI_KEYS } from "client/ui/constants"
 
 const controls = {
-	initial_gui: Choose(["", "Shop", "Cart", "Settings","carts"]),
+	initial_gui: Choose(["", "Shop", "Cart", "Settings","carts", "rotten-shop"]),
 	cart_enabled: false,
 }
 

@@ -45,6 +45,14 @@ export function RightSidebar() {
 			<uipadding PaddingRight={new UDim(0.1, 0)} />
 			<uiaspectratioconstraint AspectRatio={0.5} />
 			<RottenButton
+				Color={new Color3(1, 0.85, 0)}
+				Size={UIDIM.ONE}
+				Text="Store"
+				onClick={() => {
+					navigator.setOpenGui("rotten-shop")
+				}}
+			/>
+			<RottenButton
 				Color={new Color3(0, 0.35, 1)}
 				Size={UIDIM.ONE}
 				Text="Teleport"
