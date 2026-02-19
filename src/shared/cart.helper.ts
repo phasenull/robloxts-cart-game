@@ -181,9 +181,31 @@ export function RigCartModel(cart_model: ICart) {
 	motor6d.MaxVelocity = 0.025
 	motor6d.C1 = new CFrame(1.9, 0, 0.7).mul(CFrame.Angles(0, math.rad(90), 0))
 
+	const honk = assets.FindFirstChild("Honk") as IHonk | undefined
+	if (honk) {
+		const honk_clone = honk.Clone()
+		honk_clone.GetDescendants().forEach((descendant) => {
+			if (descendant.IsA("BasePart")) {
+				descendant.CanCollide = false
+				descendant.Massless = true
+				descendant.Anchored = false
+			}
+		})
+		honk_clone.Name = "Honk"
+		honk_clone.Parent = cart_model
+		const honk_motor = new Instance("Motor6D", honk_clone.HonkRoot)
+		honk_motor.Name = "Motor6D"
+		honk_motor.Part0 = honk_clone.HonkRoot
+		honk_motor.Part1 = cart_model.PrimaryPart
+		honk_motor.C0 = new CFrame()
+		honk_motor.C1 = new CFrame(1, 2, -2.3).mul(CFrame.Angles(0, math.rad(-90), 0))
+	}
 	OutlineHighlight(cart_model)
 }
-
+type IHonk = Model & {
+	HonkBase: BasePart
+	HonkRoot: BasePart
+}
 export const getPreviousBigCheckpoint = (current: number) => {
 	let found
 	let i = current
@@ -433,4 +455,10 @@ export function BrickifyModel(
 			tween
 		}
 	})
+}
+
+
+type ICartHorn = Model & {
+	HornBase: BasePart
+	HornRoot: BasePart
 }

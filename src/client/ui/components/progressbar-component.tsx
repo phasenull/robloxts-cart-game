@@ -11,6 +11,7 @@ export function ProgressBarComponent(props: {
 	Text?: string;
 	AnchorPoint?: Vector2;
 	text_size_multiplier?:number
+	Stroke?:number
 	children?: React.ReactNode;
 }) {
 	const target_color = props.Color ?? Color3.fromRGB(249, 65, 0);
@@ -53,8 +54,8 @@ export function ProgressBarComponent(props: {
 				}
 			/>
 			<textlabel
-				key="Seconds"
-				AnchorPoint={new Vector2(1, 0.5)}
+				key="OverlayText"
+				AnchorPoint={new Vector2(.5, 0.5)}
 				BackgroundTransparency={1}
 				Font={Enum.Font.GothamBlack}
 				FontFace={
@@ -64,14 +65,14 @@ export function ProgressBarComponent(props: {
 						Enum.FontStyle.Normal,
 					)
 				}
-				Position={new UDim2(0.932, 0, 0.5, 0)}
+				Position={new UDim2(0.5, 0, 0.5, 0)}
 				Size={new UDim2(0.863 * (props.text_size_multiplier ?? 1), 0, 0.782 * (props.text_size_multiplier ?? 1), 0)}
 				Text={props.Text ?? ""}
 				TextColor3={Color3.fromRGB(255, 255, 255)}
 				TextScaled={true}
 				ZIndex={2}
 			>
-				<uistroke Thickness={3} />
+				<uistroke Thickness={props.Stroke ?? 3} />
 			</textlabel>
 			<imagelabel
 				key="Tile"

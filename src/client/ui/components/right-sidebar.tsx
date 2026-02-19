@@ -62,6 +62,14 @@ export function RightSidebar() {
 					})
 				}}
 			/>
+			{/* <RottenButton
+				Color={new Color3(0, 0.85, 1)}
+				Size={UIDIM.ONE}
+				Text="Leaderboard"
+				onClick={() => {
+					navigator.setOpenGui("leaderboard")
+				}}
+			/> */}
 		</frame>
 	)
 }

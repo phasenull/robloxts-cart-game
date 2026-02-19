@@ -46,6 +46,13 @@ export class CartClientComponent
 		print("honk!")
 		ClientEvents.CartService.honk.fire()
 	}
+
+	/**
+	 * for client -> server -> clients (broadcast)
+	 * */
+	private replicatedHonk(): void {
+		
+	}
 	public readonly brakeListener = new Signal<(status: boolean) => void>()
 	private readonly brakes: ParticleEmitter[] = []
 	private descriptor: string = "Cart"

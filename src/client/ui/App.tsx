@@ -25,6 +25,7 @@ import Sidebar from "./gui/sidebar"
 import { NotificationsGui } from "./gui/main/notifications/notifications-gui"
 import { ShopGui } from "./gui/cart/shop-gui"
 import { GlobalHUDGui } from "./gui/global-hud-gui"
+import { LeaderboardGui } from "./gui/main/leaderboard/leaderboard-gui"
 const query_client = new QueryClient({
 	mutations: {
 		onError: (err) => {}
@@ -73,6 +74,9 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 											>
 												<uicorner CornerRadius={new UDim(0.1, 0)} />
 											</imagelabel>
+										</PopGui>
+										<PopGui id={"leaderboard"}>
+											{/* <LeaderboardGui/> */}
 										</PopGui>
 										<PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
 											<PassShopGui />

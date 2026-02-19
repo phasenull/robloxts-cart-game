@@ -1,24 +1,26 @@
-import React, { ReactNode } from "@rbxts/react";
-import { GoofyText } from "client/ui/components/goofy-text";
-import { ProgressBarComponent } from "client/ui/components/progressbar-component";
-import { UIDIM } from "client/ui/constants";
-import useAnimateValue from "client/ui/hooks/useAnimateValue";
+import React, { ReactNode } from "@rbxts/react"
+import { GoofyText } from "client/ui/components/goofy-text"
+import { ProgressBarComponent } from "client/ui/components/progressbar-component"
+import { UIDIM } from "client/ui/constants"
+import useAnimateValue from "client/ui/hooks/useAnimateValue"
 
 export function ShopBillboardGui(props: {
-	target_instance: PVInstance;
-	text: string;
-	progress: number;
+	target_instance: PVInstance
+	text: string
+	progress: number
+	x_distance?: number
+	mirrored?: boolean
 }) {
-	const target_instance = props.target_instance;
-	if (!target_instance) return;
+	const target_instance = props.target_instance
+	if (!target_instance) return
 	const instance_to_descriptor =
-		target_instance.Name === "FR" ? "Wheels" : "Handbrake";
+		target_instance.Name === "FR" ? "Wheels" : "Handbrake"
 	const RL_CONFIG = {
 		Wheels: -1,
 		Horn: 1,
-		Handbrake: -1,
-	};
-	const CONFIG = RL_CONFIG[instance_to_descriptor];
+		Handbrake: -1
+	}
+	const CONFIG = RL_CONFIG[instance_to_descriptor]
 	const animated_value = useAnimateValue({
 		target_value: 1,
 		tween_info: new TweenInfo(
@@ -27,10 +29,10 @@ export function ShopBillboardGui(props: {
 			Enum.EasingDirection.InOut,
 			0,
 			false,
-			1,
-		),
-	});
-	const progress = props.progress;
+			1
+		)
+	})
+	const progress = props.progress
 	return (
 		<billboardgui
 			AlwaysOnTop
@@ -48,7 +50,7 @@ export function ShopBillboardGui(props: {
 				<Line
 					root_position={UIDIM.CENTER}
 					Rotation={180}
-					Length={(math.clamp(animated_value, 0, 0.7) / 0.7) * 30}
+					Length={(math.clamp(animated_value, 0, 0.7) / 0.7) * (props.x_distance ?? 30)}
 				>
 					<Line
 						root_position={UIDIM.CENTER}
@@ -65,13 +67,14 @@ export function ShopBillboardGui(props: {
 						>
 							<frame
 								Size={UDim2.fromScale(10, 5)}
-								AnchorPoint={UIDIM.A_BOTTOM}
+								AnchorPoint={UIDIM.A_CENTER}
 								Position={UIDIM.CENTER}
 								ClipsDescendants={false}
 								BackgroundTransparency={1}
 							>
 								<ProgressBarComponent
-									text_size_multiplier={1}
+									Stroke={1}
+									text_size_multiplier={1.4}
 									Text={props.text}
 									Color={
 										progress < 0.15
@@ -83,7 +86,8 @@ export function ShopBillboardGui(props: {
 													: new Color3(0, 1, 0)
 									}
 									progress={props.progress}
-									Size={UDim2.fromScale(600,120)}
+									Size={UDim2.fromScale(600, 120)}
+									Ratio={6}
 								/>
 							</frame>
 						</frame>
@@ -91,15 +95,15 @@ export function ShopBillboardGui(props: {
 				</Line>
 			</frame>
 		</billboardgui>
-	);
+	)
 }
 
-const BOX_SIZE = 1;
+const BOX_SIZE = 1
 export function Line(props: {
-	root_position: UDim2;
-	Length: number;
-	Rotation: number;
-	children?: ReactNode;
+	root_position: UDim2
+	Length: number
+	Rotation: number
+	children?: ReactNode
 }) {
 	return (
 		<frame
@@ -131,5 +135,5 @@ export function Line(props: {
 				</frame>
 			</frame>
 		</frame>
-	);
+	)
 }

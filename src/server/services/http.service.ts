@@ -6,8 +6,8 @@ import { Logger } from "shared/logger"
 export class HttpService implements OnStart {
 	constructor(private logger: Logger) {}
 	async onStart(): Promise<void> {
-		const leaderboard = await this.getLeaderboard()
-		print("Leaderboard:", leaderboard)
+		// const leaderboard = await this.getLeaderboard()
+		// print("Leaderboard:", leaderboard)
 	}
 	private readonly HttpService = game.GetService("HttpService")
 	private readonly host = "https://api.cart-game.project.phasenull.dev"
