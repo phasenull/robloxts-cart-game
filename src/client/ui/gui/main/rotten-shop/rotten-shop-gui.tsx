@@ -1,11 +1,23 @@
-import React from "@rbxts/react"
+import React, { useRef, useEffect } from "@rbxts/react"
 import { PurchasableContainer } from "client/ui/components/purchasable-container"
 import { useNavigator } from "client/ui/hooks/useNavigator"
 import { purchasables } from "shared/purchasables"
 import { RottenShopList } from "./rotten-shop-list"
+import { UIHelper } from "client/ui.helper"
 
 export function RottenShopGui() {
 	const { closeAll } = useNavigator()
+	const closeButtonRef = useRef<ImageButton>()
+
+	useEffect(() => {
+		const button = closeButtonRef.current
+		if (button) {
+			UIHelper.bind(button, 5)
+			return () => {
+				UIHelper.unbind(button)
+			}
+		}
+	}, [])
 
 	return (
 		<frame
@@ -96,6 +108,7 @@ export function RottenShopGui() {
 				</imagelabel>
 				<imagebutton
 					key="Close"
+					ref={closeButtonRef}
 					AnchorPoint={new Vector2(0.5, 0.5)}
 					BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 					BorderSizePixel={0}
