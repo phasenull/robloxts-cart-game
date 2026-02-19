@@ -215,8 +215,8 @@ export function RottenShopGui() {
 					SortOrder={Enum.SortOrder.LayoutOrder}
 				/>
 				<uipadding
-					PaddingLeft={new UDim(0, 10)}
-					PaddingRight={new UDim(0, 10)}
+					PaddingLeft={new UDim(.02,0)}
+					PaddingRight={new UDim(.02,0)}
 				/>
 				<RottenShopList />
 			</scrollingframe>
