@@ -5,15 +5,14 @@ interface TileEntryProps {
 	layoutOrder?: number
 }
 
-export function TileEntry({ title, layoutOrder = -1 }: TileEntryProps) {
+export function TileEntry({ title }: TileEntryProps) {
 	return (
 		<frame
 			key="TitleEntry"
 			BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 			BorderSizePixel={0}
-			LayoutOrder={layoutOrder}
 			Position={new UDim2(0.044, 0, 0.73, 0)}
-			Size={new UDim2(1, 0, 0.04, 0)}
+			Size={new UDim2(1, 0, 0.5, 0)}
 		>
 			<uigradient
 				Color={
@@ -30,7 +29,7 @@ export function TileEntry({ title, layoutOrder = -1 }: TileEntryProps) {
 					])
 				}
 			/>
-			<uiaspectratioconstraint AspectRatio={25.275000000000002} />
+			<uiaspectratioconstraint AspectRatio={20} />
 			<textlabel
 				key="TitleText"
 				BackgroundTransparency={1}

@@ -136,6 +136,17 @@ export function formatCash(cash: number): string {
 	
 	return `$ ${cash}`;
 }
+export function RainbowGradient() {
+	return new ColorSequence([
+		new ColorSequenceKeypoint(0, Color3.fromRGB(255, 0, 0)),
+		new ColorSequenceKeypoint(0.17, Color3.fromRGB(255, 127, 0)),
+		new ColorSequenceKeypoint(0.34, Color3.fromRGB(255, 255, 0)),
+		new ColorSequenceKeypoint(0.51, Color3.fromRGB(0, 255, 0)),
+		new ColorSequenceKeypoint(0.68, Color3.fromRGB(0, 255, 255)),
+		new ColorSequenceKeypoint(0.85, Color3.fromRGB(0, 0, 255)),
+		new ColorSequenceKeypoint(1, Color3.fromRGB(255, 0, 255)),
+	])
+}
 export function OutlineHighlight(parent: Instance) {
 	const highlight = new Instance("Highlight")
 	highlight.FillTransparency = 1

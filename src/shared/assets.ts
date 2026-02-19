@@ -70,7 +70,8 @@ export namespace A {
 		post_magma:"rbxassetid://89145592620126",
 		initial: "rbxassetid://115272068924901",
 		post_initial: "rbxassetid://122225957336369",
-		post_snowy: "rbxassetid://93762869405076"
+		post_snowy: "rbxassetid://93762869405076",
+		box_weld: "rbxassetid://94748745460410",
 	}
 	export const sounds = {
 		click_hard: "rbxassetid://6324790483",

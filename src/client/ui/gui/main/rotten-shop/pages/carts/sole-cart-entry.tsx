@@ -1,46 +1,64 @@
 import React, { useRef, useEffect } from "@rbxts/react"
 import { UIHelper } from "client/ui.helper"
+import { useCartProductId } from "client/ui/hooks/useCartProductId"
+import { useProductPrice } from "client/ui/hooks/useProductPrice"
 
 interface SoleCartEntryProps {
 	cartName: string
 	description: string
-	price: string
 	backgroundImage?: string
 	backgroundImageColor?: Color3
 	layoutOrder?: number
-	onClick?: () => void
-	onBuyClick?: () => void
+	textChildren?: React.ReactNode
 }
 
 export function SoleCartEntry({
 	cartName,
 	description,
-	price,
 	backgroundImage = "rbxassetid://119921518737471",
 	backgroundImageColor = Color3.fromRGB(147, 201, 255),
 	layoutOrder,
-	onClick,
-	onBuyClick
+	textChildren
 }: SoleCartEntryProps) {
 	const entryButtonRef = useRef<ImageButton>()
-	const buyButtonRef = useRef<ImageButton>()
+	const is_owned = false
+
+	// Get product_id from cart name
+	const productId = useCartProductId(cartName)
+
+	// Fetch price from MarketplaceService
+	const { priceInRobux, isLoading } = useProductPrice({
+		productId,
+		enabled: !is_owned
+	})
+
+	// Format price display
+	const priceText = isLoading
+		? "..."
+		: priceInRobux !== undefined
+			? `${priceInRobux} R$`
+			: "N/A"
+
+
+	const handleBuyClick = () => {
+		if (is_owned) {
+			print(`Cart ${cartName} is already owned!`)
+			return
+		}
+		print(`Attempting to buy cart: ${cartName}`)
+	}
 
 	useEffect(() => {
 		const entryButton = entryButtonRef.current
-		const buyButton = buyButtonRef.current
 
 		if (entryButton) {
 			UIHelper.bind(entryButton, 2)
 		}
-		if (buyButton) {
-			UIHelper.bind(buyButton, 3)
-		}
 
 		return () => {
 			if (entryButton) UIHelper.unbind(entryButton)
-			if (buyButton) UIHelper.unbind(buyButton)
 		}
-	}, [])
+	}, [is_owned])
 
 	return (
 		<imagebutton
@@ -51,11 +69,12 @@ export function SoleCartEntry({
 			ClipsDescendants={true}
 			LayoutOrder={layoutOrder}
 			Position={new UDim2(0.015, 0, 0.073, 0)}
-			Size={new UDim2(0.31, 0, 0.927, 0)}
+			Size={new UDim2(0.31, 0, 1, 0)}
 			Event={{
-				MouseButton1Click: onClick
+				MouseButton1Click: handleBuyClick
 			}}
 		>
+			<uiaspectratioconstraint AspectRatio={0.862} />
 			<uistroke Thickness={5} />
 			<imagelabel
 				key="Shadow"
@@ -109,7 +128,6 @@ export function SoleCartEntry({
 				</textlabel>
 			</frame>
 			<imagebutton
-				ref={buyButtonRef}
 				key="Buy"
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 				BorderSizePixel={0}
@@ -117,16 +135,27 @@ export function SoleCartEntry({
 				ScaleType={Enum.ScaleType.Fit}
 				Size={new UDim2(0.891, 0, 0.138, 0)}
 				ZIndex={45}
+				Active={!is_owned}
 				Event={{
-					MouseButton1Click: onBuyClick
+					MouseButton1Click: handleBuyClick
 				}}
 			>
 				<uistroke Thickness={5} />
 				<uigradient
 					Color={
 						new ColorSequence([
-							new ColorSequenceKeypoint(0, Color3.fromRGB(62, 216, 40)),
-							new ColorSequenceKeypoint(1, Color3.fromRGB(171, 248, 71))
+							new ColorSequenceKeypoint(
+								0,
+								is_owned
+									? Color3.fromRGB(100, 100, 100)
+									: Color3.fromRGB(62, 216, 40)
+							),
+							new ColorSequenceKeypoint(
+								1,
+								is_owned
+									? Color3.fromRGB(150, 150, 150)
+									: Color3.fromRGB(171, 248, 71)
+							)
 						])
 					}
 					Rotation={-90}
@@ -162,7 +191,7 @@ export function SoleCartEntry({
 					}
 					Position={new UDim2(0.182, 0, 0.123, 0)}
 					Size={new UDim2(0.636, 0, 0.754, 0)}
-					Text={price}
+					Text={is_owned ? "OWNED" : priceText}
 					TextColor3={Color3.fromRGB(255, 255, 255)}
 					TextScaled={true}
 					TextSize={14}
@@ -181,15 +210,17 @@ export function SoleCartEntry({
 						Enum.FontStyle.Normal
 					)
 				}
-				Position={new UDim2(0.034, 0, 0.757, 0)}
-				Size={new UDim2(0.93, 0, 0.058, 0)}
+				Position={new UDim2(0.034, 0, 0.73, 0)}
+				Size={new UDim2(0.93, 0, 0.1, 0)}
 				Text={description}
+				RichText={true}
 				TextColor3={Color3.fromRGB(255, 255, 255)}
 				TextScaled={true}
 				TextSize={14}
 				TextWrapped={true}
 				ZIndex={4}
 			>
+				{textChildren}
 				<uistroke Thickness={3} />
 			</textlabel>
 			<imagelabel
@@ -198,9 +229,10 @@ export function SoleCartEntry({
 				ClipsDescendants={true}
 				Image={backgroundImage}
 				ImageColor3={backgroundImageColor}
-				Position={new UDim2(-0.886, 0, -0.036000000000000004, 0)}
-				Size={new UDim2(2.822, 0, 1.052, 0)}
+				Position={new UDim2(0,0,0,0)}
+				Size={new UDim2(1,0,1,0)}
 				ZIndex={0}
+				ScaleType={Enum.ScaleType.Crop}
 			>
 				<uigradient
 					Rotation={-90}
@@ -211,24 +243,6 @@ export function SoleCartEntry({
 						])
 					}
 				/>
-				<uiaspectratioconstraint AspectRatio={1.594} />
-			</imagelabel>
-			<imagelabel
-				BackgroundTransparency={1}
-				Image="rbxassetid://124206088171388"
-				ImageTransparency={0.54}
-				Position={new UDim2(-0.025, 0, 0.65, 0)}
-				Size={new UDim2(0.758, 0, 0.522, 0)}
-			>
-				<uiaspectratioconstraint AspectRatio={0.862} />
-			</imagelabel>
-			<imagelabel
-				BackgroundTransparency={1}
-				Image="rbxassetid://94776997597220"
-				Position={new UDim2(-0.185, 0, 0.735, 0)}
-				Size={new UDim2(0.666, 0, 0.459, 0)}
-			>
-				<uiaspectratioconstraint AspectRatio={0.862} />
 			</imagelabel>
 		</imagebutton>
 	)
