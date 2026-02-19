@@ -96,8 +96,10 @@ export function ViewportHelper(config: ViewportHelperConfig) {
 	const viewportRef = useRef<ViewportFrame>()
 	const cameraRef = useRef<Camera>()
 	const modelCloneRef = useRef<Model>()
+	const animationConnectionRef = useRef<RBXScriptConnection>()
+	const isInitializedRef = useRef(false)
 
-	// Calculate bounding box and camera setup
+	// Calculate bounding box and camera setup - only when model changes
 	const { boundingBoxSize, boundingBoxCenter, calculatedCameraDistance } = useMemo(() => {
 		if (!model) return { boundingBoxSize: new Vector3(), boundingBoxCenter: new Vector3(), calculatedCameraDistance: 0 }
 		
@@ -114,13 +116,13 @@ export function ViewportHelper(config: ViewportHelperConfig) {
 	// Use manual camera distance if provided, otherwise use calculated
 	const cameraDistance = manualCameraDistance ?? calculatedCameraDistance
 
-	// Setup viewport and model
+	// Setup camera once
 	useEffect(() => {
-		if (!viewportRef.current || !model) return
+		if (!viewportRef.current) return
 
-		// Create or find camera
 		let camera = cameraRef.current
 		if (!camera) {
+			// Try to find existing camera or create new one
 			camera = Workspace.FindFirstChild("ViewportHelperCamera") as Camera
 			if (!camera) {
 				camera = new Instance("Camera")
@@ -128,12 +130,29 @@ export function ViewportHelper(config: ViewportHelperConfig) {
 				camera.Parent = Workspace
 			}
 			cameraRef.current = camera
+			viewportRef.current.CurrentCamera = camera
 		}
 
 		camera.FieldOfView = fieldOfView
-		viewportRef.current.CurrentCamera = camera
 
-		// Clone and setup model
+		return () => {
+			// Only destroy camera on unmount
+			if (cameraRef.current && !isInitializedRef.current) {
+				cameraRef.current.Destroy()
+			}
+		}
+	}, [fieldOfView])
+
+	// Clone model only when the model reference changes
+	useEffect(() => {
+		if (!viewportRef.current || !model) return
+
+		// Clean up old model if it exists
+		if (modelCloneRef.current) {
+			modelCloneRef.current.Destroy()
+		}
+
+		// Clone and setup new model
 		const modelClone = model.Clone()
 		modelCloneRef.current = modelClone
 		modelClone.Parent = viewportRef.current
@@ -143,11 +162,58 @@ export function ViewportHelper(config: ViewportHelperConfig) {
 			if (descendant.IsA("BasePart")) {
 				descendant.CanCollide = false
 				descendant.Anchored = true
-				if (animateEntrance) {
+			}
+		}
+
+		// Animate entrance if enabled
+		if (animateEntrance) {
+			const parts: BasePart[] = []
+			const originalTransparencies = new Map<BasePart, number>()
+			
+			for (const descendant of modelClone.GetDescendants()) {
+				if (descendant.IsA("BasePart")) {
+					parts.push(descendant)
+					originalTransparencies.set(descendant, descendant.Transparency)
 					descendant.Transparency = 1
 				}
 			}
+
+			const startTime = os.clock()
+			const connection = game.GetService("RunService").RenderStepped.Connect(() => {
+				const elapsed = os.clock() - startTime
+				const alpha = math.min(elapsed / entranceDuration, 1)
+				
+				for (const part of parts) {
+					const originalTransparency = originalTransparencies.get(part) ?? 0
+					part.Transparency = 1 - alpha * (1 - originalTransparency)
+				}
+
+				if (alpha >= 1) {
+					connection.Disconnect()
+				}
+			})
+
+			animationConnectionRef.current = connection
 		}
+
+		isInitializedRef.current = true
+
+		return () => {
+			if (animationConnectionRef.current) {
+				animationConnectionRef.current.Disconnect()
+			}
+			if (modelCloneRef.current) {
+				modelCloneRef.current.Destroy()
+			}
+		}
+	}, [model, animateEntrance, entranceDuration])
+
+	// Update positions/rotations without recreating model - runs separately
+	useEffect(() => {
+		if (!modelCloneRef.current || !cameraRef.current) return
+
+		const modelClone = modelCloneRef.current
+		const camera = cameraRef.current
 
 		// Calculate model position (where the model will be placed)
 		let modelPosition = new Vector3(0, 0, 0)
@@ -178,52 +244,12 @@ export function ViewportHelper(config: ViewportHelperConfig) {
 
 		camera.CFrame = cameraCFrame
 		modelClone.PivotTo(modelCFrame)
-
-		// Animate entrance if enabled
-		if (animateEntrance) {
-			const parts: BasePart[] = []
-			for (const descendant of modelClone.GetDescendants()) {
-				if (descendant.IsA("BasePart")) {
-					parts.push(descendant)
-				}
-			}
-
-			const startTime = os.clock()
-			const connection = game.GetService("RunService").RenderStepped.Connect(() => {
-				const elapsed = os.clock() - startTime
-				const alpha = math.min(elapsed / entranceDuration, 1)
-				
-				for (const part of parts) {
-					// Fade in from transparent
-					const originalTransparency = part.Transparency
-					part.Transparency = 1 - alpha * (1 - originalTransparency)
-				}
-
-				if (alpha >= 1) {
-					connection.Disconnect()
-				}
-			})
-
-			return () => {
-				connection.Disconnect()
-				modelClone.Destroy()
-			}
-		}
-
-		return () => {
-			modelClone.Destroy()
-		}
 	}, [
-		model, 
 		autoFit, 
-		fieldOfView, 
-		fitPadding, 
 		manualCameraDistance,
 		modelOffset, 
 		customCameraOffset, 
 		modelRotation,
-		animateEntrance,
-		entranceDuration,
 		cameraDistance
 	])
 
