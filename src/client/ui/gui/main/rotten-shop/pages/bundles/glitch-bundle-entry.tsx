@@ -140,7 +140,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				>
 					<uistroke Thickness={4} />
 					<textlabel
-						AnchorPoint={new Vector2(1, 0.5)}
+						AnchorPoint={new Vector2(0.5, 1)}
 						BackgroundTransparency={1}
 						Font={Enum.Font.GothamBlack}
 						FontFace={
@@ -150,14 +150,14 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 								Enum.FontStyle.Normal
 							)
 						}
-						Position={new UDim2(0.913, 0, 0.5, 0)}
-						Size={new UDim2(0.826, 0, 0.782, 0)}
+						Position={new UDim2(0.5, 0, 1, 0)}
+						Size={new UDim2(0.9, 0, 0.12, 0)}
 						Text={cartName}
 						TextColor3={Color3.fromRGB(255, 255, 255)}
 						TextScaled={true}
 						TextSize={14}
 						TextWrapped={true}
-						ZIndex={7}
+						ZIndex={10}
 					>
 						<uistroke Thickness={3} />
 					</textlabel>
