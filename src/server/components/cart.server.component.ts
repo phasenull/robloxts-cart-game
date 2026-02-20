@@ -1,7 +1,9 @@
 import { BaseComponent, Component } from "@flamework/components"
-import { OnPhysics, OnStart } from "@flamework/core"
+import { Dependency,
+OnPhysics, OnStart } from "@flamework/core"
 import { Players } from "@rbxts/services"
 import { t } from "@rbxts/t"
+import { CartService } from "server/services/cart.service";
 import { RigCartModel } from "shared/cart.helper"
 import { __IS_STUDIO__ } from "shared/config.helper"
 import { Logger } from "shared/logger"
@@ -43,6 +45,11 @@ export class CartServerComponent
 			}
 			this.setOwnership(player)
 			this.rider = player
+			const descriptor = (this.instance.FindFirstChild("Descriptor") as StringValue)?.Value
+			if (descriptor === "Armored Cart") {
+				const cart_service = Dependency<CartService>()
+				cart_service.addShield(this.instance,900)
+			}
 			char?.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
 					descendant.Massless = true

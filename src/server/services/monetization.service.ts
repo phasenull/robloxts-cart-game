@@ -76,7 +76,6 @@ export class MonetizationService implements OnStart {
 					const checkpoint_to_unlock = big_checkpoints[i]
 					const virtual_reward: IReward<"unlock_island"> = {
 						type: "unlock_island",
-						descriptor: undefined as never,
 						value: checkpoint_to_unlock,
 						handler: undefined
 					}
@@ -98,8 +97,7 @@ export class MonetizationService implements OnStart {
 				// Create virtual reward for cart purchase
 				const virtual_reward: IReward<"cart"> = {
 					type: "cart",
-					descriptor: cart_entry.name,
-					value: undefined as never,
+					value: cart_entry.name,
 					handler: undefined
 				}
 				this.giveRewardToPlayer(player, virtual_reward, `cart_purchase_${product_id}`)
@@ -129,7 +127,7 @@ export class MonetizationService implements OnStart {
 			case "revives":
 				const new_revives = Dependency<CartService>().incrementPlayerRevives(
 					player,
-					reward.value
+					reward.value as number
 				)
 				if (new_revives === undefined) {
 					return
@@ -138,7 +136,7 @@ export class MonetizationService implements OnStart {
 					player,
 					Enum.AnalyticsEconomyFlowType.Source,
 					"revives",
-					reward.value,
+					reward.value as number,
 					new_revives,
 					Enum.AnalyticsEconomyTransactionType.IAP.Name,
 					source_descriptor
@@ -147,7 +145,7 @@ export class MonetizationService implements OnStart {
 			case "flips":
 				const new_flips = Dependency<CartService>().incrementPlayerFlips(
 					player,
-					reward.value
+					reward.value as number
 				)
 				if (new_flips === undefined) {
 					return
@@ -156,7 +154,7 @@ export class MonetizationService implements OnStart {
 					player,
 					Enum.AnalyticsEconomyFlowType.Source,
 					"flips",
-					reward.value,
+					reward.value as number,
 					new_flips,
 					Enum.AnalyticsEconomyTransactionType.IAP.Name,
 					source_descriptor
@@ -165,7 +163,7 @@ export class MonetizationService implements OnStart {
 			case "cash":
 				const new_cash = Dependency<DataService>().grantPlayerCash(
 					player,
-					reward.value,
+					reward.value as number,
 					`Purchase of ${reward.value} cash`
 				)
 				if (new_cash === undefined) {
@@ -175,7 +173,7 @@ export class MonetizationService implements OnStart {
 					player,
 					Enum.AnalyticsEconomyFlowType.Source,
 					"cash",
-					reward.value,
+					reward.value as number,
 					new_cash,
 					Enum.AnalyticsEconomyTransactionType.IAP.Name,
 					source_descriptor
@@ -200,7 +198,7 @@ export class MonetizationService implements OnStart {
 				ServerEvents.NotificationService.sendNotification.fire(player, {
 					description: `<font color="rgb(0, 255, 0)">${data?.name || "Unknown Island"}</font>`,
 					title: "Island Skipped",
-					duration: 5,
+					duration: 10,
 					soundId: A.sounds.reward_earned
 				})
 				return
@@ -208,18 +206,18 @@ export class MonetizationService implements OnStart {
 			case "cart":
 				Dependency<CartService>().grantPlayerPermaCart(
 					player,
-					reward.descriptor
+					reward.value as string
 				)
 				break
 			case "unlock_island": {
 				const checkpoint_service = Dependency<CheckpointService>()
-				const checkpoint_index = reward.value
+				const checkpoint_index = reward.value as number
 				checkpoint_service.unlockCheckpointForPlayer(player, checkpoint_index)
 				const data = getCheckpointDataFromIndex(checkpoint_index)
 				ServerEvents.NotificationService.sendNotification.fire(player, {
 					description: `<font color="rgb(255, 215, 0)">${data?.name || "Unknown Island"}</font> is now unlocked!`,
 					title: "Island Unlocked",
-					duration: 5,
+					duration: 10,
 					soundId: A.sounds.reward_earned
 				})
 				break

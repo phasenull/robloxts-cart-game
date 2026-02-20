@@ -12,7 +12,6 @@ import { useBundleData } from "client/ui/hooks/useBundleData";
 import { capitalizeFirstLetter } from "shared/util.helper";
 import { getRewardDisplay } from "shared/cart.helper";
 
-
 export interface GlitchBundleEntryProps {
 	productId: number;
 	cartName: string;
@@ -190,7 +189,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				<frame
 					key="RewardsGrid"
 					BackgroundTransparency={1}
-					Size={new UDim2(.8, 0, 1, 0)}
+					Size={new UDim2(0.8, 0, 1, 0)}
 					ZIndex={6}
 				>
 					<uigridlayout
@@ -360,6 +359,40 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					/>
 				</textlabel>
 			</frame>
+			{priceInRobux !== undefined && (
+				<textlabel
+					key="OriginalPrice"
+					AnchorPoint={new Vector2(0.5, 1)}
+					BackgroundTransparency={1}
+					Font={Enum.Font.GothamBlack}
+					FontFace={
+						new Font(
+							"rbxasset://fonts/families/GothamSSm.json",
+							Enum.FontWeight.Heavy,
+							Enum.FontStyle.Normal,
+						)
+					}
+					Position={new UDim2(0.857, 0, 0.717, 0)}
+					RichText={true}
+					Rotation={-5}
+					Size={new UDim2(0.235, 0, 0.12, 0)}
+					Text={`${priceInRobux * 2} R$`}
+					TextColor3={Color3.fromRGB(255, 100, 100)}
+					TextScaled={true}
+					TextSize={14}
+					TextWrapped={true}
+					ZIndex={6}
+				>
+					<frame
+						BorderSizePixel={0}
+						BackgroundColor3={Color3.fromRGB(200, 20, 20)}
+						Size={UDim2.fromScale(.6, 0.15)}
+						AnchorPoint={UIDIM.A_CENTER}
+						Position={UIDIM.CENTER}
+					/>
+					<uistroke Thickness={4} />
+				</textlabel>
+			)}
 			<imagebutton
 				key="Buy"
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
@@ -507,7 +540,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				Position={new UDim2(0.719, 0, -0.10200000000000001, 0)}
 				Rotation={-10}
 				Size={new UDim2(0.253, 0, 0.191, 0)}
-				Text="%30 FREE"
+				Text="%50 FREE"
 				TextColor3={Color3.fromRGB(255, 0, 0)}
 				TextScaled={true}
 				TextSize={14}

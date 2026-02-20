@@ -107,7 +107,7 @@ export class DataService implements OnStart {
 			ServerEvents.NotificationService.sendNotification(player, {
 				title: "<b>Cash Earned</b>",
 				description: `<font color='#00FF00'>+$${amount}</font>${reason ? ` - ${reason}` : ""}`,
-				duration: 4
+				duration: 10
 			});
 		}
 		return profile.Data.cash as number

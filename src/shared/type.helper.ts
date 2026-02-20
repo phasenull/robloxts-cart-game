@@ -42,8 +42,7 @@ export type IValuableReward =
 export type IRewardType = IDescriptableReward | IValuableReward | "custom"
 export type IReward<T extends IRewardType> = {
 	type: T
-	descriptor: T extends IDescriptableReward ? string : never
-	value: T extends IValuableReward ? number : never
+	value: T extends IValuableReward ? number : string
 	handler: T extends "custom" ? (player: Player) => void : undefined
 }
 export type ICartConfig = ICartEntry[]

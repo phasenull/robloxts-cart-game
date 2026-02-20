@@ -50,7 +50,7 @@ export class CartService implements OnStart {
 		)
 		ServerEvents.NotificationService.sendNotification(player, {
 			title: "<b>New Cart Unlocked!</b>",
-			duration: 5,
+			duration: 10,
 			soundId: A.sounds.party,
 			description: `<font color='#00D4FF'>${cart_name}</font>`
 		})
@@ -609,7 +609,7 @@ export class CartService implements OnStart {
 		ServerEvents.NotificationService.sendNotification(player, {
 			title: "<b>Revives Earned</b>",
 			description: `<font color='#00FF88'>+${amount}</font> ${amount === 1 ? "revive" : "revives"}`,
-			duration: 4
+			duration: 10
 		})
 		this.refreshPlayerProducts(player)
 		return profile.Data.revives
@@ -624,7 +624,7 @@ export class CartService implements OnStart {
 		ServerEvents.NotificationService.sendNotification(player, {
 			title: "<b>Flips Earned</b>",
 			description: `<font color='#FFD700'>+${amount}</font> ${amount === 1 ? "flip" : "flips"}`,
-			duration: 4
+			duration: 10
 		})
 		this.refreshPlayerProducts(player)
 		return profile.Data.flips
