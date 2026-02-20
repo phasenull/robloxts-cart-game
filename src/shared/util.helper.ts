@@ -111,6 +111,10 @@ export function formatCash(cash: number): string {
 	}
 	
 	const suffixes = [
+		{ threshold: 1e63, divisor: 1e62, suffix: "Vg" }, // Vigintillions
+		{ threshold: 1e51, divisor: 1e50, suffix: "Sx" }, // Sexillions
+		{ threshold: 1e48, divisor: 1e47, suffix: "SxD" }, // Sexdecillions
+		{ threshold: 1e45, divisor: 1e44, suffix: "Qd" }, // Quindecillions
 		{ threshold: 1e42, divisor: 1e41, suffix: "Td" }, // Tredecillions
 		{ threshold: 1e39, divisor: 1e38, suffix: "Dd" }, // Duodecillions
 		{ threshold: 1e36, divisor: 1e35, suffix: "Ud" }, // Undecillions
@@ -147,6 +151,10 @@ export function RainbowGradient() {
 		new ColorSequenceKeypoint(1, Color3.fromRGB(255, 0, 255)),
 	])
 }
+export function coinFlip() {
+	return math.random() < 0.5
+}
+
 export function OutlineHighlight(parent: Instance) {
 	const highlight = new Instance("Highlight")
 	highlight.FillTransparency = 1

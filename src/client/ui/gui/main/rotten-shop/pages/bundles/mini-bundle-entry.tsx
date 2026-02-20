@@ -85,7 +85,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 	model?.FindFirstChild("HandBrake")?.Destroy()
 	model?.FindFirstChild("Honk")?.Destroy()
 	const bundleData = useBundleData(productId)
-	const rewards = (bundleData?.rewards ?? []) as Array<{ type: string; value: number }>
+	const rewards = ((bundleData?.rewards ?? []) as Array<{ type: string; value: number }>).filter((r) => r.type !== "cash")
 
 	return (
 		<frame
@@ -255,6 +255,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					)}
 				</frame>
 				{rewards.map((reward, i) => {
+					if (reward.type === "cart") return
 					const { countText, nameText } = getRewardDisplay(reward)
 					return (
 						<frame

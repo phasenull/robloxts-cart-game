@@ -9,12 +9,21 @@ import { A } from "shared/assets";
 import { ClientFunctions } from "shared/network.helper";
 import { __IS_EDIT__ } from "../../../../../../../shared/config.helper";
 import { useBundleData } from "client/ui/hooks/useBundleData";
+import { capitalizeFirstLetter } from "shared/util.helper";
 
-function getRewardDisplay(reward: { type: string; value: number }): { countText: string; nameText: string } {
-	if (reward.type === "cash") return { countText: `$${reward.value}`, nameText: "Cash" }
-	if (reward.type === "revives") return { countText: `x${reward.value}`, nameText: "Revives" }
-	if (reward.type === "flips") return { countText: `x${reward.value}`, nameText: "Flips" }
-	return { countText: `x${reward.value}`, nameText: reward.type }
+function getRewardDisplay(reward: { type: string; value: number }): {
+	countText: string;
+	nameText: string;
+	image_id?: string;
+} {
+	if (reward.type === "cash")
+		return { countText: `$${reward.value}`, nameText: "Cash", image_id: A.icons.coin };
+	if (reward.type === "revives")
+		return { countText: `x${reward.value}`, nameText: "Revives" , image_id: A.icons.rebirth};
+	if (reward.type === "flips")
+		return { countText: `x${reward.value}`, nameText: "Flips", image_id: A.icons.luck };
+	return { countText: `${reward.value}`, nameText: capitalizeFirstLetter(reward.type) };
+	// return { countText: `x${reward.value}`, nameText: reward.type };
 }
 
 export interface GlitchBundleEntryProps {
@@ -93,7 +102,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 	model?.FindFirstChild("HandBrake")?.Destroy();
 	model?.FindFirstChild("Honk")?.Destroy();
 	const bundleData = useBundleData(productId);
-	const rewards = (bundleData?.rewards ?? []) as Array<{ type: string; value: number }>;
+	const rewards = (bundleData?.rewards ?? []) as Array<{
+		type: string;
+		value: number;
+	}>;
 
 	return (
 		<frame
@@ -132,7 +144,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					SortOrder={Enum.SortOrder.LayoutOrder}
 					VerticalAlignment={Enum.VerticalAlignment.Center}
 				/>
-				<uipadding PaddingLeft={new UDim(.02, 0)} />
+				<uipadding PaddingLeft={new UDim(0.02, 0)} />
 				{model && (
 					<frame
 						key="BundleItem1"
@@ -171,7 +183,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 							model={model}
 							position={new UDim2(0.5, 0, 0.5, 0)}
 							anchorPoint={UIDIM.A_CENTER}
-							size={new UDim2(.9, 0, 0.9, 0)}
+							size={new UDim2(0.9, 0, 0.9, 0)}
 							fieldOfView={50}
 							autoFit={true}
 							modelOffset={new CFrame(0, 5, 0).mul(
@@ -188,22 +200,30 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 						</ViewportHelper>
 					</frame>
 				)}
-				{rewards.map((reward, i) => {
-					const { countText, nameText } = getRewardDisplay(reward);
-					return (
-						<frame
-							key={`RewardItem${i}`}
-							BackgroundTransparency={1}
-							Size={new UDim2(0.17, 0, 0.8, 0)}
-							ZIndex={6}
-						>
-							<uiaspectratioconstraint />
+				<frame
+					key="RewardsGrid"
+					BackgroundTransparency={1}
+					Size={new UDim2(.8, 0, 1, 0)}
+					ZIndex={6}
+				>
+					<uigridlayout
+						CellSize={new UDim2(0.63, 0, 0.63, 0)}
+						CellPadding={new UDim2(0.06, 0, 0.06, 0)}
+						SortOrder={Enum.SortOrder.LayoutOrder}
+						HorizontalAlignment={Enum.HorizontalAlignment.Left}
+					>
+						<uiaspectratioconstraint AspectRatio={1} />
+					</uigridlayout>
+					{rewards.map((reward, i) => {
+						if (reward.type === "cart") return;
+						const { countText, nameText } = getRewardDisplay(reward);
+						return (
 							<frame
-								key="ItemContainer"
+								key={`RewardItem${i}`}
 								BackgroundColor3={Color3.fromRGB(0, 0, 0)}
 								BackgroundTransparency={0.55}
 								BorderSizePixel={0}
-								Size={new UDim2(1, 0, 1, 0)}
+								ZIndex={6}
 							>
 								<uistroke Thickness={4} />
 								<textlabel
@@ -267,9 +287,9 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 									ZIndex={5}
 								/>
 							</frame>
-						</frame>
-					);
-				})}
+						);
+					})}
+				</frame>
 			</frame>
 			<frame
 				key="Top"
