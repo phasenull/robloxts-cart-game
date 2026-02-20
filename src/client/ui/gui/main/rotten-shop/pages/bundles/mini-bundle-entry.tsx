@@ -9,13 +9,7 @@ import { A } from "shared/assets"
 import { ClientFunctions } from "shared/network.helper"
 import { __IS_EDIT__ } from "shared/config.helper"
 import { useBundleData } from "client/ui/hooks/useBundleData"
-
-function getRewardDisplay(reward: { type: string; value: number }): { countText: string; nameText: string } {
-	if (reward.type === "cash") return { countText: `$${reward.value}`, nameText: "Cash" }
-	if (reward.type === "revives") return { countText: `x${reward.value}`, nameText: "Revives" }
-	if (reward.type === "flips") return { countText: `x${reward.value}`, nameText: "Flips" }
-	return { countText: `x${reward.value}`, nameText: reward.type }
-}
+import { getRewardDisplay } from "shared/cart.helper"
 
 export interface MiniBundleEntryProps {
 	productId: number
@@ -256,7 +250,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 				</frame>
 				{rewards.map((reward, i) => {
 					if (reward.type === "cart") return
-					const { countText, nameText } = getRewardDisplay(reward)
+					const { countText, nameText, image_id } = getRewardDisplay(reward)
 					return (
 						<frame
 							key={`RewardItem${i}`}
@@ -268,6 +262,18 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						>
 							<uistroke Thickness={4} />
 							<uiaspectratioconstraint />
+							{!!image_id && (
+								<imagelabel
+									key="Icon"
+									AnchorPoint={new Vector2(0.5, 0.5)}
+									BackgroundTransparency={1}
+									Image={image_id}
+									Position={new UDim2(0.5, 0, 0.4, 0)}
+									Size={new UDim2(0.55, 0, 0.55, 0)}
+									ScaleType={Enum.ScaleType.Fit}
+									ZIndex={7}
+								/>
+							)}
 							<textlabel
 								BackgroundTransparency={1}
 								Font={Enum.Font.GothamBlack}
@@ -287,6 +293,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 								TextSize={14}
 								TextWrapped={true}
 								TextXAlignment={Enum.TextXAlignment.Left}
+								ZIndex={8}
 							>
 								<uistroke Thickness={3} />
 							</textlabel>
@@ -307,6 +314,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 								TextScaled={true}
 								TextSize={14}
 								TextWrapped={true}
+								ZIndex={8}
 							>
 								<uistroke Thickness={3} />
 							</textlabel>

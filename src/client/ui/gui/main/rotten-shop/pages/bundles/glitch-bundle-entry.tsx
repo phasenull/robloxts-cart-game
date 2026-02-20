@@ -10,21 +10,8 @@ import { ClientFunctions } from "shared/network.helper";
 import { __IS_EDIT__ } from "../../../../../../../shared/config.helper";
 import { useBundleData } from "client/ui/hooks/useBundleData";
 import { capitalizeFirstLetter } from "shared/util.helper";
+import { getRewardDisplay } from "shared/cart.helper";
 
-function getRewardDisplay(reward: { type: string; value: number }): {
-	countText: string;
-	nameText: string;
-	image_id?: string;
-} {
-	if (reward.type === "cash")
-		return { countText: `$${reward.value}`, nameText: "Cash", image_id: A.icons.coin };
-	if (reward.type === "revives")
-		return { countText: `x${reward.value}`, nameText: "Revives" , image_id: A.icons.rebirth};
-	if (reward.type === "flips")
-		return { countText: `x${reward.value}`, nameText: "Flips", image_id: A.icons.luck };
-	return { countText: `${reward.value}`, nameText: capitalizeFirstLetter(reward.type) };
-	// return { countText: `x${reward.value}`, nameText: reward.type };
-}
 
 export interface GlitchBundleEntryProps {
 	productId: number;
@@ -216,7 +203,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					</uigridlayout>
 					{rewards.map((reward, i) => {
 						if (reward.type === "cart") return;
-						const { countText, nameText } = getRewardDisplay(reward);
+						const { countText, nameText, image_id } = getRewardDisplay(reward);
 						return (
 							<frame
 								key={`RewardItem${i}`}
@@ -226,6 +213,18 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 								ZIndex={6}
 							>
 								<uistroke Thickness={4} />
+								{!!image_id && (
+									<imagelabel
+										key="Icon"
+										AnchorPoint={new Vector2(0.5, 0.5)}
+										BackgroundTransparency={1}
+										Image={image_id}
+										Position={new UDim2(0.5, 0, 0.4, 0)}
+										Size={new UDim2(0.55, 0, 0.55, 0)}
+										ScaleType={Enum.ScaleType.Fit}
+										ZIndex={7}
+									/>
+								)}
 								<textlabel
 									BackgroundTransparency={1}
 									Font={Enum.Font.GothamBlack}
@@ -245,6 +244,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 									TextSize={14}
 									TextWrapped={true}
 									TextXAlignment={Enum.TextXAlignment.Left}
+									ZIndex={8}
 								>
 									<uistroke Thickness={3} />
 								</textlabel>
@@ -265,6 +265,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 									TextScaled={true}
 									TextSize={14}
 									TextWrapped={true}
+									ZIndex={8}
 								>
 									<uistroke Thickness={3} />
 								</textlabel>

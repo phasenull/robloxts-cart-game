@@ -5,6 +5,7 @@ import { ICart, IWheel } from "./type.helper"
 import {
 	BuildDeepWeldConstraints,
 	BuildWeldConstraints,
+	capitalizeFirstLetter,
 	MasslessPart,
 	OutlineHighlight
 } from "./util.helper"
@@ -14,6 +15,20 @@ export type IHandBrake = Model & {
 		WeldConstraint: WeldConstraint
 		Motor6D: Motor6D
 	}
+}
+export function getRewardDisplay(reward: { type: string; value: number }): {
+	countText: string;
+	nameText: string;
+	image_id?: string;
+} {
+	if (reward.type === "cash")
+		return { countText: `$${reward.value}`, nameText: "Cash", image_id: A.icons.coin };
+	if (reward.type === "revives")
+		return { countText: `x${reward.value}`, nameText: "Revives" , image_id: A.icons.luck};
+	if (reward.type === "flips")
+		return { countText: `x${reward.value}`, nameText: "Flips", image_id:  A.icons.rebirth};
+	return { countText: `${reward.value}`, nameText: capitalizeFirstLetter(reward.type) };
+	// return { countText: `x${reward.value}`, nameText: reward.type };
 }
 export function RigCartModel(cart_model: ICart) {
 	const visuals = cart_model.FindFirstChild("Visuals") as Model
