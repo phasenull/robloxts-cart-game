@@ -63,14 +63,14 @@ export class MonetizationService implements OnStart {
 			const checkpoint_service = Dependency<CheckpointService>()
 			const collected = checkpoint_service.getPlayerCheckpoints(player)
 			const highest_unlocked = collected.sort((a, b) => a > b)[0] || 0
-			
+
 			// Calculate target checkpoint based on skip count
 			const big_checkpoints = getAllBigCheckpoints()
 			const current_index = big_checkpoints.indexOf(highest_unlocked)
-			
+
 			if (current_index !== -1 && current_index + skip_count < big_checkpoints.size()) {
 				const target_checkpoint = big_checkpoints[current_index + skip_count]
-				
+
 				// Unlock all checkpoints up to and including target
 				for (let i = current_index + 1; i <= current_index + skip_count; i++) {
 					const checkpoint_to_unlock = big_checkpoints[i]
@@ -81,7 +81,8 @@ export class MonetizationService implements OnStart {
 					}
 					this.giveRewardToPlayer(player, virtual_reward, `island_skip_${skip_count}_purchase`)
 				}
-				
+
+				Dependency<DataService>().changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
 				return Enum.ProductPurchaseDecision.PurchaseGranted
 			}
 		}
@@ -102,6 +103,7 @@ export class MonetizationService implements OnStart {
 				}
 				this.logger.log(`Processing cart purchase for product id ${product_id}, granting cart: ${cart_entry.name}`)
 				this.giveRewardToPlayer(player, virtual_reward, `cart_purchase_${product_id}`)
+				Dependency<DataService>().changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
 				return Enum.ProductPurchaseDecision.PurchaseGranted
 			}
 			
@@ -117,6 +119,7 @@ export class MonetizationService implements OnStart {
 				`${purchasable.product_id || "unknown purchasable"}`
 			)
 		}
+		Dependency<DataService>().changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	}
 	giveRewardToPlayer(

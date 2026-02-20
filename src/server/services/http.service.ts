@@ -5,10 +5,7 @@ import { Logger } from "shared/logger"
 @Service()
 export class HttpService implements OnStart {
 	constructor(private logger: Logger) {}
-	async onStart(): Promise<void> {
-		// const leaderboard = await this.getLeaderboard()
-		// print("Leaderboard:", leaderboard)
-	}
+	async onStart(): Promise<void> {}
 	private readonly HttpService = game.GetService("HttpService")
 	private readonly host = "https://api.cart-game.project.phasenull.dev"
 	async getUser(user_id: number) {
@@ -19,9 +16,19 @@ export class HttpService implements OnStart {
 	async getLeaderboard() {
 		return await this.request<LeaderBoardResponse>(`/leaderboard/list`)
 	}
+	syncPlayer(data: PostPlayerRequest) {
+		this.updatePlayer(data).catch((err) => {
+			this.logger.warn(`Failed to sync player ${data.user_id} to leaderboard: ${err}`)
+		})
+	}
+	private async updatePlayer(body: PostPlayerRequest) {
+		return await this.request<PostPlayerResponse>(`/leaderboard/update-player`, {
+			method: "POST",
+			body: this.HttpService.JSONEncode(body),
+		} as unknown as Request)
+	}
 	private async request<T>(endpoint: string, options?: Request): Promise<T> {
 		const api_key = this.HttpService.GetSecret("API_KEY")
-		print("api_Key:", api_key)
 		const response = await fetch(`${this.host}${endpoint}`, {
 			...options,
 			headers: {

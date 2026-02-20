@@ -1,4 +1,5 @@
 import { Dependency, OnStart, Service } from "@flamework/core";
+import { HttpService } from "./http.service";
 import ProfileService from "@rbxts/profileservice";
 import { Profile } from "@rbxts/profileservice/globals";
 import {
@@ -16,6 +17,7 @@ const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],
 	cash: 0,
 	playtime: 0,
+	robux_spent: 0,
 	revives: 999,
 	flips: 999,
 	collected_checkpoints: [0] as number[],
@@ -139,6 +141,12 @@ export class DataService implements OnStart {
 		if (listener) {
 			listener.Fire();
 		}
+		Dependency<HttpService>().syncPlayer({
+			user_id: player.UserId,
+			cash: profile.Data.cash as number,
+			playtime: profile.Data.playtime as number,
+			robux_spent: profile.Data.robux_spent as number,
+		});
 		
 		// Send initial cash to client
 		task.delay(0.5, () => {
@@ -161,6 +169,12 @@ export class DataService implements OnStart {
 		const join_time = this.playtime_state.get(player.UserId) ?? os.clock();
 		const session_playtime = math.floor(os.clock() - join_time);
 		profile.Data.playtime = (profile.Data.playtime as number) + session_playtime;
+		Dependency<HttpService>().syncPlayer({
+			user_id: player.UserId,
+			cash: profile.Data.cash as number,
+			playtime: profile.Data.playtime as number,
+			robux_spent: profile.Data.robux_spent as number,
+		});
 		this.playtime_state.delete(player.UserId);
 		// Update ordered stats
 		profile.Release();
