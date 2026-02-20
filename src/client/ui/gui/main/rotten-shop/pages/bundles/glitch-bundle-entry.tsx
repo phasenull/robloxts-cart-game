@@ -8,6 +8,15 @@ import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
 import { A } from "shared/assets";
 import { ClientFunctions } from "shared/network.helper";
 import { __IS_EDIT__ } from "../../../../../../../shared/config.helper";
+import { useBundleData } from "client/ui/hooks/useBundleData";
+
+function getRewardDisplay(reward: { type: string; value: number }): { countText: string; nameText: string } {
+	if (reward.type === "cash") return { countText: `$${reward.value}`, nameText: "Cash" }
+	if (reward.type === "revives") return { countText: `x${reward.value}`, nameText: "Revives" }
+	if (reward.type === "flips") return { countText: `x${reward.value}`, nameText: "Flips" }
+	return { countText: `x${reward.value}`, nameText: reward.type }
+}
+
 export interface GlitchBundleEntryProps {
 	productId: number;
 	cartName: string;
@@ -83,6 +92,8 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 	const model = useCartModel(cartName, true);
 	model?.FindFirstChild("HandBrake")?.Destroy();
 	model?.FindFirstChild("Honk")?.Destroy();
+	const bundleData = useBundleData(productId);
+	const rewards = (bundleData?.rewards ?? []) as Array<{ type: string; value: number }>;
 
 	return (
 		<frame
@@ -115,14 +126,13 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				Size={new UDim2(0.96, 0, 0.73, 0)}
 				ZIndex={6}
 			>
-				
 				<uilistlayout
 					FillDirection={Enum.FillDirection.Horizontal}
 					Padding={new UDim(0.05, 0)}
 					SortOrder={Enum.SortOrder.LayoutOrder}
 					VerticalAlignment={Enum.VerticalAlignment.Center}
 				/>
-				<uipadding PaddingLeft={new UDim(.02,0)}/>
+				<uipadding PaddingLeft={new UDim(.02, 0)} />
 				{model && (
 					<frame
 						key="BundleItem1"
@@ -178,176 +188,88 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 						</ViewportHelper>
 					</frame>
 				)}
-				<frame
-					key="BundleItem2"
-					BackgroundTransparency={1}
-					Size={new UDim2(0.17, 0, 0.8, 0)}
-					ZIndex={6}
-				>
-					<uiaspectratioconstraint />
-					<frame
-						key="ItemContainer"
-						BackgroundColor3={Color3.fromRGB(0, 0, 0)}
-						BackgroundTransparency={0.55}
-						BorderSizePixel={0}
-						Size={new UDim2(1, 0, 1, 0)}
-					>
-						<uistroke Thickness={4} />
-						<textlabel
+				{rewards.map((reward, i) => {
+					const { countText, nameText } = getRewardDisplay(reward);
+					return (
+						<frame
+							key={`RewardItem${i}`}
 							BackgroundTransparency={1}
-							Font={Enum.Font.GothamBlack}
-							FontFace={
-								new Font(
-									"rbxasset://fonts/families/GothamSSm.json",
-									Enum.FontWeight.Heavy,
-									Enum.FontStyle.Normal,
-								)
-							}
-							Position={new UDim2(-0.112, 0, -0.141, 0)}
-							Rotation={-6}
-							Size={new UDim2(0.641, 0, 0.37, 0)}
-							Text="x1"
-							TextColor3={Color3.fromRGB(255, 255, 255)}
-							TextScaled={true}
-							TextSize={14}
-							TextWrapped={true}
-							TextXAlignment={Enum.TextXAlignment.Left}
-						>
-							<uistroke Thickness={3} />
-						</textlabel>
-						<textlabel
-							BackgroundTransparency={1}
-							Font={Enum.Font.GothamBlack}
-							FontFace={
-								new Font(
-									"rbxasset://fonts/families/GothamSSm.json",
-									Enum.FontWeight.Heavy,
-									Enum.FontStyle.Normal,
-								)
-							}
-							Position={new UDim2(0.087, 0, 0.629, 0)}
-							Size={new UDim2(0.809, 0, 0.37, 0)}
-							Text="OP Egg"
-							TextColor3={Color3.fromRGB(255, 255, 255)}
-							TextScaled={true}
-							TextSize={14}
-							TextWrapped={true}
-						>
-							<uistroke Thickness={3} />
-						</textlabel>
-						<imagelabel
-							BackgroundTransparency={1}
-							Position={new UDim2(0.051, 0, 0.06, 0)}
-							Size={new UDim2(0.896, 0, 0.879, 0)}
-							ZIndex={0}
+							Size={new UDim2(0.17, 0, 0.8, 0)}
+							ZIndex={6}
 						>
 							<uiaspectratioconstraint />
-						</imagelabel>
-						<uigradient
-							Rotation={-90}
-							Transparency={
-								new NumberSequence([
-									new NumberSequenceKeypoint(0, 0, 0),
-									new NumberSequenceKeypoint(1, 0.581, 0),
-								])
-							}
-						/>
-						<imagelabel
-							key="Shadow"
-							BackgroundTransparency={1}
-							Image="rbxassetid://75600902046326"
-							ImageColor3={Color3.fromRGB(0, 0, 0)}
-							ImageTransparency={0.84}
-							Size={new UDim2(1, 0, 1, 0)}
-							ZIndex={5}
-						/>
-					</frame>
-				</frame>
-				<frame
-					key="BundleItem3"
-					BackgroundTransparency={1}
-					Size={new UDim2(0.17, 0, 0.8, 0)}
-					ZIndex={6}
-				>
-					<uiaspectratioconstraint />
-					<frame
-						key="ItemContainer"
-						BackgroundColor3={Color3.fromRGB(0, 0, 0)}
-						BackgroundTransparency={0.55}
-						BorderSizePixel={0}
-						Size={new UDim2(1, 0, 1, 0)}
-					>
-						<uistroke Thickness={4} />
-						<textlabel
-							BackgroundTransparency={1}
-							Font={Enum.Font.GothamBlack}
-							FontFace={
-								new Font(
-									"rbxasset://fonts/families/GothamSSm.json",
-									Enum.FontWeight.Heavy,
-									Enum.FontStyle.Normal,
-								)
-							}
-							Position={new UDim2(-0.112, 0, -0.141, 0)}
-							Rotation={-6}
-							Size={new UDim2(0.641, 0, 0.37, 0)}
-							Text="x1"
-							TextColor3={Color3.fromRGB(255, 255, 255)}
-							TextScaled={true}
-							TextSize={14}
-							TextWrapped={true}
-							TextXAlignment={Enum.TextXAlignment.Left}
-						>
-							<uistroke Thickness={3} />
-						</textlabel>
-						<textlabel
-							BackgroundTransparency={1}
-							Font={Enum.Font.GothamBlack}
-							FontFace={
-								new Font(
-									"rbxasset://fonts/families/GothamSSm.json",
-									Enum.FontWeight.Heavy,
-									Enum.FontStyle.Normal,
-								)
-							}
-							Position={new UDim2(0.087, 0, 0.629, 0)}
-							Size={new UDim2(0.809, 0, 0.37, 0)}
-							Text="OP Egg"
-							TextColor3={Color3.fromRGB(255, 255, 255)}
-							TextScaled={true}
-							TextSize={14}
-							TextWrapped={true}
-						>
-							<uistroke Thickness={3} />
-						</textlabel>
-						<imagelabel
-							BackgroundTransparency={1}
-							Position={new UDim2(0.051, 0, 0.06, 0)}
-							Size={new UDim2(0.896, 0, 0.879, 0)}
-							ZIndex={0}
-						>
-							<uiaspectratioconstraint />
-						</imagelabel>
-						<uigradient
-							Rotation={-90}
-							Transparency={
-								new NumberSequence([
-									new NumberSequenceKeypoint(0, 0, 0),
-									new NumberSequenceKeypoint(1, 0.581, 0),
-								])
-							}
-						/>
-						<imagelabel
-							key="Shadow"
-							BackgroundTransparency={1}
-							Image="rbxassetid://75600902046326"
-							ImageColor3={Color3.fromRGB(0, 0, 0)}
-							ImageTransparency={0.84}
-							Size={new UDim2(1, 0, 1, 0)}
-							ZIndex={5}
-						/>
-					</frame>
-				</frame>
+							<frame
+								key="ItemContainer"
+								BackgroundColor3={Color3.fromRGB(0, 0, 0)}
+								BackgroundTransparency={0.55}
+								BorderSizePixel={0}
+								Size={new UDim2(1, 0, 1, 0)}
+							>
+								<uistroke Thickness={4} />
+								<textlabel
+									BackgroundTransparency={1}
+									Font={Enum.Font.GothamBlack}
+									FontFace={
+										new Font(
+											"rbxasset://fonts/families/GothamSSm.json",
+											Enum.FontWeight.Heavy,
+											Enum.FontStyle.Normal,
+										)
+									}
+									Position={new UDim2(-0.112, 0, -0.141, 0)}
+									Rotation={-6}
+									Size={new UDim2(0.641, 0, 0.37, 0)}
+									Text={countText}
+									TextColor3={Color3.fromRGB(255, 255, 255)}
+									TextScaled={true}
+									TextSize={14}
+									TextWrapped={true}
+									TextXAlignment={Enum.TextXAlignment.Left}
+								>
+									<uistroke Thickness={3} />
+								</textlabel>
+								<textlabel
+									BackgroundTransparency={1}
+									Font={Enum.Font.GothamBlack}
+									FontFace={
+										new Font(
+											"rbxasset://fonts/families/GothamSSm.json",
+											Enum.FontWeight.Heavy,
+											Enum.FontStyle.Normal,
+										)
+									}
+									Position={new UDim2(0.087, 0, 0.629, 0)}
+									Size={new UDim2(0.809, 0, 0.37, 0)}
+									Text={nameText}
+									TextColor3={Color3.fromRGB(255, 255, 255)}
+									TextScaled={true}
+									TextSize={14}
+									TextWrapped={true}
+								>
+									<uistroke Thickness={3} />
+								</textlabel>
+								<uigradient
+									Rotation={-90}
+									Transparency={
+										new NumberSequence([
+											new NumberSequenceKeypoint(0, 0, 0),
+											new NumberSequenceKeypoint(1, 0.581, 0),
+										])
+									}
+								/>
+								<imagelabel
+									key="Shadow"
+									BackgroundTransparency={1}
+									Image="rbxassetid://75600902046326"
+									ImageColor3={Color3.fromRGB(0, 0, 0)}
+									ImageTransparency={0.84}
+									Size={new UDim2(1, 0, 1, 0)}
+									ZIndex={5}
+								/>
+							</frame>
+						</frame>
+					);
+				})}
 			</frame>
 			<frame
 				key="Top"
