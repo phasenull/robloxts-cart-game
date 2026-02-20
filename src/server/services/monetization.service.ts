@@ -43,7 +43,7 @@ export class MonetizationService implements OnStart {
 				)
 			}
 			this.logger.log(
-				`PURCHASE_RECEIPT_PROCESSED: player=${player.Name}, product_id=${reciept.ProductId}, product_name=${product_data.Name}`
+				`PURCHASE_RECEIPT: player=${player.Name}, product_id=${reciept.ProductId}, product_name=${product_data.Name}`
 			)
 		})
 		const purchasables = this.getPurchasables()
@@ -100,6 +100,7 @@ export class MonetizationService implements OnStart {
 					value: cart_entry.name,
 					handler: undefined
 				}
+				this.logger.log(`Processing cart purchase for product id ${product_id}, granting cart: ${cart_entry.name}`)
 				this.giveRewardToPlayer(player, virtual_reward, `cart_purchase_${product_id}`)
 				return Enum.ProductPurchaseDecision.PurchaseGranted
 			}
