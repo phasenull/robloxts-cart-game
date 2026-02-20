@@ -1,23 +1,23 @@
-import React, { useRef, useEffect } from "@rbxts/react"
-import { useMutation, useQuery } from "@rbxts/react-query"
-import { MarketplaceService, Players } from "@rbxts/services"
-import { UIHelper } from "client/ui.helper"
-import { __STUDIO__ } from "client/ui/constants"
-import { ViewportHelper } from "client/ui/components/viewport-helper"
-import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel"
-import { useCartProductId } from "client/ui/hooks/useCartProductId"
-import { useProductPrice } from "client/ui/hooks/useProductPrice"
-import { __IS_EDIT__ } from "shared/config.helper"
-import { ClientFunctions } from "shared/network.helper"
-import { A } from "shared/assets"
+import React, { useRef, useEffect } from "@rbxts/react";
+import { useMutation, useQuery } from "@rbxts/react-query";
+import { MarketplaceService, Players } from "@rbxts/services";
+import { UIHelper } from "client/ui.helper";
+import { __STUDIO__ } from "client/ui/constants";
+import { ViewportHelper } from "client/ui/components/viewport-helper";
+import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
+import { useCartProductId } from "client/ui/hooks/useCartProductId";
+import { useProductPrice } from "client/ui/hooks/useProductPrice";
+import { __IS_EDIT__ } from "shared/config.helper";
+import { ClientFunctions } from "shared/network.helper";
+import { A } from "shared/assets";
 
 interface SoleCartEntryProps {
-	cartName: string
-	description: string
-	backgroundImage?: string
-	backgroundImageColor?: Color3
-	layoutOrder?: number
-	textChildren?: React.ReactNode
+	cartName: string;
+	description: string;
+	backgroundImage?: string;
+	backgroundImageColor?: Color3;
+	layoutOrder?: number;
+	textChildren?: React.ReactNode;
 }
 
 export function SoleCartEntry({
@@ -26,82 +26,90 @@ export function SoleCartEntry({
 	backgroundImage = "rbxassetid://119921518737471",
 	backgroundImageColor = Color3.fromRGB(147, 201, 255),
 	layoutOrder,
-	textChildren
+	textChildren,
 }: SoleCartEntryProps) {
-	const entryButtonRef = useRef<ImageButton>()
+	const entryButtonRef = useRef<ImageButton>();
 
 	// Get product_id from cart name
-	const productId = useCartProductId(cartName)
+	const productId = useCartProductId(cartName);
 
 	// Check if player owns this cart
 	const { data: is_owned = false, refetch: refetchOwned } = useQuery({
 		queryKey: ["cart-owned", cartName],
 		queryFn: async () => {
-			if (__IS_EDIT__) return false
-			const [owned, err] = await ClientFunctions.ShopService.doesPlayerOwnItem.invoke("cart", cartName)
-			if (err) return false
-			return owned as boolean
-		}
-	})
+			if (__IS_EDIT__) return false;
+			const [owned, err] =
+				await ClientFunctions.ShopService.doesPlayerOwnItem.invoke(
+					"cart",
+					cartName,
+				);
+			if (err) return false;
+			return owned as boolean;
+		},
+	});
 
 	// Fetch price from MarketplaceService
 	const { priceInRobux, isLoading } = useProductPrice({
 		productId,
-		enabled: !is_owned
-	})
+		enabled: !is_owned,
+	});
 
 	// Format price display
 	const priceText = isLoading
 		? "..."
 		: priceInRobux !== undefined
 			? `${priceInRobux} R$`
-			: "N/A"
+			: "N/A";
 
 	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
 		mutationFn: async (args: { productId: number }) => {
-			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, args.productId)
-			let result = false
+			MarketplaceService.PromptProductPurchase(
+				Players.LocalPlayer,
+				args.productId,
+			);
+			let result = false;
 			if (__STUDIO__) {
-				task.wait(1)
-				result = true
+				task.wait(1);
+				result = true;
 			} else {
-				const [_, __, new_result] = MarketplaceService.PromptProductPurchaseFinished.Wait()
-				result = new_result
+				const [_, __, new_result] =
+					MarketplaceService.PromptProductPurchaseFinished.Wait();
+				result = new_result;
 			}
 			if (result) {
-				UIHelper.playSound(A.sounds.purchase_success)
-				refetchOwned()
+				UIHelper.playSound(A.sounds.purchase_success);
+				refetchOwned();
 			}
-			return result
-		}
-	})
+			return result;
+		},
+	});
 
-	const model = useCartModel(cartName, true)
-	model?.FindFirstChild("HandBrake")?.Destroy()
-	model?.FindFirstChild("Honk")?.Destroy()
+	const model = useCartModel(cartName, true);
+	model?.FindFirstChild("HandBrake")?.Destroy();
+	model?.FindFirstChild("Honk")?.Destroy();
 
 	const handleBuyClick = () => {
 		if (is_owned || isPromptLoading || !productId) {
-			UIHelper.playSound(A.sounds.error)
-			return
+			UIHelper.playSound(A.sounds.error);
+			return;
 		}
-		promptPurchase({ productId })
-	}
+		promptPurchase({ productId });
+	};
 
 	useEffect(() => {
-		const entryButton = entryButtonRef.current
+		const entryButton = entryButtonRef.current;
 
 		if (entryButton) {
-			UIHelper.bind(entryButton, 2)
+			UIHelper.bind(entryButton, 2);
 		}
 
 		return () => {
-			if (entryButton) UIHelper.unbind(entryButton)
-		}
-	}, [is_owned])
+			if (entryButton) UIHelper.unbind(entryButton);
+		};
+	}, [is_owned]);
 
 	if (!model) {
-		return
+		return;
 	}
 	return (
 		<imagebutton
@@ -114,7 +122,7 @@ export function SoleCartEntry({
 			Position={new UDim2(0.015, 0, 0.073, 0)}
 			Size={new UDim2(0.31, 0, 1, 0)}
 			Event={{
-				MouseButton1Click: handleBuyClick
+				MouseButton1Click: handleBuyClick,
 			}}
 		>
 			<uiaspectratioconstraint AspectRatio={0.862} />
@@ -156,7 +164,7 @@ export function SoleCartEntry({
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.913, 0, 0.5, 0)}
@@ -180,7 +188,7 @@ export function SoleCartEntry({
 				ZIndex={45}
 				Active={!is_owned && !isPromptLoading}
 				Event={{
-					MouseButton1Click: handleBuyClick
+					MouseButton1Click: handleBuyClick,
 				}}
 			>
 				<uistroke Thickness={5} />
@@ -191,14 +199,14 @@ export function SoleCartEntry({
 								0,
 								is_owned
 									? Color3.fromRGB(100, 100, 100)
-									: Color3.fromRGB(62, 216, 40)
+									: Color3.fromRGB(62, 216, 40),
 							),
 							new ColorSequenceKeypoint(
 								1,
 								is_owned
 									? Color3.fromRGB(150, 150, 150)
-									: Color3.fromRGB(171, 248, 71)
-							)
+									: Color3.fromRGB(171, 248, 71),
+							),
 						])
 					}
 					Rotation={-90}
@@ -229,7 +237,7 @@ export function SoleCartEntry({
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.182, 0, 0.123, 0)}
@@ -250,7 +258,7 @@ export function SoleCartEntry({
 					new Font(
 						"rbxasset://fonts/families/GothamSSm.json",
 						Enum.FontWeight.Heavy,
-						Enum.FontStyle.Normal
+						Enum.FontStyle.Normal,
 					)
 				}
 				Position={new UDim2(0.034, 0, 0.7, 0)}
@@ -282,18 +290,21 @@ export function SoleCartEntry({
 					Transparency={
 						new NumberSequence([
 							new NumberSequenceKeypoint(0, 0, 0),
-							new NumberSequenceKeypoint(1, 0.581, 0)
+							new NumberSequenceKeypoint(1, 0.581, 0),
 						])
 					}
 				/>
 			</imagelabel>
 			<ViewportHelper
-			position={new UDim2(0, 0, -0.1, 0)}
+				position={new UDim2(0, 0, -0, 0)}
 				model={model}
-				fieldOfView={50}
+				fieldOfView={60}
 				cameraDistance={15}
 				autoFit={true}
-				modelOffset={new CFrame(0, 5, 0).mul(CFrame.Angles(math.rad(10), math.rad(180), 0))}
+				modelOffset={new CFrame(0, 5, 0).mul(
+					CFrame.Angles(math.rad(10), math.rad(180), 0),
+				)}
+				size={UDim2.fromScale(1,1)}
 				lightDirection={Vector3.zero}
 				enableRotationAnimation={true}
 				rotationSpeed={30}
@@ -301,5 +312,5 @@ export function SoleCartEntry({
 				rotateCameraInsteadOfModel={true}
 			/>
 		</imagebutton>
-	)
+	);
 }

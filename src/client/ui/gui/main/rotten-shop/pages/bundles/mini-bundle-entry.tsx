@@ -1,13 +1,18 @@
-import React from "@rbxts/react"
+import React, { useRef, useEffect } from "@rbxts/react"
+import { useMutation, useQuery } from "@rbxts/react-query"
+import { MarketplaceService, Players } from "@rbxts/services"
+import { UIHelper } from "client/ui.helper"
+import { __STUDIO__ } from "client/ui/constants"
+import { ViewportHelper } from "client/ui/components/viewport-helper"
+import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel"
+import { A } from "shared/assets"
+import { ClientFunctions } from "shared/network.helper"
+import { __IS_EDIT__ } from "shared/config.helper"
 
 export interface MiniBundleEntryProps {
-	bundleName?: string
+	productId: number
+	cartName: string
 	side: "left" | "right"
-	mainItem?: {
-		name: string
-		quantity: number
-		image?: string
-	}
 	leftItem?: {
 		name: string
 		quantity: number
@@ -18,13 +23,82 @@ export interface MiniBundleEntryProps {
 		quantity: number
 		image?: string
 	}
-	price?: string
 	onBuy?: () => void
 }
 
 export function MiniBundleEntry(props: MiniBundleEntryProps) {
-	// TODO: Implement bundle entry logic
-	const x_anchor = props.side === "left" ? 0 : 1
+	const { productId, cartName, side, leftItem, rightItem } = props
+	const x_anchor = side === "left" ? 0 : 1
+	const entryButtonRef = useRef<ImageButton>()
+
+	const { data: productInfo, isLoading } = useQuery({
+		queryKey: ["product-info", productId],
+		queryFn: async () => {
+			const info = MarketplaceService.GetProductInfoAsync(
+				productId,
+				Enum.InfoType.Product
+			) as DeveloperProductInfo
+			return info
+		},
+		staleTime: 300_000
+	})
+
+	const { data: is_owned = false, refetch: refetchOwned } = useQuery({
+		queryKey: ["cart-owned", cartName],
+		queryFn: async () => {
+			if (__IS_EDIT__) return false
+			const [owned, err] = await ClientFunctions.ShopService.doesPlayerOwnItem.invoke("cart", cartName)
+			if (err) return false
+			return owned as boolean
+		}
+	})
+
+	const bundleTitle = productInfo?.Name ?? "..."
+	const priceInRobux = productInfo?.PriceInRobux
+	const priceText = isLoading ? "..." : priceInRobux !== undefined ? `${priceInRobux} R$` : "N/A"
+
+	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
+		mutationFn: async () => {
+			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId)
+			let result = false
+			if (__STUDIO__) {
+				task.wait(1)
+				result = true
+			} else {
+				const [_, __, new_result] = MarketplaceService.PromptProductPurchaseFinished.Wait()
+				result = new_result
+			}
+			if (result) {
+				UIHelper.playSound(A.sounds.purchase_success)
+				refetchOwned()
+				props.onBuy?.()
+			}
+			return result
+		}
+	})
+
+	const handleBuyClick = () => {
+		if (is_owned || isPromptLoading) {
+			UIHelper.playSound(A.sounds.error)
+			return
+		}
+		promptPurchase()
+	}
+
+	useEffect(() => {
+		const entryButton = entryButtonRef.current
+		if (entryButton) {
+			UIHelper.bind(entryButton, 2)
+		}
+		return () => {
+			if (entryButton) UIHelper.unbind(entryButton)
+		}
+	}, [is_owned])
+
+	const model = useCartModel(cartName, true)
+	model?.FindFirstChild("HandBrake")?.Destroy()
+	model?.FindFirstChild("Honk")?.Destroy()
+
 	return (
 		<frame
 			key="MiniBundleEntry"
@@ -58,7 +132,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					}
 					Position={new UDim2(0.481, 0, 0.481, 0)}
 					Size={new UDim2(0.468, 0, 0.782, 0)}
-					Text="Spiky Cart Bundle!"
+					Text={bundleTitle}
 					TextColor3={Color3.fromRGB(255, 255, 255)}
 					TextScaled={true}
 					TextSize={14}
@@ -131,61 +205,9 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					BackgroundTransparency={0.55}
 					BorderSizePixel={0}
 					LayoutOrder={2}
-					Position={new UDim2(0.075, 0, 0.274, 0)}
-					SelectionOrder={1}
-					Size={new UDim2(1, 0, 1, 0)}
+					Size={new UDim2(0.5, 0, 1, 0)}
 				>
 					<uistroke Thickness={4} />
-					<textlabel
-						BackgroundTransparency={1}
-						Font={Enum.Font.GothamBlack}
-						FontFace={
-							new Font(
-								"rbxasset://fonts/families/GothamSSm.json",
-								Enum.FontWeight.Heavy,
-								Enum.FontStyle.Normal
-							)
-						}
-						Position={new UDim2(-0.112, 0, -0.14100000000000001, 0)}
-						Rotation={-6}
-						Size={new UDim2(0.641, 0, 0.37, 0)}
-						Text="x1"
-						TextColor3={Color3.fromRGB(255, 255, 255)}
-						TextScaled={true}
-						TextSize={14}
-						TextWrapped={true}
-						TextXAlignment={Enum.TextXAlignment.Left}
-					>
-						<uistroke Thickness={3} />
-					</textlabel>
-					<textlabel
-						BackgroundTransparency={1}
-						Font={Enum.Font.GothamBlack}
-						FontFace={
-							new Font(
-								"rbxasset://fonts/families/GothamSSm.json",
-								Enum.FontWeight.Heavy,
-								Enum.FontStyle.Normal
-							)
-						}
-						Position={new UDim2(0.08700000000000001, 0, 0.629, 0)}
-						Size={new UDim2(0.809, 0, 0.37, 0)}
-						Text="OP Egg"
-						TextColor3={Color3.fromRGB(255, 255, 255)}
-						TextScaled={true}
-						TextSize={14}
-						TextWrapped={true}
-					>
-						<uistroke Thickness={3} />
-					</textlabel>
-					<imagelabel
-						BackgroundTransparency={1}
-						Position={new UDim2(0.051000000000000004, 0, 0.06, 0)}
-						Size={new UDim2(0.896, 0, 0.88, 0)}
-						ZIndex={0}
-					>
-						<uiaspectratioconstraint />
-					</imagelabel>
 					<uiaspectratioconstraint />
 					<uigradient
 						Rotation={-90}
@@ -205,6 +227,22 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						Size={new UDim2(1, 0, 1, 0)}
 						ZIndex={5}
 					/>
+					{model && (
+						<ViewportHelper
+							model={model}
+							size={new UDim2(1, 0, 1, 0)}
+							position={new UDim2(0, 0, 0, 0)}
+							fieldOfView={50}
+							autoFit={true}
+							modelOffset={new CFrame(0, 5, 0).mul(CFrame.Angles(math.rad(10), math.rad(180), 0))}
+							lightDirection={Vector3.zero}
+							enableRotationAnimation={true}
+							rotationSpeed={30}
+							rotationAxis="Y"
+							rotateCameraInsteadOfModel={true}
+							zIndex={6}
+						/>
+					)}
 				</frame>
 				<frame
 					key="LeftItemContainer"
@@ -230,7 +268,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						Position={new UDim2(-0.112, 0, -0.14100000000000001, 0)}
 						Rotation={-6}
 						Size={new UDim2(0.641, 0, 0.37, 0)}
-						Text="x1"
+						Text={leftItem !== undefined ? `x${leftItem.quantity}` : "x1"}
 						TextColor3={Color3.fromRGB(255, 255, 255)}
 						TextScaled={true}
 						TextSize={14}
@@ -251,7 +289,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						}
 						Position={new UDim2(0.08700000000000001, 0, 0.629, 0)}
 						Size={new UDim2(0.809, 0, 0.37, 0)}
-						Text="OP Egg"
+						Text={leftItem?.name ?? "?"}
 						TextColor3={Color3.fromRGB(255, 255, 255)}
 						TextScaled={true}
 						TextSize={14}
@@ -261,6 +299,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					</textlabel>
 					<imagelabel
 						BackgroundTransparency={1}
+						Image={leftItem?.image ?? ""}
 						Position={new UDim2(0.051000000000000004, 0, 0.06, 0)}
 						Size={new UDim2(0.896, 0, 0.879, 0)}
 						ZIndex={0}
@@ -311,7 +350,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						Position={new UDim2(-0.112, 0, -0.14100000000000001, 0)}
 						Rotation={-6}
 						Size={new UDim2(0.641, 0, 0.37, 0)}
-						Text="x1"
+						Text={rightItem !== undefined ? `x${rightItem.quantity}` : "x1"}
 						TextColor3={Color3.fromRGB(255, 255, 255)}
 						TextScaled={true}
 						TextSize={14}
@@ -332,7 +371,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						}
 						Position={new UDim2(0.08700000000000001, 0, 0.629, 0)}
 						Size={new UDim2(0.809, 0, 0.37, 0)}
-						Text="OP Egg"
+						Text={rightItem?.name ?? "?"}
 						TextColor3={Color3.fromRGB(255, 255, 255)}
 						TextScaled={true}
 						TextSize={14}
@@ -342,6 +381,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					</textlabel>
 					<imagelabel
 						BackgroundTransparency={1}
+						Image={rightItem?.image ?? ""}
 						Position={new UDim2(0.051000000000000004, 0, 0.06, 0)}
 						Size={new UDim2(0.896, 0, 0.879, 0)}
 						ZIndex={0}
@@ -397,6 +437,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 				ZIndex={5}
 			/>
 			<imagebutton
+				ref={entryButtonRef}
 				key="Buy"
 				AnchorPoint={new Vector2(0.5, 0.5)}
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
@@ -405,6 +446,10 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 				ScaleType={Enum.ScaleType.Fit}
 				Size={new UDim2(0.289, 0, 0.181, 0)}
 				ZIndex={5}
+				Active={!is_owned && !isPromptLoading}
+				Event={{
+					MouseButton1Click: handleBuyClick
+				}}
 			>
 				<frame
 					key="Bottom"
@@ -438,32 +483,11 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					}
 					Position={new UDim2(0.181, 0, 0.167, 0)}
 					Size={new UDim2(0.636, 0, 0.5760000000000001, 0)}
-					Text=" N/A"
+					Text={is_owned ? "OWNED" : priceText}
 					TextColor3={Color3.fromRGB(255, 255, 255)}
 					TextScaled={true}
 					TextSize={14}
 					TextWrapped={true}
-				>
-					<uistroke Thickness={3} />
-				</textlabel>
-				<textlabel
-					BackgroundTransparency={1}
-					Font={Enum.Font.GothamBlack}
-					FontFace={
-						new Font(
-							"rbxasset://fonts/families/GothamSSm.json",
-							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
-						)
-					}
-					Position={new UDim2(0.221, 0, -0.585, 0)}
-					Size={new UDim2(0.641, 0, 0.5760000000000001, 0)}
-					Text={""}
-					TextColor3={Color3.fromRGB(255, 255, 255)}
-					TextScaled={true}
-					TextSize={14}
-					TextWrapped={true}
-					TextXAlignment={Enum.TextXAlignment.Left}
 				>
 					<uistroke Thickness={3} />
 				</textlabel>
@@ -471,8 +495,18 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 				<uigradient
 					Color={
 						new ColorSequence([
-							new ColorSequenceKeypoint(0, Color3.fromRGB(255, 148, 0)),
-							new ColorSequenceKeypoint(1, Color3.fromRGB(247, 248, 148))
+							new ColorSequenceKeypoint(
+								0,
+								is_owned
+									? Color3.fromRGB(100, 100, 100)
+									: Color3.fromRGB(255, 148, 0)
+							),
+							new ColorSequenceKeypoint(
+								1,
+								is_owned
+									? Color3.fromRGB(150, 150, 150)
+									: Color3.fromRGB(247, 248, 148)
+							)
 						])
 					}
 					Rotation={-90}

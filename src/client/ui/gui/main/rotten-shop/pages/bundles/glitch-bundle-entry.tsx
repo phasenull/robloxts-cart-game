@@ -1,20 +1,93 @@
-import React from "@rbxts/react"
+import React, { useRef, useEffect } from "@rbxts/react"
+import { useMutation, useQuery } from "@rbxts/react-query"
+import { MarketplaceService, Players } from "@rbxts/services"
+import { UIHelper } from "client/ui.helper"
+import { __STUDIO__ } from "client/ui/constants"
+import { ViewportHelper } from "client/ui/components/viewport-helper"
+import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel"
+import { A } from "shared/assets"
+import { ClientFunctions } from "shared/network.helper"
+import { __IS_EDIT__ } from "shared/config.helper"
 
 export interface GlitchBundleEntryProps {
-	bundleName?: string
-	items?: Array<{
-		name: string
-		quantity: number
-		image?: string
-	}>
-	price?: string
-	originalPrice?: string
+	productId: number
+	cartName: string
 	discountPercentage?: number
 	onBuy?: () => void
 }
 
 export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
-	// TODO: Implement glitch bundle entry logic
+	const { productId, cartName, discountPercentage } = props
+	const entryButtonRef = useRef<ImageButton>()
+
+	const { data: productInfo, isLoading } = useQuery({
+		queryKey: ["product-info", productId],
+		queryFn: async () => {
+			const info = MarketplaceService.GetProductInfoAsync(
+				productId,
+				Enum.InfoType.Product
+			) as DeveloperProductInfo
+			return info
+		},
+		staleTime: 300_000
+	})
+
+	const { data: is_owned = false, refetch: refetchOwned } = useQuery({
+		queryKey: ["cart-owned", cartName],
+		queryFn: async () => {
+			if (__IS_EDIT__) return false
+			const [owned, err] = await ClientFunctions.ShopService.doesPlayerOwnItem.invoke("cart", cartName)
+			if (err) return false
+			return owned as boolean
+		}
+	})
+
+	const bundleTitle = productInfo?.Name ?? "..."
+	const priceInRobux = productInfo?.PriceInRobux
+	const priceText = isLoading ? "..." : priceInRobux !== undefined ? `${priceInRobux} R$` : "N/A"
+
+	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
+		mutationFn: async () => {
+			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId)
+			let result = false
+			if (__STUDIO__) {
+				task.wait(1)
+				result = true
+			} else {
+				const [_, __, new_result] = MarketplaceService.PromptProductPurchaseFinished.Wait()
+				result = new_result
+			}
+			if (result) {
+				UIHelper.playSound(A.sounds.purchase_success)
+				refetchOwned()
+				props.onBuy?.()
+			}
+			return result
+		}
+	})
+
+	const handleBuyClick = () => {
+		if (is_owned || isPromptLoading) {
+			UIHelper.playSound(A.sounds.error)
+			return
+		}
+		promptPurchase()
+	}
+
+	useEffect(() => {
+		const entryButton = entryButtonRef.current
+		if (entryButton) {
+			UIHelper.bind(entryButton, 2)
+		}
+		return () => {
+			if (entryButton) UIHelper.unbind(entryButton)
+		}
+	}, [is_owned])
+
+	const model = useCartModel(cartName, true)
+	model?.FindFirstChild("HandBrake")?.Destroy()
+	model?.FindFirstChild("Honk")?.Destroy()
+
 	return (
 		<frame
 			key="GlitchBundleEntry"
@@ -39,6 +112,22 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				}
 				Enabled={false}
 			/>
+			{model && (
+				<ViewportHelper
+					model={model}
+					position={new UDim2(0.01, 0, 0.19, 0)}
+					size={new UDim2(0.29, 0, 0.73, 0)}
+					fieldOfView={50}
+					autoFit={true}
+					modelOffset={new CFrame(0, 5, 0).mul(CFrame.Angles(math.rad(10), math.rad(180), 0))}
+					lightDirection={Vector3.zero}
+					enableRotationAnimation={true}
+					rotationSpeed={30}
+					rotationAxis="Y"
+					rotateCameraInsteadOfModel={true}
+					zIndex={6}
+				/>
+			)}
 			<frame
 				key="List"
 				BackgroundTransparency={1}
@@ -394,7 +483,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					}
 					Position={new UDim2(0.481, 0, 0.481, 0)}
 					Size={new UDim2(0.468, 0, 0.782, 0)}
-					Text="Limited Offer!"
+					Text={bundleTitle}
 					TextColor3={Color3.fromRGB(255, 255, 255)}
 					TextScaled={true}
 					TextSize={14}
@@ -417,13 +506,13 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					}
 					Position={new UDim2(0.991, 0, 0.492, 0)}
 					Size={new UDim2(0.468, 0, 0.625, 0)}
-					Text="Sale %50!"
+					Text={discountPercentage !== undefined ? `Sale %${discountPercentage}!` : ""}
 					TextColor3={Color3.fromRGB(255, 255, 255)}
 					TextScaled={true}
 					TextSize={14}
 					TextWrapped={true}
 					TextXAlignment={Enum.TextXAlignment.Right}
-					Visible={false}
+					Visible={discountPercentage !== undefined}
 				>
 					<uistroke Thickness={3} />
 					<uigradient
@@ -437,6 +526,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				</textlabel>
 			</frame>
 			<imagebutton
+				ref={entryButtonRef}
 				key="Buy"
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 				BorderSizePixel={0}
@@ -444,13 +534,27 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				ScaleType={Enum.ScaleType.Fit}
 				Size={new UDim2(0.23500000000000001, 0, 0.20500000000000002, 0)}
 				ZIndex={5}
+				Active={!is_owned && !isPromptLoading}
+				Event={{
+					MouseButton1Click: handleBuyClick
+				}}
 			>
 				<uistroke Thickness={5.1000000000000005} />
 				<uigradient
 					Color={
 						new ColorSequence([
-							new ColorSequenceKeypoint(0, Color3.fromRGB(255, 148, 0)),
-							new ColorSequenceKeypoint(1, Color3.fromRGB(247, 248, 148))
+							new ColorSequenceKeypoint(
+								0,
+								is_owned
+									? Color3.fromRGB(100, 100, 100)
+									: Color3.fromRGB(255, 148, 0)
+							),
+							new ColorSequenceKeypoint(
+								1,
+								is_owned
+									? Color3.fromRGB(150, 150, 150)
+									: Color3.fromRGB(247, 248, 148)
+							)
 						])
 					}
 					Rotation={-90}
@@ -487,63 +591,13 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					}
 					Position={new UDim2(0.181, 0, 0.167, 0)}
 					Size={new UDim2(0.636, 0, 0.5760000000000001, 0)}
-					Text=" N/A"
+					Text={is_owned ? "OWNED" : priceText}
 					TextColor3={Color3.fromRGB(255, 255, 255)}
 					TextScaled={true}
 					TextSize={14}
 					TextWrapped={true}
 				>
 					<uistroke Thickness={3} />
-				</textlabel>
-				<textlabel
-					BackgroundTransparency={1}
-					Font={Enum.Font.GothamBlack}
-					FontFace={
-						new Font(
-							"rbxasset://fonts/families/GothamSSm.json",
-							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
-						)
-					}
-					Position={new UDim2(0.221, 0, -0.585, 0)}
-					Size={new UDim2(0.641, 0, 0.5760000000000001, 0)}
-					Text={""}
-					TextColor3={Color3.fromRGB(255, 255, 255)}
-					TextScaled={true}
-					TextSize={14}
-					TextWrapped={true}
-					TextXAlignment={Enum.TextXAlignment.Left}
-				>
-					<uistroke Thickness={3} />
-				</textlabel>
-				<textlabel
-					BackgroundTransparency={1}
-					Font={Enum.Font.GothamBlack}
-					FontFace={
-						new Font(
-							"rbxasset://fonts/families/GothamSSm.json",
-							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
-						)
-					}
-					Position={new UDim2(-0.23600000000000002, 0, -0.20700000000000002, 0)}
-					Rotation={-10}
-					Size={new UDim2(0.636, 0, 0.446, 0)}
-					Text="N/A"
-					TextColor3={Color3.fromRGB(255, 0, 0)}
-					TextScaled={true}
-					TextSize={14}
-					TextWrapped={true}
-				>
-					<uistroke Thickness={3} />
-					<uistroke Thickness={3} />
-					<frame
-						BackgroundColor3={Color3.fromRGB(255, 0, 0)}
-						BorderSizePixel={0}
-						Position={new UDim2(0.08, 0, 0.402, 0)}
-						Rotation={-10}
-						Size={new UDim2(0.839, 0, 0.197, 0)}
-					/>
 				</textlabel>
 			</imagebutton>
 			<imagelabel
@@ -626,7 +680,6 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				TextWrapped={true}
 				ZIndex={50}
 			>
-				<uistroke Thickness={3} />
 				<uistroke Thickness={3} />
 			</textlabel>
 			<imagelabel
