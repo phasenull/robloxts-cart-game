@@ -22,7 +22,6 @@ export class MonetizationService implements OnStart {
 	}
 	onStart(): void {
 		Players.PlayerAdded.Connect((p) => this.playerAdded(p))
-		const CartService = Dependency<CartService>()
 		MarketplaceService.ProcessReceipt = (receipt) =>
 			this.processReceipt(receipt)
 	}
@@ -32,6 +31,8 @@ export class MonetizationService implements OnStart {
 		if (!player) {
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		}
+		const data_service = Dependency<DataService>()
+		data_service.changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
 		task.spawn(() => {
 			const product_data = MarketplaceService.GetProductInfoAsync(
 				reciept.ProductId,
@@ -82,7 +83,6 @@ export class MonetizationService implements OnStart {
 					this.giveRewardToPlayer(player, virtual_reward, `island_skip_${skip_count}_purchase`)
 				}
 
-				Dependency<DataService>().changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
 				return Enum.ProductPurchaseDecision.PurchaseGranted
 			}
 		}
@@ -103,7 +103,6 @@ export class MonetizationService implements OnStart {
 				}
 				this.logger.log(`Processing cart purchase for product id ${product_id}, granting cart: ${cart_entry.name}`)
 				this.giveRewardToPlayer(player, virtual_reward, `cart_purchase_${product_id}`)
-				Dependency<DataService>().changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
 				return Enum.ProductPurchaseDecision.PurchaseGranted
 			}
 			
@@ -119,7 +118,7 @@ export class MonetizationService implements OnStart {
 				`${purchasable.product_id || "unknown purchasable"}`
 			)
 		}
-		Dependency<DataService>().changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
+		
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	}
 	giveRewardToPlayer(

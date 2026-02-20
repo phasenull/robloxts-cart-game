@@ -22,7 +22,7 @@ const PROFILE_TEMPLATE = {
 	flips: 999,
 	collected_checkpoints: [0] as number[],
 	inventory: {
-		vehicles: ["Cart"]  // Default cart for all players
+		vehicles: ["Cart"], // Default cart for all players
 	} as Record<string, string[]>,
 	customization: {} as Record<string, string[]>,
 };
@@ -33,7 +33,10 @@ type PurchaseHistoryEntry = {
 	product_type: "item" | "case" | "gamepass";
 	created_at: number;
 };
-const PROFILE_STORE = ProfileService.GetProfileStore("players", PROFILE_TEMPLATE);
+const PROFILE_STORE = ProfileService.GetProfileStore(
+	"players",
+	PROFILE_TEMPLATE,
+);
 
 @Service({ loadOrder: 0 })
 export class DataService implements OnStart {
@@ -58,7 +61,7 @@ export class DataService implements OnStart {
 				this.playerRemoving(player);
 			}
 		});
-		
+
 		// Setup network callbacks
 		ServerFunctions.DataService.getCash.setCallback((player) => {
 			const profile = this.getProfile(player);
@@ -92,32 +95,42 @@ export class DataService implements OnStart {
 		// }
 	}
 
-	public grantPlayerCash(player: Player, amount: number, reason?: string, skipQuestProgress?: boolean) {
+	public grantPlayerCash(
+		player: Player,
+		amount: number,
+		reason?: string,
+		skipQuestProgress?: boolean,
+	) {
 		const profile = this.getProfile(player);
 		if (!profile) {
-			this.logger.warn(`Tried to grant cash to player ${player.Name} but their profile was not loaded`);
+			this.logger.warn(
+				`Tried to grant cash to player ${player.Name} but their profile was not loaded`,
+			);
 			return;
 		}
 		const current = profile.Data.cash as number;
 		profile.Data.cash = (current + amount) as any;
-		this.logger.log(`Granted ${amount} cash to player ${player.Name}. Reason: ${reason || "N/A"}`);
-		
+		this.logger.log(
+			`Granted ${amount} cash to player ${player.Name}. Reason: ${reason || "N/A"}`,
+		);
+
 		// Fire network event to update UI
-		ServerEvents.DataService.updatePlayerCash.fire(player, profile.Data.cash as number);
-		
+		ServerEvents.DataService.updatePlayerCash.fire(
+			player,
+			profile.Data.cash as number,
+		);
+
 		if (amount > 0) {
 			ServerEvents.NotificationService.sendNotification(player, {
 				title: "<b>Cash Earned</b>",
 				description: `<font color='#00FF00'>+$${amount}</font>${reason ? ` - ${reason}` : ""}`,
-				duration: 10
+				duration: 10,
 			});
 		}
-		return profile.Data.cash as number
+		return profile.Data.cash as number;
 	}
-	public refreshLeaderboard(leaderboard: ScreenGui, stat: string) {
-	}
-	public list100ByStat() {
-	}
+	public refreshLeaderboard(leaderboard: ScreenGui, stat: string) {}
+	public list100ByStat() {}
 
 	public playerAdded(player: Player) {
 		const profile = PROFILE_STORE.LoadProfileAsync(`${player.UserId}`);
@@ -147,28 +160,42 @@ export class DataService implements OnStart {
 			playtime: profile.Data.playtime as number,
 			robux_spent: profile.Data.robux_spent as number,
 		});
-		
+
 		// Send initial cash to client
 		task.delay(0.5, () => {
-			ServerEvents.DataService.updatePlayerCash.fire(player, profile.Data.cash as number);
+			ServerEvents.DataService.updatePlayerCash.fire(
+				player,
+				profile.Data.cash as number,
+			);
 		});
 	}
 	// cash, kills, playtime, bounties
 
-	public changeOrderedStat(player: Player, stat: keyof typeof PROFILE_TEMPLATE, amount: number) {
+	public changeOrderedStat(
+		player: Player,
+		stat: keyof typeof PROFILE_TEMPLATE,
+		amount: number,
+	) {
 		const profile = this.state.get(player.UserId);
-		if (!profile) return;
-		if (!(stat in PROFILE_TEMPLATE)) return;
+		if (!profile) {
+			return;
+		}
 		const current = profile.Data[stat] as number;
-		if (current === undefined) return;
+		if (current === undefined || typeOf(current) !== "number") {
+			return;
+		}
 		(profile.Data[stat] as number) = (current + amount) as any;
+		this.logger.log(
+			`Changed stat ${stat} for player ${player.Name} by ${amount}. New value: ${profile.Data[stat]}`,
+		);
 	}
 	public playerRemoving(player: Player) {
 		const profile = this.state.get(player.UserId);
 		if (!profile) return;
 		const join_time = this.playtime_state.get(player.UserId) ?? os.clock();
 		const session_playtime = math.floor(os.clock() - join_time);
-		profile.Data.playtime = (profile.Data.playtime as number) + session_playtime;
+		profile.Data.playtime =
+			(profile.Data.playtime as number) + session_playtime;
 		Dependency<HttpService>().syncPlayer({
 			user_id: player.UserId,
 			cash: profile.Data.cash as number,
