@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "@rbxts/react"
+import React from "@rbxts/react"
 import { useMutation, useQuery } from "@rbxts/react-query"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
@@ -29,8 +29,6 @@ export interface MiniBundleEntryProps {
 export function MiniBundleEntry(props: MiniBundleEntryProps) {
 	const { productId, cartName, side, leftItem, rightItem } = props
 	const x_anchor = side === "left" ? 0 : 1
-	const entryButtonRef = useRef<ImageButton>()
-
 	const { data: productInfo, isLoading } = useQuery({
 		queryKey: ["product-info", productId],
 		queryFn: async () => {
@@ -85,15 +83,6 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 		promptPurchase()
 	}
 
-	useEffect(() => {
-		const entryButton = entryButtonRef.current
-		if (entryButton) {
-			UIHelper.bind(entryButton, 2)
-		}
-		return () => {
-			if (entryButton) UIHelper.unbind(entryButton)
-		}
-	}, [is_owned])
 
 	const model = useCartModel(cartName, true)
 	model?.FindFirstChild("HandBrake")?.Destroy()
@@ -437,7 +426,6 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 				ZIndex={5}
 			/>
 			<imagebutton
-				ref={entryButtonRef}
 				key="Buy"
 				AnchorPoint={new Vector2(0.5, 0.5)}
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}

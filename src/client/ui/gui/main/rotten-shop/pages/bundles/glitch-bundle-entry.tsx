@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "@rbxts/react"
+import React from "@rbxts/react"
 import { useMutation, useQuery } from "@rbxts/react-query"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
@@ -18,8 +18,6 @@ export interface GlitchBundleEntryProps {
 
 export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 	const { productId, cartName, discountPercentage } = props
-	const entryButtonRef = useRef<ImageButton>()
-
 	const { data: productInfo, isLoading } = useQuery({
 		queryKey: ["product-info", productId],
 		queryFn: async () => {
@@ -74,15 +72,6 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 		promptPurchase()
 	}
 
-	useEffect(() => {
-		const entryButton = entryButtonRef.current
-		if (entryButton) {
-			UIHelper.bind(entryButton, 2)
-		}
-		return () => {
-			if (entryButton) UIHelper.unbind(entryButton)
-		}
-	}, [is_owned])
 
 	const model = useCartModel(cartName, true)
 	model?.FindFirstChild("HandBrake")?.Destroy()
@@ -526,20 +515,19 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				</textlabel>
 			</frame>
 			<imagebutton
-				ref={entryButtonRef}
 				key="Buy"
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 				BorderSizePixel={0}
 				Position={new UDim2(0.74, 0, 0.717, 0)}
 				ScaleType={Enum.ScaleType.Fit}
-				Size={new UDim2(0.23500000000000001, 0, 0.20500000000000002, 0)}
+				Size={new UDim2(0.235, 0, 0.205, 0)}
 				ZIndex={5}
 				Active={!is_owned && !isPromptLoading}
 				Event={{
 					MouseButton1Click: handleBuyClick
 				}}
 			>
-				<uistroke Thickness={5.1000000000000005} />
+				<uistroke Thickness={5} />
 				<uigradient
 					Color={
 						new ColorSequence([
