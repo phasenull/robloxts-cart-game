@@ -26,7 +26,13 @@ function CashLabel() {
 		refetchInterval: 30_000
 	})
 
-	// Set initial cash when query completes
+	useEffect(() => {
+		if (__IS_EDIT__) return;
+		const conn = ClientEvents.DataService.updatePlayerCash.connect((amount) => {
+			setCash(amount)
+		})
+		return () => conn.Disconnect()
+	}, [])
 
 	return (
 		<frame

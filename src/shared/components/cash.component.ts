@@ -1,0 +1,130 @@
+import { Component, Components } from "@flamework/components";
+import { Dependency } from "@flamework/core";
+import { Players, RunService } from "@rbxts/services";
+import type { CartServerComponent } from "server/components/cart.server.component";
+import type { DataService } from "server/services/data.service";
+import {
+	BuildDeepWeldConstraints,
+	BuildWeldConstraints,
+} from "shared/util.helper";
+import { CartTouch } from "./cart-touch.component";
+
+@Component({ tag: "CashComponent" })
+export class CashComponent extends CartTouch<
+	Model & {
+		Visuals: Model;
+		Trigger: BasePart;
+	}
+> {
+	private readonly debounce: Map<Model, number> = new Map();
+	private readonly DEBOUNCE_DURATION = 120;
+	private readonly CASH_AMOUNT = 50;
+	private client_collected = false;
+
+	constructor() {
+		super();
+
+		this.touch_part.Anchored = true;
+
+		const visuals = this.instance.FindFirstChild("Visuals") as
+			| Model
+			| undefined;
+		if (!visuals) return;
+
+		const root =
+			visuals.PrimaryPart ?? visuals.FindFirstChildWhichIsA("BasePart");
+		if (!root) return;
+
+		for (const d of visuals.GetDescendants()) {
+			if (!d.IsA("BasePart")) continue;
+			d.Massless = true;
+			d.CanCollide = false;
+		}
+
+		BuildDeepWeldConstraints(root, visuals);
+		// Weld the Visuals root to the Trigger so moving Trigger moves everything
+		BuildWeldConstraints(this.touch_part, root);
+	}
+
+	override onTouch(other_part: BasePart, cart_model: Model): void {
+		const now = os.clock();
+		const last = this.debounce.get(cart_model) ?? 0;
+		if (now - last < this.DEBOUNCE_DURATION) return;
+		this.debounce.set(cart_model, now);
+
+		if (RunService.IsServer()) {
+			this.onServerTouch(other_part, cart_model);
+		} else {
+			const local_player = Players.LocalPlayer;
+			const suffix = `_${local_player.Name}`;
+			if (cart_model.Name.sub(-suffix.size()) !== suffix) return;
+			this.onClientTouch(other_part, cart_model);
+		}
+	}
+
+	private onServerTouch(_other_part: BasePart, cart_model: Model): void {
+		const cart_component =
+			Dependency<Components>().getComponent<CartServerComponent>(cart_model);
+		if (!cart_component) return;
+		const player = cart_component.resolvePlayer();
+		if (!player) return;
+		Dependency<DataService>().grantPlayerCash(
+			player,
+			this.CASH_AMOUNT,
+			"Cash Pickup",
+			undefined,
+			true,
+		);
+	}
+
+	private onClientTouch(_other_part: BasePart, _cart_model: Model): void {
+		if (this.client_collected) return;
+		this.client_collected = true;
+
+		const primary_part = Players.LocalPlayer.Character?.PrimaryPart;
+		if (!primary_part) return;
+
+		const clone = this.instance.Clone();
+		clone.RemoveTag("CashComponent");
+		clone.Parent = this.instance.Parent;
+
+		const start_pos = this.touch_part.Position;
+
+		// Hide original visuals by making parts fully transparent
+		const visuals = this.instance.FindFirstChild("Visuals") as Model | undefined;
+		const visual_parts = (visuals?.GetDescendants().filter((d) => d.IsA("BasePart")) ?? []) as BasePart[];
+		for (const part of visual_parts) part.Transparency = 1;
+
+		// Get clone parts for fade
+		const clone_visuals = clone.FindFirstChild("Visuals") as Model | undefined;
+		const clone_parts = (clone_visuals?.GetDescendants().filter((d) => d.IsA("BasePart")) ?? []) as BasePart[];
+		const original_transparencies = clone_parts.map((p) => p.Transparency);
+
+		const DURATION = 0.5;
+		const start = os.clock();
+
+		const conn = RunService.Heartbeat.Connect(() => {
+			const alpha = math.min((os.clock() - start) / DURATION, 1);
+			const end_pos = primary_part.Position;
+			clone.PivotTo(new CFrame(start_pos.Lerp(end_pos, alpha)));
+			// Fade out clone parts
+			for (let i = 0; i < clone_parts.size(); i++) {
+				clone_parts[i].Transparency = math.lerp(original_transparencies[i], 1, alpha);
+			}
+			if (alpha >= 1) {
+				clone.Destroy();
+				conn.Disconnect();
+			}
+		});
+
+		task.spawn(() => {
+			task.wait(this.DEBOUNCE_DURATION);
+			this.client_collected = false;
+			const current_visuals = this.instance.FindFirstChild("Visuals") as Model | undefined;
+			if (!current_visuals) return;
+			for (const d of current_visuals.GetDescendants()) {
+				if (d.IsA("BasePart")) d.Transparency = 0;
+			}
+		});
+	}
+}

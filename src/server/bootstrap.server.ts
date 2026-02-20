@@ -8,6 +8,7 @@ const logger = new logger_class(PREFIX)
 async function main() {
 	Flamework.addPaths("src/server/services")
 	Flamework.addPaths("src/server/components")
+	Flamework.addPaths("src/shared/components")
 	Flamework.ignite()
 	logger.log("Flamework Ignited!")
 

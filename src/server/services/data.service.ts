@@ -100,6 +100,7 @@ export class DataService implements OnStart {
 		amount: number,
 		reason?: string,
 		skipQuestProgress?: boolean,
+		silent = false,
 	) {
 		const profile = this.getProfile(player);
 		if (!profile) {
@@ -120,7 +121,7 @@ export class DataService implements OnStart {
 			profile.Data.cash as number,
 		);
 
-		if (amount > 0) {
+		if (amount > 0 && !silent) {
 			ServerEvents.NotificationService.sendNotification(player, {
 				title: "<b>Cash Earned</b>",
 				description: `<font color='#00FF00'>+$${amount}</font>${reason ? ` - ${reason}` : ""}`,
