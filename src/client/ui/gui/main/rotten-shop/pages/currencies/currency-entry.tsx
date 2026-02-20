@@ -1,8 +1,9 @@
 import React, { useRef, useEffect } from "@rbxts/react"
-import { useQuery } from "@rbxts/react-query"
-import { MarketplaceService } from "@rbxts/services"
+import { useMutation, useQuery } from "@rbxts/react-query"
+import { MarketplaceService, Players } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
-import { __IS_EDIT__ } from "shared/config.helper"
+import { __STUDIO__ } from "client/ui/constants"
+import { A } from "shared/assets"
 
 interface CurrencyEntryProps {
 	productId: number
@@ -41,6 +42,25 @@ export function CurrencyEntry({
 	const price = isLoading ? "..." : productInfo?.PriceInRobux !== undefined ? `${productInfo.PriceInRobux} R$` : "N/A"
 	const icon = productInfo?.IconImageAssetId ? `rbxassetid://${productInfo.IconImageAssetId}` : undefined
 
+	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
+		mutationFn: async () => {
+			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId)
+			let result = false
+			if (__STUDIO__) {
+				task.wait(1)
+				result = true
+			} else {
+				const [_, __, new_result] = MarketplaceService.PromptProductPurchaseFinished.Wait()
+				result = new_result
+			}
+			if (result) {
+				UIHelper.playSound(A.sounds.purchase_success)
+				onPurchase?.()
+			}
+			return result
+		}
+	})
+
 	useEffect(() => {
 		const entryButton = entryButtonRef.current
 
@@ -54,9 +74,8 @@ export function CurrencyEntry({
 	}, [])
 
 	const handleClick = () => {
-		if (onPurchase) {
-			onPurchase()
-		}
+		if (isPromptLoading) return
+		promptPurchase()
 	}
 
 	return (
@@ -145,6 +164,7 @@ export function CurrencyEntry({
 				ScaleType={Enum.ScaleType.Fit}
 				Size={new UDim2(0.419, 0, 0.218, 0)}
 				ZIndex={45}
+				Active={!isPromptLoading}
 				Event={{
 					MouseButton1Click: handleClick
 				}}

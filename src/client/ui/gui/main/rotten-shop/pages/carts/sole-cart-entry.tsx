@@ -1,9 +1,13 @@
 import React, { useRef, useEffect } from "@rbxts/react"
+import { useMutation } from "@rbxts/react-query"
+import { MarketplaceService, Players } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
+import { __STUDIO__ } from "client/ui/constants"
 import { ViewportHelper } from "client/ui/components/viewport-helper"
 import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel"
 import { useCartProductId } from "client/ui/hooks/useCartProductId"
 import { useProductPrice } from "client/ui/hooks/useProductPrice"
+import { A } from "shared/assets"
 
 interface SoleCartEntryProps {
 	cartName: string
@@ -41,15 +45,31 @@ export function SoleCartEntry({
 			? `${priceInRobux} R$`
 			: "N/A"
 
+	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
+		mutationFn: async (args: { productId: number }) => {
+			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, args.productId)
+			let result = false
+			if (__STUDIO__) {
+				task.wait(1)
+				result = true
+			} else {
+				const [_, __, new_result] = MarketplaceService.PromptProductPurchaseFinished.Wait()
+				result = new_result
+			}
+			if (result) {
+				UIHelper.playSound(A.sounds.purchase_success)
+			}
+			return result
+		}
+	})
+
 	const model = useCartModel(cartName, true)
 	model?.FindFirstChild("HandBrake")?.Destroy()
 	model?.FindFirstChild("Honk")?.Destroy()
+
 	const handleBuyClick = () => {
-		if (is_owned) {
-			print(`Cart ${cartName} is already owned!`)
-			return
-		}
-		print(`Attempting to buy cart: ${cartName}`)
+		if (is_owned || isPromptLoading || !productId) return
+		promptPurchase({ productId })
 	}
 
 	useEffect(() => {
@@ -142,7 +162,7 @@ export function SoleCartEntry({
 				ScaleType={Enum.ScaleType.Fit}
 				Size={new UDim2(0.891, 0, 0.138, 0)}
 				ZIndex={45}
-				Active={!is_owned}
+				Active={!is_owned && !isPromptLoading}
 				Event={{
 					MouseButton1Click: handleBuyClick
 				}}
