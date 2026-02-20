@@ -24,6 +24,7 @@ export function RottenShopList() {
 			<TileEntry title="Carts" />
 			<SoleCartsFrame>
 				<SoleCartEntry
+					
 					backgroundImage={A.backgrounds.box_weld}
 					cartName="V8 Cart"
 					description="3x More Speed"
@@ -35,6 +36,7 @@ export function RottenShopList() {
 					textChildren={<uigradient Color={RainbowGradient()} />}
 				/>
 				<SoleCartEntry
+					
 					backgroundImage={A.backgrounds.box_weld}
 					cartName="Spiky Cart"
 					description="Damage others!"

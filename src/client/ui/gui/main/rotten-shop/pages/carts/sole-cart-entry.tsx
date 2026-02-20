@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "@rbxts/react"
-import { useMutation } from "@rbxts/react-query"
+import { useMutation, useQuery } from "@rbxts/react-query"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { UIHelper } from "client/ui.helper"
 import { __STUDIO__ } from "client/ui/constants"
@@ -7,6 +7,8 @@ import { ViewportHelper } from "client/ui/components/viewport-helper"
 import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel"
 import { useCartProductId } from "client/ui/hooks/useCartProductId"
 import { useProductPrice } from "client/ui/hooks/useProductPrice"
+import { __IS_EDIT__ } from "shared/config.helper"
+import { ClientFunctions } from "shared/network.helper"
 import { A } from "shared/assets"
 
 interface SoleCartEntryProps {
@@ -27,10 +29,20 @@ export function SoleCartEntry({
 	textChildren
 }: SoleCartEntryProps) {
 	const entryButtonRef = useRef<ImageButton>()
-	const is_owned = false
 
 	// Get product_id from cart name
 	const productId = useCartProductId(cartName)
+
+	// Check if player owns this cart
+	const { data: is_owned = false, refetch: refetchOwned } = useQuery({
+		queryKey: ["cart-owned", cartName],
+		queryFn: async () => {
+			if (__IS_EDIT__) return false
+			const [owned, err] = await ClientFunctions.ShopService.doesPlayerOwnItem.invoke("cart", cartName)
+			if (err) return false
+			return owned as boolean
+		}
+	})
 
 	// Fetch price from MarketplaceService
 	const { priceInRobux, isLoading } = useProductPrice({
@@ -58,6 +70,7 @@ export function SoleCartEntry({
 			}
 			if (result) {
 				UIHelper.playSound(A.sounds.purchase_success)
+				refetchOwned()
 			}
 			return result
 		}
@@ -68,7 +81,10 @@ export function SoleCartEntry({
 	model?.FindFirstChild("Honk")?.Destroy()
 
 	const handleBuyClick = () => {
-		if (is_owned || isPromptLoading || !productId) return
+		if (is_owned || isPromptLoading || !productId) {
+			UIHelper.playSound(A.sounds.error)
+			return
+		}
 		promptPurchase({ productId })
 	}
 
