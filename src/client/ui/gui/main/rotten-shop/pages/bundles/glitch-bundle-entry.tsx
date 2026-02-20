@@ -139,6 +139,28 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					ZIndex={6}
 				>
 					<uistroke Thickness={4} />
+					<textlabel
+						AnchorPoint={new Vector2(1, 0.5)}
+						BackgroundTransparency={1}
+						Font={Enum.Font.GothamBlack}
+						FontFace={
+							new Font(
+								"rbxasset://fonts/families/GothamSSm.json",
+								Enum.FontWeight.Heavy,
+								Enum.FontStyle.Normal
+							)
+						}
+						Position={new UDim2(0.913, 0, 0.5, 0)}
+						Size={new UDim2(0.826, 0, 0.782, 0)}
+						Text={cartName}
+						TextColor3={Color3.fromRGB(255, 255, 255)}
+						TextScaled={true}
+						TextSize={14}
+						TextWrapped={true}
+						ZIndex={7}
+					>
+						<uistroke Thickness={3} />
+					</textlabel>
 				</frame>
 				<frame
 					key="BundleItem2"
