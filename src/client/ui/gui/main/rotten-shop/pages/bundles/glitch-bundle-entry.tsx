@@ -87,6 +87,22 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 			Position={UDim2.fromScale(.005,0)}
 		>
 			<uistroke Thickness={5} />
+			{model && (
+				<ViewportHelper
+					model={model}
+					position={new UDim2(0.01, 0, 0.19, 0)}
+					size={new UDim2(0.29, 0, 0.73, 0)}
+					fieldOfView={50}
+					autoFit={true}
+					modelOffset={new CFrame(0, 5, 0).mul(CFrame.Angles(math.rad(10), math.rad(180), 0))}
+					lightDirection={Vector3.zero}
+					enableRotationAnimation={true}
+					rotationSpeed={30}
+					rotationAxis="Y"
+					rotateCameraInsteadOfModel={true}
+					zIndex={6}
+				/>
+			)}
 			<uigradient
 				Color={
 					new ColorSequence([
@@ -116,27 +132,13 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				/>
 				<frame
 					key="BundleItem1"
-					BackgroundTransparency={1}
+					BackgroundColor3={Color3.fromRGB(0, 0, 0)}
+					BackgroundTransparency={0.55}
+					BorderSizePixel={0}
 					Size={new UDim2(0.3, 0, 1, 0)}
 					ZIndex={6}
 				>
-					<uiaspectratioconstraint />
-					{model && (
-						<ViewportHelper
-							model={model}
-							position={new UDim2(0, 0, 0, 0)}
-							size={new UDim2(1, 0, 1, 0)}
-							fieldOfView={50}
-							autoFit={true}
-							modelOffset={new CFrame(0, 5, 0).mul(CFrame.Angles(math.rad(10), math.rad(180), 0))}
-							lightDirection={Vector3.zero}
-							enableRotationAnimation={true}
-							rotationSpeed={30}
-							rotationAxis="Y"
-							rotateCameraInsteadOfModel={true}
-							zIndex={6}
-						/>
-					)}
+					<uistroke Thickness={4} />
 				</frame>
 				<frame
 					key="BundleItem2"
