@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "@rbxts/react";
 import { useMutation, useQuery } from "@rbxts/react-query";
 import { MarketplaceService, Players } from "@rbxts/services";
 import { UIHelper } from "client/ui.helper";
-import { __STUDIO__ } from "client/ui/constants";
+import { __STUDIO__,UIDIM } from "client/ui/constants";
 import { ViewportHelper } from "client/ui/components/viewport-helper";
 import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
 import { useCartProductId } from "client/ui/hooks/useCartProductId";
@@ -296,7 +296,8 @@ export function SoleCartEntry({
 				/>
 			</imagelabel>
 			<ViewportHelper
-				position={new UDim2(0, 0, -0, 0)}
+				position={new UDim2(.5, 0, .4, 0)}
+				anchorPoint={UIDIM.A_CENTER}
 				model={model}
 				fieldOfView={60}
 				cameraDistance={15}
@@ -304,7 +305,8 @@ export function SoleCartEntry({
 				modelOffset={new CFrame(0, 5, 0).mul(
 					CFrame.Angles(math.rad(10), math.rad(180), 0),
 				)}
-				size={UDim2.fromScale(1,1)}
+				
+				size={UDim2.fromScale(.8,.8)}
 				lightDirection={Vector3.zero}
 				enableRotationAnimation={true}
 				rotationSpeed={30}

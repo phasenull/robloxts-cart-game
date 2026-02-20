@@ -1,81 +1,88 @@
-import React from "@rbxts/react"
-import { useMutation, useQuery } from "@rbxts/react-query"
-import { MarketplaceService, Players } from "@rbxts/services"
-import { UIHelper } from "client/ui.helper"
-import { __STUDIO__ } from "client/ui/constants"
-import { ViewportHelper } from "client/ui/components/viewport-helper"
-import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel"
-import { A } from "shared/assets"
-import { ClientFunctions } from "shared/network.helper"
-import { __IS_EDIT__ } from "shared/config.helper"
-
+import React from "@rbxts/react";
+import { useMutation, useQuery } from "@rbxts/react-query";
+import { MarketplaceService, Players } from "@rbxts/services";
+import { UIHelper } from "client/ui.helper";
+import { __STUDIO__, UIDIM } from "client/ui/constants";
+import { ViewportHelper } from "client/ui/components/viewport-helper";
+import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
+import { A } from "shared/assets";
+import { ClientFunctions } from "shared/network.helper";
+import { __IS_EDIT__ } from "../../../../../../../shared/config.helper";
 export interface GlitchBundleEntryProps {
-	productId: number
-	cartName: string
-	discountPercentage?: number
-	onBuy?: () => void
+	productId: number;
+	cartName: string;
+	discountPercentage?: number;
+	onBuy?: () => void;
 }
 
 export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
-	const { productId, cartName, discountPercentage } = props
+	const { productId, cartName, discountPercentage } = props;
 	const { data: productInfo, isLoading } = useQuery({
 		queryKey: ["product-info", productId],
 		queryFn: async () => {
 			const info = MarketplaceService.GetProductInfoAsync(
 				productId,
-				Enum.InfoType.Product
-			) as DeveloperProductInfo
-			return info
+				Enum.InfoType.Product,
+			) as DeveloperProductInfo;
+			return info;
 		},
-		staleTime: 300_000
-	})
+		staleTime: 300_000,
+	});
 
 	const { data: is_owned = false, refetch: refetchOwned } = useQuery({
 		queryKey: ["cart-owned", cartName],
 		queryFn: async () => {
-			if (__IS_EDIT__) return false
-			const [owned, err] = await ClientFunctions.ShopService.doesPlayerOwnItem.invoke("cart", cartName)
-			if (err) return false
-			return owned as boolean
-		}
-	})
+			if (__IS_EDIT__) return false;
+			const [owned, err] =
+				await ClientFunctions.ShopService.doesPlayerOwnItem.invoke(
+					"cart",
+					cartName,
+				);
+			if (err) return false;
+			return owned as boolean;
+		},
+	});
 
-	const bundleTitle = productInfo?.Name ?? "..."
-	const priceInRobux = productInfo?.PriceInRobux
-	const priceText = isLoading ? "..." : priceInRobux !== undefined ? `${priceInRobux} R$` : "N/A"
+	const bundleTitle = productInfo?.Name ?? "...";
+	const priceInRobux = productInfo?.PriceInRobux;
+	const priceText = isLoading
+		? "..."
+		: priceInRobux !== undefined
+			? `${priceInRobux} R$`
+			: "N/A";
 
 	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
 		mutationFn: async () => {
-			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId)
-			let result = false
+			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId);
+			let result = false;
 			if (__STUDIO__) {
-				task.wait(1)
-				result = true
+				task.wait(1);
+				result = true;
 			} else {
-				const [_, __, new_result] = MarketplaceService.PromptProductPurchaseFinished.Wait()
-				result = new_result
+				const [_, __, new_result] =
+					MarketplaceService.PromptProductPurchaseFinished.Wait();
+				result = new_result;
 			}
 			if (result) {
-				UIHelper.playSound(A.sounds.purchase_success)
-				refetchOwned()
-				props.onBuy?.()
+				UIHelper.playSound(A.sounds.purchase_success);
+				refetchOwned();
+				props.onBuy?.();
 			}
-			return result
-		}
-	})
+			return result;
+		},
+	});
 
 	const handleBuyClick = () => {
 		if (is_owned || isPromptLoading) {
-			UIHelper.playSound(A.sounds.error)
-			return
+			UIHelper.playSound(A.sounds.error);
+			return;
 		}
-		promptPurchase()
-	}
+		promptPurchase();
+	};
 
-
-	const model = useCartModel(cartName, true)
-	model?.FindFirstChild("HandBrake")?.Destroy()
-	model?.FindFirstChild("Honk")?.Destroy()
+	const model = useCartModel(cartName, true);
+	model?.FindFirstChild("HandBrake")?.Destroy();
+	model?.FindFirstChild("Honk")?.Destroy();
 
 	return (
 		<frame
@@ -83,26 +90,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 			BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 			BorderSizePixel={0}
 			ClipsDescendants={true}
-			Size={new UDim2(.99, 0, 0.491, 0)}
-			Position={UDim2.fromScale(.005,0)}
+			Size={new UDim2(0.99, 0, 0.491, 0)}
+			Position={UDim2.fromScale(0.005, 0)}
 		>
 			<uistroke Thickness={5} />
-			{model && (
-				<ViewportHelper
-					model={model}
-					position={new UDim2(0.01, 0, 0.19, 0)}
-					size={new UDim2(0.29, 0, 0.73, 0)}
-					fieldOfView={50}
-					autoFit={true}
-					modelOffset={new CFrame(0, 5, 0).mul(CFrame.Angles(math.rad(10), math.rad(180), 0))}
-					lightDirection={Vector3.zero}
-					enableRotationAnimation={true}
-					rotationSpeed={30}
-					rotationAxis="Y"
-					rotateCameraInsteadOfModel={true}
-					zIndex={6}
-				/>
-			)}
 			<uigradient
 				Color={
 					new ColorSequence([
@@ -112,7 +103,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 						new ColorSequenceKeypoint(0.5, Color3.fromRGB(0, 255, 255)),
 						new ColorSequenceKeypoint(0.66, Color3.fromRGB(0, 0, 255)),
 						new ColorSequenceKeypoint(0.833, Color3.fromRGB(255, 0, 255)),
-						new ColorSequenceKeypoint(1, Color3.fromRGB(255, 0, 0))
+						new ColorSequenceKeypoint(1, Color3.fromRGB(255, 0, 0)),
 					])
 				}
 				Enabled={false}
@@ -124,44 +115,69 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				Size={new UDim2(0.96, 0, 0.73, 0)}
 				ZIndex={6}
 			>
+				
 				<uilistlayout
 					FillDirection={Enum.FillDirection.Horizontal}
-					Padding={new UDim(0.03, 0)}
+					Padding={new UDim(0.05, 0)}
 					SortOrder={Enum.SortOrder.LayoutOrder}
 					VerticalAlignment={Enum.VerticalAlignment.Center}
 				/>
-				<frame
-					key="BundleItem1"
-					BackgroundColor3={Color3.fromRGB(0, 0, 0)}
-					BackgroundTransparency={0.55}
-					BorderSizePixel={0}
-					Size={new UDim2(0.3, 0, 1, 0)}
-					ZIndex={6}
-				>
-					<uistroke Thickness={4} />
-					<textlabel
-						AnchorPoint={new Vector2(0.5, 1)}
-						BackgroundTransparency={1}
-						Font={Enum.Font.GothamBlack}
-						FontFace={
-							new Font(
-								"rbxasset://fonts/families/GothamSSm.json",
-								Enum.FontWeight.Heavy,
-								Enum.FontStyle.Normal
-							)
-						}
-						Position={new UDim2(0.5, 0, 1, 0)}
-						Size={new UDim2(0.9, 0, 0.12, 0)}
-						Text={cartName}
-						TextColor3={Color3.fromRGB(255, 255, 255)}
-						TextScaled={true}
-						TextSize={14}
-						TextWrapped={true}
-						ZIndex={10}
+				<uipadding PaddingLeft={new UDim(.02,0)}/>
+				{model && (
+					<frame
+						key="BundleItem1"
+						BackgroundColor3={Color3.fromRGB(0, 0, 0)}
+						BackgroundTransparency={0.55}
+						BorderSizePixel={0}
+						Size={new UDim2(0.3, 0, 1, 0)}
+						ZIndex={6}
+						LayoutOrder={-1}
 					>
-						<uistroke Thickness={3} />
-					</textlabel>
-				</frame>
+						<uiaspectratioconstraint />
+						<uistroke Thickness={4} />
+						<textlabel
+							AnchorPoint={new Vector2(0.5, 1)}
+							BackgroundTransparency={1}
+							Font={Enum.Font.GothamBlack}
+							FontFace={
+								new Font(
+									"rbxasset://fonts/families/GothamSSm.json",
+									Enum.FontWeight.Heavy,
+									Enum.FontStyle.Normal,
+								)
+							}
+							Position={new UDim2(0.5, 0, 1, 0)}
+							Size={new UDim2(0.9, 0, 0.12, 0)}
+							Text={cartName}
+							TextColor3={Color3.fromRGB(255, 255, 255)}
+							TextScaled={true}
+							TextSize={14}
+							TextWrapped={true}
+							ZIndex={10}
+						>
+							<uistroke Thickness={3} />
+						</textlabel>
+						<ViewportHelper
+							model={model}
+							position={new UDim2(0.5, 0, 0.5, 0)}
+							anchorPoint={UIDIM.A_CENTER}
+							size={new UDim2(.9, 0, 0.9, 0)}
+							fieldOfView={50}
+							autoFit={true}
+							modelOffset={new CFrame(0, 5, 0).mul(
+								CFrame.Angles(math.rad(10), math.rad(180), 0),
+							)}
+							lightDirection={Vector3.zero}
+							enableRotationAnimation={true}
+							rotationSpeed={30}
+							rotationAxis="Y"
+							rotateCameraInsteadOfModel={true}
+							zIndex={6}
+						>
+							<uiaspectratioconstraint AspectRatio={1} />
+						</ViewportHelper>
+					</frame>
+				)}
 				<frame
 					key="BundleItem2"
 					BackgroundTransparency={1}
@@ -184,7 +200,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 								new Font(
 									"rbxasset://fonts/families/GothamSSm.json",
 									Enum.FontWeight.Heavy,
-									Enum.FontStyle.Normal
+									Enum.FontStyle.Normal,
 								)
 							}
 							Position={new UDim2(-0.112, 0, -0.141, 0)}
@@ -206,7 +222,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 								new Font(
 									"rbxasset://fonts/families/GothamSSm.json",
 									Enum.FontWeight.Heavy,
-									Enum.FontStyle.Normal
+									Enum.FontStyle.Normal,
 								)
 							}
 							Position={new UDim2(0.087, 0, 0.629, 0)}
@@ -232,7 +248,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 							Transparency={
 								new NumberSequence([
 									new NumberSequenceKeypoint(0, 0, 0),
-									new NumberSequenceKeypoint(1, 0.581, 0)
+									new NumberSequenceKeypoint(1, 0.581, 0),
 								])
 							}
 						/>
@@ -269,7 +285,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 								new Font(
 									"rbxasset://fonts/families/GothamSSm.json",
 									Enum.FontWeight.Heavy,
-									Enum.FontStyle.Normal
+									Enum.FontStyle.Normal,
 								)
 							}
 							Position={new UDim2(-0.112, 0, -0.141, 0)}
@@ -291,7 +307,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 								new Font(
 									"rbxasset://fonts/families/GothamSSm.json",
 									Enum.FontWeight.Heavy,
-									Enum.FontStyle.Normal
+									Enum.FontStyle.Normal,
 								)
 							}
 							Position={new UDim2(0.087, 0, 0.629, 0)}
@@ -317,7 +333,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 							Transparency={
 								new NumberSequence([
 									new NumberSequenceKeypoint(0, 0, 0),
-									new NumberSequenceKeypoint(1, 0.581, 0)
+									new NumberSequenceKeypoint(1, 0.581, 0),
 								])
 							}
 						/>
@@ -350,7 +366,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.481, 0, 0.481, 0)}
@@ -373,12 +389,16 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.991, 0, 0.492, 0)}
 					Size={new UDim2(0.468, 0, 0.625, 0)}
-					Text={discountPercentage !== undefined ? `Sale %${discountPercentage}!` : ""}
+					Text={
+						discountPercentage !== undefined
+							? `Sale %${discountPercentage}!`
+							: ""
+					}
 					TextColor3={Color3.fromRGB(255, 255, 255)}
 					TextScaled={true}
 					TextSize={14}
@@ -391,7 +411,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 						Color={
 							new ColorSequence([
 								new ColorSequenceKeypoint(0, Color3.fromRGB(255, 144, 0)),
-								new ColorSequenceKeypoint(1, Color3.fromRGB(255, 255, 0))
+								new ColorSequenceKeypoint(1, Color3.fromRGB(255, 255, 0)),
 							])
 						}
 					/>
@@ -407,7 +427,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				ZIndex={5}
 				Active={!is_owned && !isPromptLoading}
 				Event={{
-					MouseButton1Click: handleBuyClick
+					MouseButton1Click: handleBuyClick,
 				}}
 			>
 				<uistroke Thickness={5} />
@@ -418,14 +438,14 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 								0,
 								is_owned
 									? Color3.fromRGB(100, 100, 100)
-									: Color3.fromRGB(255, 148, 0)
+									: Color3.fromRGB(255, 148, 0),
 							),
 							new ColorSequenceKeypoint(
 								1,
 								is_owned
 									? Color3.fromRGB(150, 150, 150)
-									: Color3.fromRGB(247, 248, 148)
-							)
+									: Color3.fromRGB(247, 248, 148),
+							),
 						])
 					}
 					Rotation={-90}
@@ -457,7 +477,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.181, 0, 0.167, 0)}
@@ -538,7 +558,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					new Font(
 						"rbxasset://fonts/families/GothamSSm.json",
 						Enum.FontWeight.Heavy,
-						Enum.FontStyle.Normal
+						Enum.FontStyle.Normal,
 					)
 				}
 				Position={new UDim2(0.719, 0, -0.10200000000000001, 0)}
@@ -578,5 +598,5 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				/>
 			</canvasgroup>
 		</frame>
-	)
+	);
 }
