@@ -32,7 +32,7 @@ export type IPurchasable = {
 	rewards: IReward<any>[]
 }
 
-export type IDescriptableReward = "cart" | "lucky_block"
+export type IDescriptableReward = "cart" | "lucky_block" | "honk"
 export type IValuableReward =
 	| "cash"
 	| "revives"

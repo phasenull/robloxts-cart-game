@@ -6,6 +6,7 @@ import {
 	Players,
 	Workspace
 } from "@rbxts/services"
+import { t } from "@rbxts/t"
 import { CartServerComponent } from "server/components/cart.server.component"
 import { A, assets } from "shared/assets"
 import { getConfig } from "shared/config.helper"
@@ -108,7 +109,46 @@ export class CartService implements OnStart {
 			})
 		})
 	}
+	validateConfigs(): void {
+		const config = getConfig()
+		let errors = 0
+
+		const cartConfig = config.CartConfig as defined[]
+		if (!typeIs(cartConfig, "table")) {
+			this.logger.warn("CartConfig: expected an array, got something else entirely")
+			return
+		}
+
+		cartConfig.forEach((entry: defined, i) => {
+			const c = entry as { name?: unknown; friction?: unknown; power?: unknown; product_id?: unknown; price?: unknown }
+			const problems: string[] = []
+
+			if (!t.string(c.name)) problems.push(`name is ${typeOf(c.name)} (expected string)`)
+			if (!t.number(c.friction)) problems.push(`friction is ${typeOf(c.friction)} (expected number)`)
+			if (!t.number(c.power)) problems.push(`power is ${typeOf(c.power)} (expected number)`)
+			if (c.product_id !== undefined && !t.number(c.product_id)) problems.push(`product_id is ${typeOf(c.product_id)} (expected number)`)
+			if (c.price !== undefined && !t.number(c.price)) problems.push(`price is ${typeOf(c.price)} (expected number)`)
+
+			if (problems.size() > 0) {
+				this.logger.warn(`CartConfig[${i}] (name=${tostring(c.name)}): ${problems.join("; ")}`)
+				errors++
+				return
+			}
+
+			// Check that the referenced cart model actually exists in assets
+			const model = assets.carts.FindFirstChild(c.name as string)
+			if (!model) {
+				this.logger.warn(`CartConfig[${i}] (name=${c.name as string}): no matching cart model found in assets.carts — typo in name?`)
+				errors++
+			}
+		})
+
+		if (errors === 0) {
+			this.logger.log(`CartConfig validation passed — ${cartConfig.size()} cart entries all OK`)
+		}
+	}
 	onStart(): void {
+		this.validateConfigs()
 		ServerEvents.CartService.spawnCart.connect((player, button) => {
 			this.spawnPlayerCart(player, button)
 		})

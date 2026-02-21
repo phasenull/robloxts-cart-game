@@ -1,5 +1,6 @@
 import { Dependency, OnStart, Service } from "@flamework/core"
 import { AnalyticsService, MarketplaceService, Players } from "@rbxts/services"
+import { t } from "@rbxts/t"
 import { getConfig } from "shared/config.helper"
 import { Logger } from "shared/logger"
 import { PRODUCTS, ISLAND_SKIP_PRODUCTS, getAllBigCheckpoints } from "shared/purchasables"
@@ -21,9 +22,77 @@ export class MonetizationService implements OnStart {
 		return getConfig().PurchasableConfig as IPurchasableConfig
 	}
 	onStart(): void {
+		this.validateConfigs()
 		Players.PlayerAdded.Connect((p) => this.playerAdded(p))
 		MarketplaceService.ProcessReceipt = (receipt) =>
 			this.processReceipt(receipt)
+	}
+	validateConfigs(): void {
+		const config = getConfig()
+		const VALID_REWARD_TYPES = ["honk","cash", "revives", "flips", "skip_island", "unlock_island", "cart", "lucky_block", "custom"]
+		let errors = 0
+
+		// --- PurchasableConfig ---
+		const purchasables = config.PurchasableConfig as defined[]
+		if (!typeIs(purchasables, "table")) {
+			this.logger.warn("PurchasableConfig: expected an array, got something else entirely")
+			return
+		}
+		purchasables.forEach((entry: defined, i) => {
+			const e = entry as { product_id?: unknown; rewards?: unknown }
+			const problems: string[] = []
+
+			if (!t.number(e.product_id)) {
+				problems.push(`product_id is ${typeOf(e.product_id)} (expected number)`)
+			}
+			if (!typeIs(e.rewards, "table")) {
+				problems.push(`rewards is ${typeOf(e.rewards)} (expected array)`)
+			} else {
+				(e.rewards as defined[]).forEach((reward: defined, j) => {
+					const r = reward as { type?: unknown; value?: unknown }
+					const rProblems: string[] = []
+					if (!t.string(r.type) || !VALID_REWARD_TYPES.includes(r.type)) {
+						rProblems.push(`type=${tostring(r.type)} is not a valid reward type (got ${typeOf(r.type)}, expected one of: ${VALID_REWARD_TYPES.join(", ")})`)
+					}
+					if (!t.number(r.value) && !t.string(r.value)) {
+						rProblems.push(`value=${tostring(r.value)} is ${typeOf(r.value)} (expected number or string)`)
+					}
+					if (rProblems.size() > 0) {
+						this.logger.warn(`PurchasableConfig[${i}].rewards[${j}]: ${rProblems.join("; ")}`)
+						errors++
+					}
+				})
+			}
+
+			if (problems.size() > 0) {
+				this.logger.warn(`PurchasableConfig[${i}] (product_id=${tostring(e.product_id)}): ${problems.join("; ")}`)
+				errors++
+			}
+		})
+
+		// --- CartConfig ---
+		const cartConfig = config.CartConfig as defined[]
+		if (!typeIs(cartConfig, "table")) {
+			this.logger.warn("CartConfig: expected an array, got something else entirely")
+			return
+		}
+		cartConfig.forEach((entry: defined, i) => {
+			const c = entry as { name?: unknown; friction?: unknown; power?: unknown }
+			const problems: string[] = []
+
+			if (!t.string(c.name)) problems.push(`name is ${typeOf(c.name)} (expected string)`)
+			if (!t.number(c.friction)) problems.push(`friction is ${typeOf(c.friction)} (expected number)`)
+			if (!t.number(c.power)) problems.push(`power is ${typeOf(c.power)} (expected number)`)
+
+			if (problems.size() > 0) {
+				this.logger.warn(`CartConfig[${i}] (name=${tostring(c.name)}): ${problems.join("; ")}`)
+				errors++
+			}
+		})
+
+		if (errors === 0) {
+			this.logger.log(`Config validation passed — ${purchasables.size()} purchasables, ${cartConfig.size()} cart entries all OK`)
+		}
 	}
 	processReceipt(reciept: ReceiptInfo): Enum.ProductPurchaseDecision {
 		const user_id = reciept.PlayerId
