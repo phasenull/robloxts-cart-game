@@ -13,7 +13,9 @@ import { DataService } from "./data.service"
 import { CartService } from "./cart.service"
 import { getConfig } from "shared/config.helper"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
-import { A } from "shared/assets"
+import { A, assets } from "shared/assets"
+import { MarketplaceService, Players } from "@rbxts/services"
+import { PRODUCTS } from "shared/purchasables"
 
 @Service()
 export class ShopService implements OnStart {
@@ -21,6 +23,9 @@ export class ShopService implements OnStart {
 		private logger: Logger,
 		private DataService: DataService
 	) {}
+
+	// Tracks which honk a player intends to purchase (cleared after receipt is processed)
+	private readonly pendingHonkPurchases = new Map<Player, string>()
 
 	onStart(): void {
 		this.logger.log("ShopService started")
@@ -59,6 +64,46 @@ export class ShopService implements OnStart {
 				return this.doesPlayerOwnItem(player, item_type, item_name)
 			}
 		)
+
+		ServerFunctions.ShopService.promptHonkPurchase.setCallback(
+			(player, honk_name) => {
+				return this.promptHonkPurchase(player, honk_name)
+			}
+		)
+
+		Players.PlayerRemoving.Connect((player) => {
+			this.pendingHonkPurchases.delete(player)
+		})
+	}
+
+	promptHonkPurchase(player: Player, honk_name: string): ProperReturns<true> {
+		// Validate the honk sound exists
+		const sound = assets.honks.FindFirstChild(honk_name) as Sound | undefined
+		if (!sound) {
+			return [false, `Honk "${honk_name}" does not exist`]
+		}
+
+		// Check if already owned
+		const [owns] = this.doesPlayerOwnItem(player, "honk", honk_name)
+		if (owns) {
+			return [false, "Already owned"]
+		}
+
+		// Store intent and prompt the single honk product
+		this.pendingHonkPurchases.set(player, honk_name)
+		this.logger.log(
+			`Player ${player.Name} is attempting to purchase honk "${honk_name}" (product ${PRODUCTS.honk})`
+		)
+		MarketplaceService.PromptProductPurchase(player, PRODUCTS.honk)
+		return [true]
+	}
+
+	getPendingHonkPurchase(player: Player): string | undefined {
+		return this.pendingHonkPurchases.get(player)
+	}
+
+	clearPendingHonkPurchase(player: Player): void {
+		this.pendingHonkPurchases.delete(player)
 	}
 	makePlayerPurchaseItem(
 		player: Player,

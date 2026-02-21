@@ -9,6 +9,7 @@ import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
 import { CheckpointService } from "./checkpoint.service"
 import { CustomizationService } from "./customization.service"
+import { ShopService } from "./shop.service"
 import {
 	getCheckpointDataFromIndex,
 	getNextBigCheckpoint
@@ -157,6 +158,27 @@ export class MonetizationService implements OnStart {
 			}
 		}
 		
+		// Check if it's the single honk purchase product
+		if (product_id === PRODUCTS.honk) {
+			const shop_service = Dependency<ShopService>()
+			const honk_name = shop_service.getPendingHonkPurchase(player)
+			shop_service.clearPendingHonkPurchase(player)
+			if (!honk_name) {
+				this.logger.warn(
+					`Player ${player.Name} purchased honk product but had no pending honk`
+				)
+				return Enum.ProductPurchaseDecision.NotProcessedYet
+			}
+			const virtual_reward: IReward<"honk"> = {
+				type: "honk",
+				value: honk_name,
+				handler: undefined
+			}
+			this.logger.log(`Processing honk purchase for player ${player.Name}, granting honk: ${honk_name}`)
+			this.giveRewardToPlayer(player, virtual_reward, `honk_purchase_${honk_name}`)
+			return Enum.ProductPurchaseDecision.PurchaseGranted
+		}
+
 		// If not found in PurchasableConfig, check CartConfig
 		if (!purchasable) {
 			const cart_config = getConfig().CartConfig

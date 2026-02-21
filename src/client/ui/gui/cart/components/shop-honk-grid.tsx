@@ -1,12 +1,12 @@
 import React from "@rbxts/react";
 import { useMutation } from "@rbxts/react-query";
-import { MarketplaceService, Players } from "@rbxts/services";
 import { IShopItem } from "shared/type.helper";
 import { ClientFunctions } from "shared/network.helper";
 import { __IS_EDIT__ } from "shared/config.helper";
 import { A, assets } from "shared/assets";
 import { UIHelper } from "client/ui.helper";
 import { useProductPrice } from "client/ui/hooks/useProductPrice";
+import { PRODUCTS } from "shared/purchasables";
 
 interface ShopHonkEntryProps {
 	item: IShopItem;
@@ -21,9 +21,10 @@ function ShopHonkEntry({
 	isOwned,
 	onEquipSuccess,
 }: ShopHonkEntryProps) {
+	// All honks share a single product — show its price
 	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
-		productId: item.product_id,
-		enabled: !!item.product_id && !isOwned,
+		productId: PRODUCTS.honk,
+		enabled: !isOwned,
 	});
 
 	const { mutate, isLoading } = useMutation({
@@ -41,18 +42,11 @@ function ShopHonkEntry({
 				if (!success || err) return;
 				UIHelper.playSound(A.sounds.pop_success);
 				onEquipSuccess();
-			} else if (!isOwned && item.product_id) {
-				// Purchase via Robux
-				MarketplaceService.PromptProductPurchase(
-					Players.LocalPlayer,
-					item.product_id,
-				);
-				const [_, __, wasPurchased] =
-					MarketplaceService.PromptProductPurchaseFinished.Wait();
-				if (wasPurchased) {
-					UIHelper.playSound(A.sounds.reward_earned);
-					onEquipSuccess();
-				}
+			} else if (!isOwned) {
+				// Tell server to record intent and prompt the single honk product
+				await ClientFunctions.ShopService.promptHonkPurchase.invoke(item.name);
+				// Server fires the prompt; client waits for the result signal
+				onEquipSuccess();
 			}
 		},
 	});

@@ -1,3 +1,4 @@
+import { assets } from "./assets";import { PRODUCTS } from "./purchasables";
 import { ICartEntry } from "./type.helper"
 
 export const MOCK_CART_SHOP = [
@@ -16,11 +17,11 @@ export const MOCK_INVENTORY: ICartEntry[] = [
 
 export const MOCK_CASH = 67676767
 
-export const MOCK_HONK_SHOP = [
-	{ name: "Pizza Scream", product_id: 111111111 },
-	{ name: "Air Horn", product_id: 222222222 },
-	{ name: "Bike Bell", product_id: 333333333 },
-	{ name: "Duck Quack", product_id: 444444444 },
-]
+export const MOCK_HONK_SHOP = 
+	assets.honks.GetChildren().map((honk) => ({
+		name: honk.Name,
+		product_id: PRODUCTS.honk
+	}))
+
 
 export const MOCK_HONK_INVENTORY: string[] = ["Pizza Scream"]

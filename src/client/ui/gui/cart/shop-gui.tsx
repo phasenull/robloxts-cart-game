@@ -128,11 +128,7 @@ export function ShopGui() {
 	const { data: honkShopItems, refetch: refetchHonkShopItems } = useQuery({
 		queryKey: ["shop-items", "honk"],
 		queryFn: async () => {
-			if (__IS_EDIT__) return MOCK_HONK_SHOP;
-			const [items, err] =
-				await ClientFunctions.ShopService.getShopItems.invoke("honk");
-			if (err || !items) return [];
-			return items;
+			return MOCK_HONK_SHOP;
 		},
 	});
 

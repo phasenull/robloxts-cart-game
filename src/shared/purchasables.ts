@@ -13,9 +13,13 @@ export const PRODUCTS = {
 
 	revives_10:3534758322,
 	skip_island:3535471413,
-	
+
 	// Island unlock products (skip-based)
 	unlock_island_skip_1: 3535471413, // Skip 1 island
+
+	// Single product used for all honk purchases
+	// The specific honk name is tracked server-side per player
+	honk: 3542257811, // TODO: replace with real product ID
 }
 
 // Map of number of islands to skip to product ID

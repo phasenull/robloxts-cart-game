@@ -66,6 +66,7 @@ interface ClientToServerFunctions {
 		makePlayerPurchaseItem: (item_type: IShopItemTypes, item_name: string) => ProperReturns<true>
 		getPlayerInventory: (item_type: IShopItemTypes) => ProperReturns<IInventoryData>
 		doesPlayerOwnItem: (item_type: IShopItemTypes, item_name: string) => ProperReturns<boolean>
+		promptHonkPurchase: (honk_name: string) => ProperReturns<true>
 	}
 
 	CustomizationService: {
