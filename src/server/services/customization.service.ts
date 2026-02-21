@@ -40,7 +40,7 @@ export class CustomizationService implements OnStart {
 	): ProperReturns<string[]> {
 		const profile = this.dataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
+			this.logger.log(
 				`Tried to get preferences for player ${player.Name} but their profile was not loaded`
 			)
 			return [false, "Profile not loaded"]
@@ -68,7 +68,7 @@ export class CustomizationService implements OnStart {
 	): ProperReturns<true> {
 		const profile = this.dataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
+			this.logger.log(
 				`Tried to set preferences for player ${player.Name} but their profile was not loaded`
 			)
 			return [false, "Profile not loaded"]
@@ -136,7 +136,7 @@ export class CustomizationService implements OnStart {
 	): ProperReturns<true> {
 		const profile = this.dataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
+			this.logger.log(
 				`Tried to remove preferences for player ${player.Name} but their profile was not loaded`
 			)
 			return [false, "Profile not loaded"]
@@ -172,7 +172,7 @@ export class CustomizationService implements OnStart {
 	): ProperReturns<true> {
 		const profile = this.dataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
+			this.logger.log(
 				`Tried to clear preferences for player ${player.Name} but their profile was not loaded`
 			)
 			return [false, "Profile not loaded"]
@@ -197,7 +197,7 @@ export class CustomizationService implements OnStart {
 	public getAllPreferences(player: Player): ProperReturns<Record<string, string[]>> {
 		const profile = this.dataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
+			this.logger.log(
 				`Tried to get all preferences for player ${player.Name} but their profile was not loaded`
 			)
 			return [false, "Profile not loaded"]

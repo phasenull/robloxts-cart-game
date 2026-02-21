@@ -171,7 +171,7 @@ export class CheckpointService implements OnStart {
 		const profile_service = Dependency<DataService>()
 		const profile = profile_service.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
+			this.logger.log(
 				`Profile not found for player ${player.Name} when getting checkpoints`
 			)
 			return []
@@ -219,7 +219,7 @@ export class CheckpointService implements OnStart {
 		const profile_service = Dependency<DataService>()
 		const profile = profile_service.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
+			this.logger.log(
 				`Profile not found for player ${player.Name} when unlocking checkpoint`
 			)
 			return false
