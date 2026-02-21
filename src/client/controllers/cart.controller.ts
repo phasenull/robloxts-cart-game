@@ -5,6 +5,7 @@ import {
 	MarketplaceService,
 	Players,
 	RunService,
+	TweenService,
 	Workspace
 } from "@rbxts/services"
 import Signal from "@rbxts/signal"
@@ -149,6 +150,29 @@ export class CartController implements OnStart {
 	}
 	onStart(): void {
 		const components = Dependency<Components>()
+
+		// Listen for honk VFX broadcast
+		ClientEvents.CartService.honkVfx.connect((cartModel, soundDuration) => {
+			const honkModel = cartModel.FindFirstChild("Honk") as Model | undefined
+			if (!honkModel) return
+
+			const scaleValue = new Instance("NumberValue")
+			scaleValue.Value = 1
+
+			const tweenInfo = new TweenInfo(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 0)
+			const tween = TweenService.Create(scaleValue, tweenInfo, { Value: 1.5 })
+
+			scaleValue.Changed.Connect((value) => {
+				honkModel.ScaleTo(value)
+			})
+
+			tween.Play()
+			task.delay(soundDuration, () => {
+				tween.Cancel()
+				honkModel.ScaleTo(1)
+				scaleValue.Destroy()
+			})
+		})
 
 		// Listen for boxing glove punches
 		ClientEvents.CartService.boxingGlovePunch.connect(

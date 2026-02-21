@@ -27,6 +27,7 @@ interface ServerToClientEvents {
 		clearDeathPreview: () => void
 		forceCloseDeathScreen: () => void
 		boxingGlovePunch: (touch_position: Vector3) => void
+		honkVfx: (cartModel: Model, soundDuration: number) => void
 	},
 	NotificationService: {
 		sendNotification: (notification: INotification) => void

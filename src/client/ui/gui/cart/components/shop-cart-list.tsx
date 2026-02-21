@@ -193,8 +193,8 @@ export function ShopCartList({
 				BackgroundTransparency={1}
 				CanvasSize={new UDim2(0, 0, 0, 0)}
 				Position={new UDim2(0.5, 0, 0.109, 0)}
-				ScrollBarImageColor3={Color3.fromRGB(0, 0, 0)}
-				ScrollBarThickness={5}
+				ScrollBarImageColor3={Color3.fromRGB(255, 255, 255)}
+				ScrollBarThickness={10}
 				ScrollingDirection={Enum.ScrollingDirection.Y}
 				Size={new UDim2(1, 0, 0.892, 0)}
 			>
@@ -207,8 +207,7 @@ export function ShopCartList({
 					<uiaspectratioconstraint />
 				</uigridlayout>
 				<uipadding
-					PaddingRight={new UDim(0.02, 0)}
-					PaddingTop={new UDim(0.01, 0)}
+					PaddingRight={new UDim(0.05, 0)}
 				/>
 				{(isLoadingItems) ? (
 					<frame Size={UIDIM.ONE} BackgroundTransparency={1}>

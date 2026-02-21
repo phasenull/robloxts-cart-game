@@ -12,6 +12,7 @@ import { PRODUCTS } from "shared/purchasables";
 interface ShopHonkEntryProps {
 	item: IShopItem;
 	isEquipped: boolean;
+	LayoutOrder: number;
 	isOwned: boolean;
 	onEquipSuccess: () => void;
 }
@@ -20,6 +21,7 @@ function ShopHonkEntry({
 	item,
 	isEquipped,
 	isOwned,
+	LayoutOrder,
 	onEquipSuccess,
 }: ShopHonkEntryProps) {
 	// All honks share a single product — show its price
@@ -85,6 +87,7 @@ function ShopHonkEntry({
 			BackgroundColor3={bgColor}
 			BackgroundTransparency={isOwned || isEquipped ? 0.2 : 0.35}
 			BorderSizePixel={0}
+			LayoutOrder={LayoutOrder}
 			Event={{
 				MouseButton1Click: () => {
 					if (canAct) mutate();
@@ -185,14 +188,14 @@ export function ShopHonkGrid({
 	onEquipSuccess,
 }: ShopHonkGridProps) {
 	const sortedHonkItems = [...honkItems].sort((a, b) => {
-		const priority = (item: typeof a) => {
-			if (equippedHonk === item.name) return 0;
-			if (ownedHonks.includes(item.name)) return 1;
-			return 2;
-		};
-		const pa = priority(a);
-		const pb = priority(b);
-		if (pa !== pb) return pa < pb;
+		const aEquipped = equippedHonk === a.name;
+		const bEquipped = equippedHonk === b.name;
+		if (aEquipped !== bEquipped) return aEquipped;
+
+		const aOwned = ownedHonks.includes(a.name);
+		const bOwned = ownedHonks.includes(b.name);
+		if (aOwned !== bOwned) return aOwned;
+
 		return a.name < b.name;
 	});
 
@@ -273,8 +276,8 @@ export function ShopHonkGrid({
 				BackgroundTransparency={1}
 				CanvasSize={new UDim2(0, 0, 0, 0)}
 				Position={new UDim2(0.5, 0, 0.1, 0)}
-				ScrollBarImageColor3={Color3.fromRGB(0, 0, 0)}
-				ScrollBarThickness={4}
+				ScrollBarImageColor3={Color3.fromRGB(255, 255, 255)}
+				ScrollBarThickness={10}
 				ScrollingDirection={Enum.ScrollingDirection.Y}
 				Size={new UDim2(1, 0, 0.9, 0)}
 			>
@@ -288,13 +291,13 @@ export function ShopHonkGrid({
 					<uiaspectratioconstraint AspectRatio={1} />
 				</uigridlayout>
 				<uipadding
-					PaddingLeft={new UDim(0.02, 0)}
-					PaddingRight={new UDim(0.02, 0)}
+					PaddingRight={new UDim(0.05, 0)}
 				/>
-				{sortedHonkItems.map((item) => (
+				{sortedHonkItems.map((item,i) => (
 					<ShopHonkEntry
 						key={item.name}
 						item={item}
+						LayoutOrder={i}
 						isEquipped={equippedHonk === item.name}
 						isOwned={ownedHonks.includes(item.name)}
 						onEquipSuccess={onEquipSuccess}

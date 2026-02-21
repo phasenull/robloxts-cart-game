@@ -166,7 +166,8 @@ export class CartService implements OnStart {
 			const sound = (assets.honks.FindFirstChild(honkName) ?? assets.honks.FindFirstChild("Quack")) as Sound | undefined
 			if (!sound) return
 
-			cooldownEndTimes.set(player, now + sound.TimeLength + 1)
+			const soundDuration = sound.TimeLength
+			cooldownEndTimes.set(player, now + soundDuration + 1)
 
 			const cart = this.getPlayerCart(player)
 			if (cart) {
@@ -176,6 +177,8 @@ export class CartService implements OnStart {
 				cloned.Ended.Once(() => {
 					cloned.Destroy()
 				})
+				// Broadcast cart model directly so clients don't need to look it up
+				ServerEvents.CartService.honkVfx.broadcast(cart, soundDuration)
 			}
 		})
 		Players.PlayerAdded.Connect((player) => this.playerAdded(player))
