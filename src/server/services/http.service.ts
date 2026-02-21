@@ -1,13 +1,60 @@
 import { OnStart, Service } from "@flamework/core"
 import { fetch, Request } from "@rbxts/fetch-patched"
-import { Logger } from "shared/logger"
+import { Logger, setLogSink } from "shared/logger"
+
+export interface LogEntry {
+	created_at: string
+	job_id: string
+	published_version: number
+	context: string
+	message: string
+	type: string
+}
 
 @Service()
 export class HttpService implements OnStart {
 	constructor(private logger: Logger) {}
-	async onStart(): Promise<void> {}
 	private readonly HttpService = game.GetService("HttpService")
 	private readonly host = "https://api.cart-game.project.phasenull.dev"
+	private readonly logQueue: LogEntry[] = []
+
+	onStart(): void {
+		setLogSink((entry) => this.queueLog(entry))
+
+		// Flush every 30 seconds
+		task.spawn(async () => {
+			while (true) {
+				task.wait(30)
+				await this.flushLogs()
+			}
+		})
+
+		// Flush before server shuts down
+		game.BindToClose(async () => {
+			await this.flushLogs()
+		})
+	}
+
+	queueLog(entry: LogEntry): void {
+		this.logQueue.push(entry)
+	}
+
+	async flushLogs() {
+		if (this.logQueue.size() === 0) return
+		const batch = [...this.logQueue]
+		this.logQueue.clear()
+		await this.pushLogs(batch).catch((err) => {
+			this.logger.warn(`Failed to flush logs: ${err}`)
+		})
+	}
+
+	private async pushLogs(logs: LogEntry[]): Promise<void> {
+		await this.request<{}>("/logs/create", {
+			method: "POST",
+			body: this.HttpService.JSONEncode({ logs }),
+		} as unknown as Request)
+	}
+
 	async getUser(user_id: number) {
 		return await this.request<GetPlayerResponse>(
 			`/leaderboard/get-player?user_id=${user_id}`
@@ -38,8 +85,9 @@ export class HttpService implements OnStart {
 			}
 		} as unknown as Request)
 		const data = (await response.json()) as { error: string } & T
+		const http2 = game.GetService("HttpService")
 		if (!response.ok || data.error) {
-			throw `HTTP error! status: ${response.status}, message: ${data.error || "Unknown error"}`
+			throw `HTTP error! status: ${response.status}, message: ${http2.JSONEncode(data.error) || "Unknown error"}`
 		}
 		return data as T
 	}
