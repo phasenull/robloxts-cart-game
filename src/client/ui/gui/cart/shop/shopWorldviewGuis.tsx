@@ -4,7 +4,7 @@ import { ICart } from "shared/type.helper"
 import { ShopBillboardGui } from "./shop-billboard-gui"
 import { getCartConfig } from "shared/cart.helper"
 
-export function ShopWorldviewGuis(props: { cart: ICart | undefined }) {
+export function ShopWorldviewGuis(props: { cart: ICart | undefined; equippedHonk?: string }) {
 	const cart = props.cart
 	const wheels = cart?.Wheels
 	const FR_WHEEL = wheels?.FindFirstChild("FR")
@@ -15,6 +15,7 @@ export function ShopWorldviewGuis(props: { cart: ICart | undefined }) {
 	}
 	const cart_identifier = (cart?.FindFirstChild("CartIdentifier") as StringValue | undefined)?.Value
 	const config = getCartConfig(cart_identifier ?? "")
+	const honkLabel = props.equippedHonk ?? "None"
 	return props.cart ? (
 		<>
 			<ShopBillboardGui
@@ -32,7 +33,7 @@ export function ShopWorldviewGuis(props: { cart: ICart | undefined }) {
 				x_distance={30}
 				progress={1}
 				offset={new Vector3(.4, 0, 0)}
-				text="Pizza Scream"
+				text={honkLabel}
 				mirrored
 				target_instance={positions.honk}
 			/>

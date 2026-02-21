@@ -189,6 +189,7 @@ export function ShopGui() {
 				cart={
 					Workspace.CurrentCamera?.FindFirstChild("GaragePreviewCart") as ICart
 				}
+				equippedHonk={equippedHonkData?.[0]}
 			/> : undefined}
 			<ShopHonkGrid
 				equippedHonk={equippedHonkData?.[0]}

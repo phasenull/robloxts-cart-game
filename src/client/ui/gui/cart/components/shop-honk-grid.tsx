@@ -1,4 +1,4 @@
-import React from "@rbxts/react";
+import React, { useRef, useState } from "@rbxts/react";
 import { useMutation } from "@rbxts/react-query";
 import { IShopItem } from "shared/type.helper";
 import { ClientFunctions } from "shared/network.helper";
@@ -68,6 +68,8 @@ function ShopHonkEntry({
 					: "\u{E002} ???";
 
 	const canAct = !isLoading && !isEquipped && (isOwned || !!item.product_id);
+	const previewSoundRef = useRef<Sound | undefined>(undefined);
+	const [isHovered, setIsHovered] = useState(false);
 
 	return (
 		<imagebutton
@@ -81,8 +83,16 @@ function ShopHonkEntry({
 					if (canAct) mutate();
 				},
 				MouseEnter: () => {
+					setIsHovered(true);
 					const sound = assets.honks.FindFirstChild(item.name) as Sound | undefined;
-					if (sound) UIHelper.playSound(sound.SoundId);
+					if (sound) previewSoundRef.current = UIHelper.playSound(sound.SoundId);
+				},
+				MouseLeave: () => {
+					setIsHovered(false);
+					if (previewSoundRef.current) {
+						previewSoundRef.current.Stop();
+						previewSoundRef.current = undefined;
+					}
 				},
 			}}
 		>
@@ -137,6 +147,19 @@ function ShopHonkEntry({
 			>
 				<uistroke Thickness={2} />
 			</textlabel>
+			{isHovered && (
+				<imagelabel
+					key="SoundIcon"
+					AnchorPoint={new Vector2(0.5, 0.5)}
+					BackgroundTransparency={1}
+					Image="rbxassetid://118552291926802"
+					Position={new UDim2(0.5, 0, 0.5, 0)}
+					Size={new UDim2(0.5, 0, 0.5, 0)}
+					ZIndex={10}
+				>
+					<uiaspectratioconstraint AspectRatio={1} />
+				</imagelabel>
+			)}
 		</imagebutton>
 	);
 }
@@ -246,8 +269,6 @@ export function ShopHonkGrid({
 					<uiaspectratioconstraint AspectRatio={1} />
 				</uigridlayout>
 				<uipadding
-					PaddingTop={new UDim(0.02, 0)}
-					PaddingBottom={new UDim(0.02, 0)}
 					PaddingLeft={new UDim(0.02, 0)}
 					PaddingRight={new UDim(0.02, 0)}
 				/>
