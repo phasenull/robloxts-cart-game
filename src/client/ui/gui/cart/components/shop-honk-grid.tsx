@@ -31,7 +31,7 @@ function ShopHonkEntry({
 	const { mutate, isLoading } = useMutation({
 		queryKey: ["honk-action", item.name],
 		mutationFn: async () => {
-			if (__IS_EDIT__) return;
+			if (__IS_EDIT__) return true;
 
 			if (isOwned && !isEquipped) {
 				// Equip
@@ -40,13 +40,13 @@ function ShopHonkEntry({
 						"honk",
 						item.name,
 					);
-				if (!success || err) return;
+				if (!success || err) return false;
 				UIHelper.playSound(A.sounds.pop_success);
 				onEquipSuccess();
 			} else if (!isOwned) {
 				// Tell server to record intent and prompt the single honk product
 				const [ok, err] = await ClientFunctions.ShopService.promptHonkPurchase.invoke(item.name);
-				if (!ok || err) return;
+				if (!ok || err) return true;
 				// Wait for the Roblox purchase dialog to close
 				const [_, __, wasPurchased] = MarketplaceService.PromptProductPurchaseFinished.Wait();
 				if (wasPurchased) {
@@ -54,6 +54,7 @@ function ShopHonkEntry({
 					onEquipSuccess();
 				}
 			}
+			return true
 		},
 	});
 
@@ -184,12 +185,14 @@ export function ShopHonkGrid({
 	onEquipSuccess,
 }: ShopHonkGridProps) {
 	const sortedHonkItems = [...honkItems].sort((a, b) => {
-		const aEquipped = equippedHonk === a.name;
-		const bEquipped = equippedHonk === b.name;
-		if (aEquipped !== bEquipped) return aEquipped;
-		const aOwned = ownedHonks.includes(a.name);
-		const bOwned = ownedHonks.includes(b.name);
-		if (aOwned !== bOwned) return aOwned;
+		const priority = (item: typeof a) => {
+			if (equippedHonk === item.name) return 0;
+			if (ownedHonks.includes(item.name)) return 1;
+			return 2;
+		};
+		const pa = priority(a);
+		const pb = priority(b);
+		if (pa !== pb) return pa < pb;
 		return a.name < b.name;
 	});
 
