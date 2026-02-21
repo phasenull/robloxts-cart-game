@@ -8,6 +8,7 @@ import { IPurchasableConfig, IReward, IRewardType } from "shared/type.helper"
 import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
 import { CheckpointService } from "./checkpoint.service"
+import { CustomizationService } from "./customization.service"
 import {
 	getCheckpointDataFromIndex,
 	getNextBigCheckpoint
@@ -274,6 +275,26 @@ export class MonetizationService implements OnStart {
 					soundId: A.sounds.reward_earned
 				})
 				return
+			}
+			case "honk": {
+				const data_svc = Dependency<DataService>()
+				const profile = data_svc.getProfile(player)
+				if (!profile) return
+				if (!profile.Data.inventory["honk"]) {
+					profile.Data.inventory["honk"] = []
+				}
+				if (!profile.Data.inventory["honk"].includes(reward.value as string)) {
+					profile.Data.inventory["honk"].push(reward.value as string)
+				}
+				const customization_svc = Dependency<CustomizationService>()
+				customization_svc.setPreferenceUnchecked(player, "honk", reward.value as string)
+				ServerEvents.NotificationService.sendNotification.fire(player, {
+					title: "<b>Honk Unlocked!</b>",
+					description: `<font color='#00D4FF'>${reward.value}</font>`,
+					duration: 4,
+					soundId: A.sounds.reward_earned
+				})
+				break
 			}
 			case "cart":
 				Dependency<CartService>().grantPlayerPermaCart(

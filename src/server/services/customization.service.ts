@@ -74,13 +74,13 @@ export class CustomizationService implements OnStart {
 			return [false, "Profile not loaded"]
 		}
 
-		// Validate ownership for carts
-		if (key === "cart") {
+		// Validate ownership for carts and honks
+		if (key === "cart" || key === "honk") {
 			const shopService = Dependency<ShopService>()
-			const [ownsItem, ownError] = shopService.doesPlayerOwnItem(player, "cart", value)
+			const [ownsItem] = shopService.doesPlayerOwnItem(player, key as "cart" | "honk", value)
 			if (!ownsItem) {
 				this.logger.warn(
-					`Player ${player.Name} tried to equip cart "${value}" but doesn't own it`
+					`Player ${player.Name} tried to equip ${key} "${value}" but doesn't own it`
 				)
 				return [false, "You don't own this item"]
 			}
@@ -91,11 +91,11 @@ export class CustomizationService implements OnStart {
 			profile.Data.customization = {}
 		}
 
-		// For cart preference, replace the existing value (only one cart can be equipped)
-		if (key === "cart") {
+		// For cart/honk preference, replace the existing value (only one can be equipped)
+		if (key === "cart" || key === "honk") {
 			profile.Data.customization[key] = [value]
 			this.logger.log(
-				`Set cart preference to "${value}" for player ${player.Name}`
+				`Set ${key} preference to "${value}" for player ${player.Name}`
 			)
 			return [true]
 		}
@@ -187,6 +187,25 @@ export class CustomizationService implements OnStart {
 			`Cleared all preferences for player ${player.Name} in category "${key}"`
 		)
 		return [true]
+	}
+
+	/**
+	 * Set a player's preference without ownership validation (used post-purchase)
+	 */
+	public setPreferenceUnchecked(
+		player: Player,
+		key: ICustomizable,
+		value: string
+	): void {
+		const profile = this.dataService.getProfile(player)
+		if (!profile) return
+		if (!profile.Data.customization) {
+			profile.Data.customization = {}
+		}
+		profile.Data.customization[key] = [value]
+		this.logger.log(
+			`Set ${key} preference (unchecked) to "${value}" for player ${player.Name}`
+		)
 	}
 
 	/**

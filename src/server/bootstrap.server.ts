@@ -21,4 +21,3 @@ async function main() {
 	server.start()
 }
 main()
-error("test error")

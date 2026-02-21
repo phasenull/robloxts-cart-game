@@ -5,7 +5,9 @@ import {
 	IShopItem,
 	ProperReturns,
 	ICartEntry,
-	IInventoryData
+	IInventoryData,
+	IReward,
+	IRewardType
 } from "shared/type.helper"
 import { DataService } from "./data.service"
 import { CartService } from "./cart.service"
@@ -310,7 +312,22 @@ export class ShopService implements OnStart {
 			return [cartShopItems]
 		}
 
-		// Other item types not supported in CartConfig
+		if (item_type === "honk") {
+			const purchasables = config.PurchasableConfig
+			const honkItems: IShopItem[] = []
+			for (const purchasable of purchasables) {
+				for (const reward of purchasable.rewards as IReward<IRewardType>[]) {
+					if (reward.type === "honk") {
+						honkItems.push({
+							name: reward.value as string,
+							product_id: purchasable.product_id
+						})
+					}
+				}
+			}
+			return [honkItems]
+		}
+
 		return [[]]
 	}
 

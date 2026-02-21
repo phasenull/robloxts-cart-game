@@ -9,9 +9,10 @@ import PopGui from "client/ui/components/pop-gui";
 import { useShopPreview } from "./hooks/useShopPreview";
 import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation";
 import { useGarageCamera } from "./hooks/useGarageCamera";
-import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks";
+import { MOCK_CART_SHOP, MOCK_HONK_INVENTORY, MOCK_HONK_SHOP, MOCK_INVENTORY } from "shared/mocks";
 import { UIHelper } from "client/ui.helper";
 import { ShopWorldviewGuis } from "./shop/shopWorldviewGuis";
+import { ShopHonkGrid } from "./components/shop-honk-grid";
 import { Workspace } from "@rbxts/services";
 
 export function ShopGui() {
@@ -99,6 +100,42 @@ export function ShopGui() {
 		},
 	});
 
+	// Fetch equipped honk preference
+	const { data: equippedHonkData, refetch: refetchEquippedHonk } = useQuery({
+		queryKey: ["player-preference", "honk"],
+		queryFn: async () => {
+			if (__IS_EDIT__) return ["Pizza Scream"];
+			const [prefs, err] =
+				await ClientFunctions.CustomizationService.getPlayerPreference.invoke("honk");
+			if (err || !prefs) return [];
+			return prefs;
+		},
+	});
+
+	// Fetch owned honks
+	const { data: honkInventory, refetch: refetchHonkInventory } = useQuery({
+		queryKey: ["player-inventory", "honk"],
+		queryFn: async () => {
+			if (__IS_EDIT__) return MOCK_HONK_INVENTORY;
+			const [inv, err] =
+				await ClientFunctions.ShopService.getPlayerInventory.invoke("honk");
+			if (err || !inv) return [];
+			return (inv["honk"] as string[] | undefined) ?? [];
+		},
+	});
+
+	// Fetch honk shop items
+	const { data: honkShopItems, refetch: refetchHonkShopItems } = useQuery({
+		queryKey: ["shop-items", "honk"],
+		queryFn: async () => {
+			if (__IS_EDIT__) return MOCK_HONK_SHOP;
+			const [items, err] =
+				await ClientFunctions.ShopService.getShopItems.invoke("honk");
+			if (err || !items) return [];
+			return items;
+		},
+	});
+
 	const [selectedItem, setSelectedItem] = useState<IShopItem | undefined>({
 		name: "Cart",
 		price: 0,
@@ -139,6 +176,9 @@ export function ShopGui() {
 	const handlePurchaseSuccess = () => {
 		refetchInventory();
 		refetchEquippedCart();
+		refetchHonkInventory();
+		refetchEquippedHonk();
+		refetchHonkShopItems();
 		if (refetchShopCartListRef.current) {
 			refetchShopCartListRef.current();
 		}
@@ -154,6 +194,12 @@ export function ShopGui() {
 					Workspace.CurrentCamera?.FindFirstChild("GaragePreviewCart") as ICart
 				}
 			/> : undefined}
+			<ShopHonkGrid
+				equippedHonk={equippedHonkData?.[0]}
+				ownedHonks={honkInventory ?? []}
+				honkItems={honkShopItems ?? []}
+				onEquipSuccess={handlePurchaseSuccess}
+			/>
 			<ShopCartList
 				selectedItem={selectedItem}
 				onSelectItem={handleSelectItem}
