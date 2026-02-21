@@ -359,7 +359,10 @@ export class ShopService implements OnStart {
 
 		if (item_type === "honk") {
 			const purchasables = config.PurchasableConfig
-			const honkItems: IShopItem[] = []
+			const honkItems: IShopItem[] = [
+				// Quack is free and available to all players by default
+				{ name: "Quack" },
+			]
 			for (const purchasable of purchasables) {
 				for (const reward of purchasable.rewards as IReward<IRewardType>[]) {
 					if (reward.type === "honk") {

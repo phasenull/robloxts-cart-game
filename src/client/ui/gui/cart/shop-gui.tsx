@@ -172,12 +172,15 @@ export function ShopGui() {
 	const handlePurchaseSuccess = () => {
 		refetchInventory();
 		refetchEquippedCart();
-		refetchHonkInventory();
-		refetchEquippedHonk();
-		refetchHonkShopItems();
 		if (refetchShopCartListRef.current) {
 			refetchShopCartListRef.current();
 		}
+	};
+
+	const handleHonkSuccess = () => {
+		refetchHonkInventory();
+		refetchEquippedHonk();
+		refetchHonkShopItems();
 	};
 
 	// Only show preview after entrance animation completes
@@ -195,7 +198,7 @@ export function ShopGui() {
 				equippedHonk={equippedHonkData?.[0]}
 				ownedHonks={honkInventory ?? []}
 				honkItems={honkShopItems ?? []}
-				onEquipSuccess={handlePurchaseSuccess}
+				onEquipSuccess={handleHonkSuccess}
 			/>
 			<ShopCartList
 				selectedItem={selectedItem}

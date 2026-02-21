@@ -23,8 +23,11 @@ const PROFILE_TEMPLATE = {
 	collected_checkpoints: [0] as number[],
 	inventory: {
 		vehicles: ["Cart"], // Default cart for all players
+		honk: ["Quack"], // Default honk for all players
 	} as Record<string, string[]>,
-	customization: {} as Record<string, string[]>,
+	customization: {
+		honk: ["Quack"], // Default equipped honk
+	} as Record<string, string[]>,
 };
 type PurchaseHistoryEntry = {
 	purchase_type: "robux" | "cash";

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "@rbxts/react";
 import { useMutation } from "@rbxts/react-query";
+import { MarketplaceService } from "@rbxts/services";
 import { IShopItem } from "shared/type.helper";
 import { ClientFunctions } from "shared/network.helper";
 import { __IS_EDIT__ } from "shared/config.helper";
@@ -44,9 +45,14 @@ function ShopHonkEntry({
 				onEquipSuccess();
 			} else if (!isOwned) {
 				// Tell server to record intent and prompt the single honk product
-				await ClientFunctions.ShopService.promptHonkPurchase.invoke(item.name);
-				// Server fires the prompt; client waits for the result signal
-				onEquipSuccess();
+				const [ok, err] = await ClientFunctions.ShopService.promptHonkPurchase.invoke(item.name);
+				if (!ok || err) return;
+				// Wait for the Roblox purchase dialog to close
+				const [_, __, wasPurchased] = MarketplaceService.PromptProductPurchaseFinished.Wait();
+				if (wasPurchased) {
+					UIHelper.playSound(A.sounds.reward_earned);
+					onEquipSuccess();
+				}
 			}
 		},
 	});
@@ -150,11 +156,11 @@ function ShopHonkEntry({
 			{isHovered && (
 				<imagelabel
 					key="SoundIcon"
-					AnchorPoint={new Vector2(0.5, 0.5)}
+					AnchorPoint={new Vector2(0, 1)}
 					BackgroundTransparency={1}
 					Image="rbxassetid://118552291926802"
-					Position={new UDim2(0.5, 0, 0.5, 0)}
-					Size={new UDim2(0.5, 0, 0.5, 0)}
+					Position={new UDim2(0.1, 0, 0.9, 0)}
+					Size={new UDim2(0.2, 0, 0.2, 0)}
 					ZIndex={10}
 				>
 					<uiaspectratioconstraint AspectRatio={1} />
@@ -177,6 +183,16 @@ export function ShopHonkGrid({
 	honkItems,
 	onEquipSuccess,
 }: ShopHonkGridProps) {
+	const sortedHonkItems = [...honkItems].sort((a, b) => {
+		const aEquipped = equippedHonk === a.name;
+		const bEquipped = equippedHonk === b.name;
+		if (aEquipped !== bEquipped) return aEquipped;
+		const aOwned = ownedHonks.includes(a.name);
+		const bOwned = ownedHonks.includes(b.name);
+		if (aOwned !== bOwned) return aOwned;
+		return a.name < b.name;
+	});
+
 	return (
 		<frame
 			key="HonkGrid"
@@ -272,7 +288,7 @@ export function ShopHonkGrid({
 					PaddingLeft={new UDim(0.02, 0)}
 					PaddingRight={new UDim(0.02, 0)}
 				/>
-				{honkItems.map((item) => (
+				{sortedHonkItems.map((item) => (
 					<ShopHonkEntry
 						key={item.name}
 						item={item}

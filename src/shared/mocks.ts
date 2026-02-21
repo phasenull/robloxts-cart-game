@@ -17,11 +17,11 @@ export const MOCK_INVENTORY: ICartEntry[] = [
 
 export const MOCK_CASH = 67676767
 
-export const MOCK_HONK_SHOP = 
+export const MOCK_HONK_SHOP =
 	assets.honks.GetChildren().map((honk) => ({
 		name: honk.Name,
-		product_id: PRODUCTS.honk
+		// Quack is free (no product_id); all others require the honk product
+		product_id: honk.Name === "Quack" ? undefined : PRODUCTS.honk
 	}))
 
-
-export const MOCK_HONK_INVENTORY: string[] = ["Pizza Scream"]
+export const MOCK_HONK_INVENTORY: string[] = ["Quack"]
