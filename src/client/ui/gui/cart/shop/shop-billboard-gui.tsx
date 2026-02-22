@@ -85,11 +85,11 @@ export function ShopBillboardGui(props: {
 									text_size_multiplier={1.4}
 									Text={props.text}
 									Color={
-										progress < 0.15
+										progress < 0.3
 											? new Color3(1, 0, 0)
-											: progress < 0.3
+											: progress < 0.6
 												? new Color3(1, 0.75, 0.24)
-												: progress < 0.6
+												: progress < 0.8
 													? new Color3(0.06, 0.62, 0.9)
 													: new Color3(0, 1, 0)
 									}
