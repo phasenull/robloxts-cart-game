@@ -1,7 +1,7 @@
-import { Components } from "@flamework/components"
-import { Dependency } from "@flamework/core"
-import { ReplicatedStorage, Workspace } from "@rbxts/services"
-import { log_base } from "./type.helper"
+import { Components } from "@flamework/components";
+import { Dependency } from "@flamework/core";
+import { ReplicatedStorage, Workspace } from "@rbxts/services";
+import { log_base } from "./type.helper";
 
 export namespace A {
 	export const icons = {
@@ -23,8 +23,8 @@ export namespace A {
 		trade: "rbxassetid://104326444532727",
 		rebirth: "rbxassetid://121185824614656",
 		backpack: "rbxassetid://120361956794366",
-		hammer: "rbxassetid://135491521827812"
-	}
+		hammer: "rbxassetid://135491521827812",
+	};
 	export const ui = {
 		loading_indicator_white: "rbxassetid://106340732495073",
 		sparkle: "rbxassetid://89147208696467",
@@ -50,53 +50,58 @@ export namespace A {
 		checkboard2x2: "rbxassetid://132475668726463",
 		stud: "rbxassetid://117364829478409",
 		corner: "rbxassetid://137208564577695",
-		background_blur:"rbxassetid://82404922123022",
+		background_blur: "rbxassetid://82404922123022",
 		frame: "rbxassetid://120384921811889",
 		button_horizontal_bright: "rbxassetid://83483836238902",
 		button_horizontal: "rbxassetid://132165141342743",
 		player_profile_dashes: "rbxassetid://86401748109465",
 		halftone_bottom_top: "rbxassetid://110100323318280",
 		halftone_circle: "rbxassetid://124284820217674",
-		tile:"rbxassetid://120250412681646",
-		inner_shadow:"rbxassetid://75600902046326",
-		ellipse:"rbxassetid://113978818477114",
+		tile: "rbxassetid://120250412681646",
+		inner_shadow: "rbxassetid://75600902046326",
+		ellipse: "rbxassetid://113978818477114",
 		keys: {
 			h: "rbxassetid://99753543559272",
 			empty: "rbxassetid://137837563740597",
-			space: "rbxassetid://140163882410345"
-		}
-	}
+			space: "rbxassetid://140163882410345",
+		},
+	};
 	export const backgrounds = {
-		post_magma:"rbxassetid://89145592620126",
+		post_magma: "rbxassetid://89145592620126",
 		initial: "rbxassetid://115272068924901",
 		post_initial: "rbxassetid://122225957336369",
 		post_snowy: "rbxassetid://93762869405076",
 		box_weld: "rbxassetid://94748745460410",
-	}
+	};
 	export const sounds = {
 		click_hard: "rbxassetid://6324790483",
 		click_soft: "rbxassetid://15675059323",
 		pop: "rbxassetid://88442833509532",
-		error:"rbxassetid://550209561",
+		error: "rbxassetid://550209561",
 		pop_success: "rbxassetid://106145041472451",
 		mission_success: "rbxassetid://111224610455554",
 		purchase_success: "rbxassetid://134952684776633",
-		mango_scream:"rbxassetid://15798534597",
-		pizza_scream:"rbxassetid://154157563",
-		tom_scream:"rbxassetid://139694892021582",
-		drift:"rbxassetid://71308996451354",
-		party:"rbxassetid://5759274072",
-		click_kaan:"rbxassetid://876939830",
+		mango_scream: "rbxassetid://15798534597",
+		pizza_scream: "rbxassetid://154157563",
+		tom_scream: "rbxassetid://139694892021582",
+		drift: "rbxassetid://71308996451354",
+		party: "rbxassetid://5759274072",
+		click_kaan: "rbxassetid://876939830",
 		cash_kaan: "rbxassetid://134952684776633",
-		reward_earned: "rbxassetid://4612375802"
-	}
+		reward_earned: "rbxassetid://4612375802",
+	};
 }
 export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {
-	log_base:log_base,
-	carts: Folder,
-	honks:Folder,
-	CheckpointVisuals:Model & { checkpoint_visual: Part },
-	PointArrow: BasePart
-}
-export const scriptables = Workspace.FindFirstChild("scriptables") as Folder
-export const runtime = scriptables?.FindFirstChild("runtime") as Folder
+	log_base: log_base;
+	carts: Folder;
+	honks: Folder;
+	CheckpointVisuals: Model & { checkpoint_visual: Part };
+	PointArrow: BasePart;
+	Speedlines: Part & {
+		Attachment: Attachment & {
+			ParticleEmitter: ParticleEmitter;
+		};
+	};
+};
+export const scriptables = Workspace.FindFirstChild("scriptables") as Folder;
+export const runtime = scriptables?.FindFirstChild("runtime") as Folder;

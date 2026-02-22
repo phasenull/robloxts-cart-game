@@ -89,6 +89,10 @@ interface ClientToServerEvents {
 		setCheckpoint: (index: number) => void
 		processPlayerDeath: () => void
 	}
+	PlatformService: {
+		onEnter: (platform: BasePart) => void
+		onLeave: (platform: BasePart) => void
+	}
 }
 
 /*
