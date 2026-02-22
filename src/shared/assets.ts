@@ -97,9 +97,11 @@ export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {
 	honks: Folder;
 	CheckpointVisuals: Model & { checkpoint_visual: Part };
 	PointArrow: BasePart;
-	Speedlines: Part & {
-		Attachment: Attachment & {
-			ParticleEmitter: ParticleEmitter;
+	Speedlines: Model & {
+		Lines: Part & {
+			Attachment: Attachment & {
+				ParticleEmitter: ParticleEmitter;
+			};
 		};
 	};
 };

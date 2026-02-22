@@ -1,32 +1,38 @@
-import React, { useEffect, useState } from "@rbxts/react"
-import { Players, RunService, Workspace } from "@rbxts/services"
-import { CartClientComponent } from "client/components/cart.client.component"
-import { GoofyText } from "client/ui/components/goofy-text"
-import { UIDIM } from "client/ui/constants"
-import { useCart } from "client/ui/contexts/cart.context"
-import useAnimateValue from "client/ui/hooks/useAnimateValue"
-import { A } from "shared/assets"
-import { Logger } from "shared/logger"
-import { useInputType } from "client/ui/hooks/useInputType"
-const logger = new Logger("SpeedometerHud")
+import React, { useEffect, useState } from "@rbxts/react";
+import { Players, RunService, Workspace } from "@rbxts/services";
+import { CartClientComponent } from "client/components/cart.client.component";
+import { GoofyText } from "client/ui/components/goofy-text";
+import { UIDIM } from "client/ui/constants";
+import { useCart } from "client/ui/contexts/cart.context";
+import useAnimateValue from "client/ui/hooks/useAnimateValue";
+import { A, assets } from "shared/assets";
+import { Logger } from "shared/logger";
+import { useInputType } from "client/ui/hooks/useInputType";
+const logger = new Logger("SpeedometerHud");
+
+const MAX_SPEED = 70;
+const SPEEDLINES_OFFSET = 10; // studs in front of camera
+const SPEEDLINES_MAX_RATE = 1000;
+const SPEEDLINES_MAX_SPEED_MIN = 20;
+const SPEEDLINES_MAX_SPEED_MAX = 25;
 export function SpeedometerHud(props: {
 	__story?: {
-		cart_enabled: boolean
-		override_speed: number
-		override_device?: "Gamepad" | "Keyboard" | "Mobile"
-	}
+		cart_enabled: boolean;
+		override_speed: number;
+		override_device?: "Gamepad" | "Keyboard" | "Mobile";
+	};
 }) {
-	const { cart, state } = useCart()
-	const device = props.__story?.override_device ?? useInputType()
-	const isMobile = device === "Mobile"
-	const max_speed = 70
-	const degrees_range = isMobile ? [20, 160] : [-20, 110]
-	const [speed, set_speed] = useState<number>(0)
-	const death_speed = 130
-	let target_speed = props.__story?.override_speed ?? speed
-	const is_death = target_speed >= death_speed
+	const { cart, state } = useCart();
+	const device = props.__story?.override_device ?? useInputType();
+	const isMobile = device === "Mobile";
+	const max_speed = MAX_SPEED;
+	const degrees_range = isMobile ? [20, 160] : [-20, 110];
+	const [speed, set_speed] = useState<number>(0);
+	const death_speed = 130;
+	let target_speed = props.__story?.override_speed ?? speed;
+	const is_death = target_speed >= death_speed;
 	if (is_death) {
-		target_speed = death_speed
+		target_speed = death_speed;
 	}
 	// const speed = useAnimateValue({
 	// 	initial_value: 0,
@@ -42,64 +48,94 @@ export function SpeedometerHud(props: {
 	// })
 	const degree =
 		(target_speed / max_speed) * (degrees_range[1] - degrees_range[0]) +
-		degrees_range[0]
-	const speed_keypoints = [0, 10, 20, 30, 40, 50, 60, 70]
+		degrees_range[0];
+	const speed_keypoints = [0, 10, 20, 30, 40, 50, 60, 70];
 	useEffect(() => {
 		if (!cart) {
-			return
+			return;
 		}
-		const part = cart.instance.Root
+		const part = cart.instance.Root;
 		const connection = RunService.Heartbeat.Connect(() => {
-			const velocity = part.AssemblyLinearVelocity
-			const current_speed = velocity.Magnitude
-			set_speed(current_speed)
-		})
+			const velocity = part.AssemblyLinearVelocity;
+			const current_speed = velocity.Magnitude;
+			set_speed(current_speed);
+		});
 		return () => {
-			connection?.Disconnect()
-		}
-	}, [cart])
+			connection?.Disconnect();
+		};
+	}, [cart]);
+
+	// ─── Speedlines VFX ───────────────────────────────────────────────────────
+	useEffect(() => {
+		if (!cart) return;
+
+		const speedlinesPart = assets.Speedlines.Clone();
+		const emitter = speedlinesPart.Lines.Attachment.ParticleEmitter;
+		speedlinesPart.Parent = Workspace;
+
+		// Update CFrame on RenderStepped so it stays locked to camera without lag
+		const renderStepped = RunService.RenderStepped.Connect((dt) => {
+			const camera = Workspace.CurrentCamera;
+			if (!camera) return;
+			const viewportSize = camera.ViewportSize;
+			const aspectRatio = viewportSize.X / viewportSize.Y;
+			const scale = aspectRatio > 1.25 ? 1 : 0.8;
+			speedlinesPart.ScaleTo(scale);
+			speedlinesPart.PivotTo(
+				camera.CFrame.mul(new CFrame(0, 0, -SPEEDLINES_OFFSET)),
+			);
+			emitter.Emit(dt*500);
+			speedlinesPart.Lines.Attachment.ParticleEmitter.Transparency =
+				target_speed >= 50 ? new NumberSequence(0) : new NumberSequence(1);
+		});
+
+		return () => {
+			renderStepped.Disconnect();
+			speedlinesPart.Destroy();
+		};
+	}, [cart]);
 	useEffect(() => {
 		return () => {
 			if (!camera) {
-				return
+				return;
 			}
-			camera.FieldOfView = 70
-		}
-	}, [])
-	const is_open = cart || props.__story?.cart_enabled
+			camera.FieldOfView = 70;
+		};
+	}, []);
+	const is_open = cart || props.__story?.cart_enabled;
 	const value = useAnimateValue({
 		target_value: is_open ? 1 : 0,
 		tween_info: new TweenInfo(
 			1,
 			Enum.EasingStyle.Quint,
-			Enum.EasingDirection.InOut
-		)
-	})
-	const default_fov = 70
-	const camera = Workspace.CurrentCamera
+			Enum.EasingDirection.InOut,
+		),
+	});
+	const default_fov = 70;
+	const camera = Workspace.CurrentCamera;
 	if (camera && cart) {
-		const min_degrees = 20
-		const max_degrees = 120
-		const added_fov = 30
+		const min_degrees = 20;
+		const max_degrees = 120;
+		const added_fov = 30;
 		const calculated_fov =
 			default_fov +
 			math.clamp(
 				((target_speed - min_degrees) / (max_degrees - min_degrees)) *
 					added_fov,
 				0,
-				added_fov
-			)
-		camera.FieldOfView = calculated_fov
+				added_fov,
+			);
+		camera.FieldOfView = calculated_fov;
 	}
 	const death_value = useAnimateValue({
 		target_value: is_death ? 1 : 0,
 		tween_info: new TweenInfo(
 			0.2,
 			Enum.EasingStyle.Sine,
-			Enum.EasingDirection.InOut
+			Enum.EasingDirection.InOut,
 		),
-		enabled: !isMobile
-	})
+		enabled: !isMobile,
+	});
 	return (
 		<frame
 			key={"movement-scaler"}
@@ -123,7 +159,7 @@ export function SpeedometerHud(props: {
 						0.5 + (isMobile ? 0 : 1 - value - death_value * 0.2),
 						0,
 						0.5 + (1 - value) - death_value * 0.2,
-						0
+						0,
 					)
 				}
 				BackgroundTransparency={0.5}
@@ -182,7 +218,7 @@ export function SpeedometerHud(props: {
 										-11.5 + math.abs(max_speed / 2 - speed_value) / 15,
 										0,
 										0.5,
-										0
+										0,
 									)
 								}
 								Text={`${speed_value}`}
@@ -231,7 +267,7 @@ export function SpeedometerHud(props: {
 					Rotation={math.clamp(
 						degree,
 						0,
-						isMobile ? degrees_range[1] + 20 : 360
+						isMobile ? degrees_range[1] + 20 : 360,
 					)}
 					AnchorPoint={UIDIM.A_CENTER}
 					Size={new UDim2(0.05, 0, 0.05, 0)}
@@ -256,5 +292,5 @@ export function SpeedometerHud(props: {
 				</frame>
 			</frame>
 		</frame>
-	)
+	);
 }

@@ -1,4 +1,4 @@
-import React, { InstanceProps } from "react";
+import React, { InstanceProps } from "@rbxts/react";
 export function GoofyText(
 	props: React.InstanceProps<TextLabel> & {
 		MaxTextSize?: number;
