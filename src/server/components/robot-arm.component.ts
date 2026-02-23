@@ -48,16 +48,15 @@ export class RobotArmComponent
 		this.track.Play();
 		task.spawn(() => {
 			// Wait until track.Length is populated, then delay to just before the end
-			task.delay(this.track.Length - 0.03, () => {
+			task.delay(this.track.Length - 0.1, () => {
 				// Freeze on the last frame — replicates correctly since the track is still "playing"
-				this.track.TimePosition = this.track.Length-0.03;
+				this.track.TimePosition = this.track.Length-0.1;
 				this.track.AdjustSpeed(0);
 				this.status = "waiting";
 				this.logger.log(
 					"RobotArmComponent: frozen at last frame, status=waiting",
 				);
 			});
-			while (this.track.Length === 0) task.wait();
 		});
 	}
 	weldCart() {
@@ -68,6 +67,7 @@ export class RobotArmComponent
 		weld.Name = "CartWeld";
 		weld.Part0 = this.instance.GrabRoot;
 		weld.Part1 = this.grabbed_cart.Root;
+		weld.C1 = new CFrame(0,2,0)
 		weld.Parent = this.instance;
 	}
 	releaseCart() {
