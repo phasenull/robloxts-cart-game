@@ -15,7 +15,7 @@ import { ShopWorldviewGuis } from "./shop/shopWorldviewGuis";
 import { ShopHonkGrid } from "./components/shop-honk-grid";
 import { Workspace } from "@rbxts/services";
 
-export function ShopGui() {
+export function CartCustomizationGui() {
 	const isFirstRenderRef = useRef(true);
 
 	// Fetch equipped cart preference first (needed for entrance animation)

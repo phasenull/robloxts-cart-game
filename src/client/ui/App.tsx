@@ -24,7 +24,7 @@ import { RightSidebar } from "./components/right-sidebar"
 import { TPGui } from "./gui/main/tp-gui"
 import Sidebar from "./gui/sidebar"
 import { NotificationsGui } from "./gui/main/notifications/notifications-gui"
-import { ShopGui } from "./gui/cart/shop-gui"
+import { CartCustomizationGui } from "./gui/cart/shop-gui"
 import { GlobalHUDGui } from "./gui/global-hud-gui"
 import { LeaderboardGui } from "./gui/main/leaderboard/leaderboard-gui"
 const query_client = new QueryClient({
@@ -78,9 +78,9 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										<PopGui id={"leaderboard"}>
 											{/* <LeaderboardGui/> */}
 										</PopGui>
-										<PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
+										{/* <PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
 											<PassShopGui />
-										</PopGui>
+										</PopGui> */}
 										<PopGui Size={UDim2.fromScale(1,1)} disable_default_close hide_title id={"rotten-shop"}>
 											<RottenShopGui />
 										</PopGui>
@@ -95,7 +95,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 											disable_default_close={true}
 											disable_aspect_ratio={true}
 										>
-											<ShopGui />
+											<CartCustomizationGui />
 										</PopGui>
 										<NotificationsGui />
 									</SettingsProvider>

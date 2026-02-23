@@ -6,9 +6,11 @@ import { useQuery } from "@rbxts/react-query"
 import { __IS_EDIT__ } from "shared/config.helper"
 import { MOCK_CASH } from "shared/mocks"
 import { useInputType } from "../hooks/useInputType"
+import { useNavigator } from "../hooks/useNavigator"
 
 export function CashLabel() {
 	const [cash, setCash] = useState<number | undefined>(MOCK_CASH)
+	const navigator = useNavigator()
 
 	const { data: initialCash } = useQuery({
 		queryKey: ["player-cash"],
@@ -46,8 +48,8 @@ export function CashLabel() {
 				AnchorPoint={new Vector2(1, 0.5)}
 				BackgroundTransparency={1}
 				Font={Enum.Font.GothamBlack}
-				Position={new UDim2(1, 0, 0.5, 0)}
-				Size={new UDim2(.85, 0, 0.807, 0)}
+				Position={new UDim2(.97, 0, 0.5, 0)}
+				Size={new UDim2(.75, 0, 0.807, 0)}
 				Text={formatCash(cash ?? 0)}
 				TextColor3={Color3.fromRGB(255, 255, 255)}
 				TextScaled={true}
@@ -93,6 +95,7 @@ export function CashLabel() {
 				BorderSizePixel={0}
 				Position={new UDim2(0.08, 0, 0.5, 0)}
 				Size={new UDim2(0.55, 0, 0.55, 0)}
+				Event={{ MouseButton1Click: () => navigator.setOpenGui("rotten-shop") }}
 			>
 				<uiaspectratioconstraint AspectRatio={0.985} />
 				<textlabel
@@ -156,7 +159,7 @@ export function CashLabel() {
 				/>
 			</imagelabel>
 			<uiaspectratioconstraint
-				AspectRatio={5.525}
+				AspectRatio={3}
 				AspectType={Enum.AspectType.ScaleWithParentSize}
 				DominantAxis={Enum.DominantAxis.Height}
 			/>
