@@ -10,6 +10,7 @@ import { useCheckpoint } from "../gui/cart/hooks/useCheckpoint"
 import { getCheckpointDataFromIndex } from "shared/cart.helper"
 import useAnimateValue from "../hooks/useAnimateValue"
 import { UIHelper } from "client/ui.helper"
+import { CashLabel } from "../gui/global-hud-gui";
 
 export function RightSidebar() {
 	const navigator = useNavigator()
@@ -44,6 +45,8 @@ export function RightSidebar() {
 			/>
 			<uipadding PaddingRight={new UDim(0.1, 0)} />
 			<uiaspectratioconstraint AspectRatio={0.5} />
+			<CashLabel />
+
 			<RottenButton
 				Color={new Color3(0, 0.35, 1)}
 				Size={UIDIM.ONE}

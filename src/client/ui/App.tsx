@@ -48,7 +48,6 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 									initial_gui={__IS_EDIT__ ? props.initial_gui : undefined}
 								>
 									<SettingsProvider>
-										<Sidebar />
 										<GlobalHUDGui />
 										<FadeGui />
 										<DeathGui />

@@ -7,7 +7,7 @@ import { __IS_EDIT__ } from "shared/config.helper"
 import { MOCK_CASH } from "shared/mocks"
 import { useInputType } from "../hooks/useInputType"
 
-function CashLabel() {
+export function CashLabel() {
 	const [cash, setCash] = useState<number | undefined>(MOCK_CASH)
 
 	const { data: initialCash } = useQuery({
@@ -39,17 +39,15 @@ function CashLabel() {
 			key="CashLabel"
 			BackgroundColor3={Color3.fromRGB(0, 36, 62)}
 			BorderSizePixel={0}
-			AnchorPoint={new Vector2(1, 0)}
-			Position={new UDim2(1, -10, 0, 10)}
-			Size={UDim2.fromScale(0.07, 0.07)}
+			Size={UDim2.fromScale(1, 1)}
 		>
 			<textlabel
 				key="CashText"
 				AnchorPoint={new Vector2(1, 0.5)}
 				BackgroundTransparency={1}
 				Font={Enum.Font.GothamBlack}
-				Position={new UDim2(0.961, 0, 0.517, 0)}
-				Size={new UDim2(0.55, 0, 0.807, 0)}
+				Position={new UDim2(1, 0, 0.5, 0)}
+				Size={new UDim2(.85, 0, 0.807, 0)}
 				Text={formatCash(cash ?? 0)}
 				TextColor3={Color3.fromRGB(255, 255, 255)}
 				TextScaled={true}
@@ -93,8 +91,8 @@ function CashLabel() {
 				AnchorPoint={new Vector2(0.5, 0.5)}
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
 				BorderSizePixel={0}
-				Position={new UDim2(0.327, 0, 0.5, 0)}
-				Size={new UDim2(0.12, 0, 0.55, 0)}
+				Position={new UDim2(0.08, 0, 0.5, 0)}
+				Size={new UDim2(0.55, 0, 0.55, 0)}
 			>
 				<uiaspectratioconstraint AspectRatio={0.985} />
 				<textlabel
@@ -170,7 +168,6 @@ export function GlobalHUDGui() {
 	const device = useInputType()
 	return (
 		<frame Size={UIDIM.ONE} BackgroundTransparency={1}>
-			<CashLabel />
 			<textlabel
 				BackgroundTransparency={1}
 
