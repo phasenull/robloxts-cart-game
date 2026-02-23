@@ -19,6 +19,7 @@ export class RobotArmComponent extends BaseComponent<{}, IRobotArm> {
 		animation.AnimationId = this.animation_id;
 		animation.Parent = this.instance;
 		this.track = animator.LoadAnimation(animation);
+		this.track.Looped = false;
         this.track.GetMarkerReachedSignal("status").Connect((value) => {
             switch (value) {
                 case "grab":
@@ -29,7 +30,18 @@ export class RobotArmComponent extends BaseComponent<{}, IRobotArm> {
                     break;
             }
         })
-		logger.log("RobotArmComponent initialized");
+		this.track.Ended.Connect(() => {
+			// Freeze at last frame and mark ready for the next cart
+			this.track.AdjustSpeed(0);
+			this.track.TimePosition = this.track.Length;
+			this.status = "waiting";
+			logger.log("RobotArmComponent: cycle complete, holding at last frame, status=waiting");
+		})
+		// Play at speed 0 immediately to hold the arm at frame 0 (idle pose)
+		this.track.Play();
+		this.track.AdjustSpeed(0);
+		this.track.TimePosition = 0;
+		logger.log("RobotArmComponent initialized, holding at frame 0");
 	}
 	pickAndPlace(cart: ICart) {
 		if (this.status !== "waiting") {
@@ -37,7 +49,7 @@ export class RobotArmComponent extends BaseComponent<{}, IRobotArm> {
 		}
 		this.grabbed_cart = cart;
 		this.status = "moving";
-		this.track.Play();
+		this.track.AdjustSpeed(1);
 	}
 	weldCart() {
 		if (!this.grabbed_cart) {

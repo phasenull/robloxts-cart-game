@@ -62,11 +62,20 @@ export class PlatformComponent
 
 	private setupClientTouch(): void {
 		this.touched = this.instance.Touched.Connect((hit) => {
-			// Only react to a part belonging to the local player's cart
 			const local_player = Players.LocalPlayer
 			const suffix = `_${local_player.Name}`
-			const cart = hit.FindFirstAncestorOfClass("Model")
-			if (!cart || cart.Name.sub(-suffix.size()) !== suffix) return
+
+			// Walk up through all ancestor models to find the cart (hit may be inside a wheel sub-model)
+			let ancestor: Instance | undefined = hit.Parent
+			let cart: Model | undefined
+			while (ancestor) {
+				if (ancestor.IsA("Model") && ancestor.Name.sub(-suffix.size()) === suffix) {
+					cart = ancestor
+					break
+				}
+				ancestor = ancestor.Parent
+			}
+			if (!cart) return
 
 			// Already tracking — ignore duplicate touches
 			if (this.heartbeat) return
@@ -74,8 +83,7 @@ export class PlatformComponent
 			// Start heartbeat loop to keep checking while on platform
 			this.heartbeat = RunService.Heartbeat.Connect(() => {
 				const result = this.getLocalCart()
-				if (!result || !this.allRaysHitPlatform(result.root, result.cartModel)) {
-					// Cart left the platform
+				if (!result || !this.isCartOverPlatform(result.root)) {
 					this.clientSetOn(false)
 					this.heartbeat?.Disconnect()
 					this.heartbeat = undefined
@@ -89,6 +97,7 @@ export class PlatformComponent
 	private clientSetOn(value: boolean): void {
 		if (value === this.isOn) return
 		this.isOn = value
+		print(`[PlatformComponent] clientSetOn -> ${value} on ${this.instance.Name}`)
 		if (value) {
 			ClientEvents.PlatformService.onEnter.fire(this.instance)
 		} else {
@@ -99,14 +108,20 @@ export class PlatformComponent
 	// ─── Server ───────────────────────────────────────────────────────────────
 
 	protected setupServerListeners(): void {
+		print(`[PlatformComponent] setupServerListeners registered on ${this.instance.Name}`)
 		ServerEvents.PlatformService.onEnter.connect((player, platform) => {
 			if (platform !== this.instance) return
-			if (!this.validatePlayerNearPlatform(player)) return
+			print(`[PlatformComponent] server onEnter received from ${player.Name} for ${this.instance.Name}`)
+			if (!this.validatePlayerNearPlatform(player)) {
+				print(`[PlatformComponent] validatePlayerNearPlatform FAILED for ${player.Name}`)
+				return
+			}
 			this.onEnter()
 		})
 
 		ServerEvents.PlatformService.onLeave.connect((player, platform) => {
 			if (platform !== this.instance) return
+			print(`[PlatformComponent] server onLeave received from ${player.Name} for ${this.instance.Name}`)
 			this.onLeave()
 		})
 	}
@@ -125,7 +140,7 @@ export class PlatformComponent
 
 	// ─── Shared raycast logic ─────────────────────────────────────────────────
 
-	private allRaysHitPlatform(root: BasePart, cartModel: Model): boolean {
+	private isCartOverPlatform(root: BasePart): boolean {
 		const size = root.Size
 		const deadZone = 3
 		const corners = [
@@ -136,8 +151,8 @@ export class PlatformComponent
 		]
 
 		const rayParams = new RaycastParams()
-		rayParams.FilterDescendantsInstances = [cartModel]
-		rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+		rayParams.FilterType = Enum.RaycastFilterType.Include
+		rayParams.FilterDescendantsInstances = [this.instance]
 		rayParams.IgnoreWater = true
 
 		for (const corner of corners) {
@@ -146,7 +161,10 @@ export class PlatformComponent
 				new Vector3(0, -1, 0).mul(9),
 				rayParams,
 			)
-			if (!ray || ray.Instance !== this.instance) return false
+			if (!ray) {
+				print(`[PlatformComponent] Ray miss at corner ${corner} | expected=${this.instance.Name}`)
+				return false
+			}
 		}
 		return true
 	}
