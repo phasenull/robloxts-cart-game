@@ -20,6 +20,9 @@ export class PlatformComponent
 	private heartbeat: RBXScriptConnection | undefined
 	private touched: RBXScriptConnection | undefined
 
+	/** The player whose cart triggered the current onEnter. Available during onEnter(). */
+	protected currentPlayer: Player | undefined
+
 	/** Override in subclasses — called when the cart is confirmed on this platform. */
 	public onEnter(): void {}
 
@@ -117,24 +120,44 @@ export class PlatformComponent
 
 	protected setupServerListeners(): void {
 		print(`[PlatformComponent] setupServerListeners registered on ${this.instance.Name}`)
+		// Track which players are currently on this platform so retries can be cancelled on leave
+		const activePlayers = new Set<Player>()
+
 		ServerEvents.PlatformService.onEnter.connect((player, platform) => {
 			if (platform !== this.instance) return
 			print(`[PlatformComponent] server onEnter received from ${player.Name} for ${this.instance.Name}`)
-			if (!this.validatePlayerNearPlatform(player)) {
-				print(`[PlatformComponent] validatePlayerNearPlatform FAILED for ${player.Name}`)
-				return
-			}
-			this.onEnter()
+			activePlayers.add(player)
+			task.spawn(() => {
+				const [ok, err] = pcall(() => {
+					print(`[PlatformComponent] validation loop starting for ${player.Name}`)
+					const result = this.validatePlayerNearPlatform(player)
+					print(`[PlatformComponent] validatePlayerNearPlatform returned ${result} for ${player.Name}`)
+					while (activePlayers.has(player) && !this.validatePlayerNearPlatform(player)) {
+						task.wait(0.25)
+					}
+					if (!activePlayers.has(player)) {
+						print(`[PlatformComponent] player ${player.Name} left before cart was ready, aborting`)
+						return
+					}
+					this.currentPlayer = player
+					print(`[PlatformComponent] calling onEnter for ${player.Name}`)
+					this.onEnter()
+				})
+				if (!ok) {
+					print(`[PlatformComponent] ERROR in validation/onEnter: ${err}`)
+				}
+			})
 		})
 
 		ServerEvents.PlatformService.onLeave.connect((player, platform) => {
 			if (platform !== this.instance) return
 			print(`[PlatformComponent] server onLeave received from ${player.Name} for ${this.instance.Name}`)
+			activePlayers.delete(player)
 			this.onLeave()
 		})
 	}
 
-	private validatePlayerNearPlatform(player: Player): boolean {
+	protected validatePlayerNearPlatform(player: Player): boolean {
 		const cartService = Dependency<CartService>()
 		const cart = cartService.getPlayerCart(player)
 		if (!cart) return false

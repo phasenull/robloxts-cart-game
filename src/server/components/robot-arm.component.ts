@@ -39,9 +39,9 @@ export class RobotArmComponent
 
 	onStart(): void {}
 
-	pickAndPlace(cart: ICart) {
+	pickAndPlace(cart: ICart): boolean {
 		if (this.status !== "waiting") {
-			return;
+			return false;
 		}
 		this.grabbed_cart = cart;
 		this.status = "moving";
@@ -58,6 +58,7 @@ export class RobotArmComponent
 				);
 			});
 		});
+		return true;
 	}
 	weldCart() {
 		if (!this.grabbed_cart) {

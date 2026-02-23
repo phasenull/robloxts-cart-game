@@ -409,7 +409,10 @@ export class CartService implements OnStart {
 			)
 			component.instance.Destroying.Once(() => {
 				cart.cleanup()
-				this.PLAYER_CARTS.delete(player)
+				// Only remove if this is still the player's active cart
+				if (this.PLAYER_CARTS.get(player) === cart_model) {
+					this.PLAYER_CARTS.delete(player)
+				}
 			})
 		})
 		// Sit player after a short delay to ensure seat is ready
@@ -696,7 +699,10 @@ export class CartService implements OnStart {
 				CartServerComponent
 			)
 			component.instance.Destroying.Once(() => {
-				this.PLAYER_CARTS.delete(player)
+				// Only remove if this is still the player's active cart
+				if (this.PLAYER_CARTS.get(player) === cart_model) {
+					this.PLAYER_CARTS.delete(player)
+				}
 			})
 		})
 		// Sit player after a short delay to ensure seat is ready

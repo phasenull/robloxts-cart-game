@@ -4,7 +4,6 @@ import { RunService } from "@rbxts/services"
 import { t } from "@rbxts/t"
 import type { RobotArmComponent } from "server/components/robot-arm.component"
 import type { CartService } from "server/services/cart.service"
-import { ServerEvents } from "shared/network.helper"
 import { Logger } from "shared/logger"
 import { ICart } from "shared/type.helper"
 import { PlatformComponent } from "./platform.component"
@@ -24,6 +23,7 @@ export class ElevatorPlatformComponent extends PlatformComponent {
 
 	override onEnter(): void {
 		this.logger.log(`[ElevatorPlatform] onEnter fired on ${this.instance.Name}`)
+		this.currentCart = Dependency<CartService>().getPlayerCart(this.currentPlayer!)
 		this.startPickLoop()
 	}
 
@@ -37,6 +37,12 @@ export class ElevatorPlatformComponent extends PlatformComponent {
 	destroy(): void {
 		this.pickLoop?.Disconnect()
 		super.destroy()
+	}
+
+	protected override validatePlayerNearPlatform(player: Player): boolean {
+		const cart = Dependency<CartService>().getPlayerCart(player)
+		print(`[ElevatorPlatform] validatePlayerNearPlatform override called, cart=${cart !== undefined}`)
+		return cart !== undefined
 	}
 
 	private getRobotArm(): RobotArmComponent | undefined {
@@ -58,21 +64,13 @@ export class ElevatorPlatformComponent extends PlatformComponent {
 			if (!this.currentCart) return
 			const robotArm = this.getRobotArm()
 			if (!robotArm) return
-			robotArm.pickAndPlace(this.currentCart)
+			if (robotArm.pickAndPlace(this.currentCart)) {
+				this.logger.log("[ElevatorPlatform] pickAndPlace accepted, stopping pick loop")
+				this.currentCart = undefined
+				this.pickLoop?.Disconnect()
+				this.pickLoop = undefined
+			}
 		})
 	}
 
-	protected override setupServerListeners(): void {
-		this.logger.log(`[ElevatorPlatform] setupServerListeners called for ${this.instance.Name}`)
-		ServerEvents.PlatformService.onEnter.connect((player, platform) => {
-			if (platform !== this.instance) return
-			this.logger.log(`[ElevatorPlatform] network onEnter received for player ${player.Name}`)
-			const cart = Dependency<CartService>().getPlayerCart(player)
-			if (!cart) {
-				this.logger.log(`[ElevatorPlatform] getPlayerCart returned undefined for ${player.Name}`)
-			}
-			this.currentCart = cart
-		})
-		super.setupServerListeners()
-	}
 }
