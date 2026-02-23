@@ -83,7 +83,15 @@ export class PlatformComponent
 			// Start heartbeat loop to keep checking while on platform
 			this.heartbeat = RunService.Heartbeat.Connect(() => {
 				const result = this.getLocalCart()
-				if (!result || !this.isCartOverPlatform(result.root)) {
+				if (!result) {
+					this.clientSetOn(false)
+					this.heartbeat?.Disconnect()
+					this.heartbeat = undefined
+					return
+				}
+				const touching = this.instance.GetTouchingParts()
+				const stillOn = touching.some((p) => p.IsDescendantOf(result.cartModel))
+				if (!stillOn) {
 					this.clientSetOn(false)
 					this.heartbeat?.Disconnect()
 					this.heartbeat = undefined
@@ -138,34 +146,4 @@ export class PlatformComponent
 		return distance <= MAX_VALIDATION_DISTANCE
 	}
 
-	// ─── Shared raycast logic ─────────────────────────────────────────────────
-
-	private isCartOverPlatform(root: BasePart): boolean {
-		const size = root.Size
-		const deadZone = 3
-		const corners = [
-			new Vector3(size.X / 2 + deadZone, 0, size.Z / 2 + deadZone),
-			new Vector3(-size.X / 2 - deadZone, 0, size.Z / 2 + deadZone),
-			new Vector3(size.X / 2 + deadZone, 0, -size.Z / 2 - deadZone),
-			new Vector3(-size.X / 2 - deadZone, 0, -size.Z / 2 - deadZone),
-		]
-
-		const rayParams = new RaycastParams()
-		rayParams.FilterType = Enum.RaycastFilterType.Include
-		rayParams.FilterDescendantsInstances = [this.instance]
-		rayParams.IgnoreWater = true
-
-		for (const corner of corners) {
-			const ray = Workspace.Raycast(
-				root.Position.add(corner),
-				new Vector3(0, -1, 0).mul(9),
-				rayParams,
-			)
-			if (!ray) {
-				print(`[PlatformComponent] Ray miss at corner ${corner} | expected=${this.instance.Name}`)
-				return false
-			}
-		}
-		return true
-	}
 }
