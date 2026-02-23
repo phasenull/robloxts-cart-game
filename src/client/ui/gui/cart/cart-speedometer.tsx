@@ -11,7 +11,7 @@ import { useInputType } from "client/ui/hooks/useInputType";
 const logger = new Logger("SpeedometerHud");
 
 const MAX_SPEED = 70;
-const SPEEDLINES_OFFSET = 10; // studs in front of camera
+const SPEEDLINES_OFFSET = 12; // studs in front of camera
 const SPEEDLINES_MAX_RATE = 1000;
 const SPEEDLINES_MAX_SPEED_MIN = 20;
 const SPEEDLINES_MAX_SPEED_MAX = 25;
@@ -71,22 +71,22 @@ export function SpeedometerHud(props: {
 
 		const speedlinesPart = assets.Speedlines.Clone();
 		const emitter = speedlinesPart.Lines.Attachment.ParticleEmitter;
-		speedlinesPart.Parent = Workspace;
+		emitter.Enabled = false;
+		speedlinesPart.Parent = Workspace.CurrentCamera ?? Workspace;
 
 		// Update CFrame on RenderStepped so it stays locked to camera without lag
-		const renderStepped = RunService.RenderStepped.Connect((dt) => {
+		const renderStepped = RunService.RenderStepped.Connect(() => {
 			const camera = Workspace.CurrentCamera;
 			if (!camera) return;
-			const viewportSize = camera.ViewportSize;
-			const aspectRatio = viewportSize.X / viewportSize.Y;
-			const scale = aspectRatio > 1.25 ? 1 : 0.8;
+			const currentSpeed = cart.instance.Root.AssemblyLinearVelocity.Magnitude;
+			emitter.Enabled = currentSpeed >= 50;
+			if (!emitter.Enabled) return;
+			const aspectRatio = camera.ViewportSize.X / camera.ViewportSize.Y;
+			const baseScale = aspectRatio > 1.25 ? 1.21 : 0.968;
+			const fovAlpha = math.clamp((camera.FieldOfView - 70) / 30, 0, 1);
+			const scale = baseScale * (1 + fovAlpha * 0.5);
 			speedlinesPart.ScaleTo(scale);
-			speedlinesPart.PivotTo(
-				camera.CFrame.mul(new CFrame(0, 0, -SPEEDLINES_OFFSET)),
-			);
-			emitter.Emit(dt*500);
-			speedlinesPart.Lines.Attachment.ParticleEmitter.Transparency =
-				target_speed >= 50 ? new NumberSequence(0) : new NumberSequence(1);
+			speedlinesPart.PivotTo(camera.CFrame.mul(new CFrame(0, 0, -SPEEDLINES_OFFSET)));
 		});
 
 		return () => {
