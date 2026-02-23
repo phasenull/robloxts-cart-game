@@ -68,7 +68,7 @@ export class RobotArmComponent
 		weld.Name = "CartWeld";
 		weld.Part0 = this.instance.GrabRoot;
 		weld.Part1 = this.grabbed_cart.Root;
-		weld.C1 = new CFrame(0,2,0)
+		weld.C1 = new CFrame(0,0,0)
 		weld.Parent = this.instance;
 	}
 	releaseCart() {
