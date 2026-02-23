@@ -1,15 +1,18 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
+import { Logger } from "shared/logger";
 import { ICart } from "shared/type.helper";
 
-@Component()
+@Component({
+	tag: "RobotArmComponent",
+})
 export class RobotArmComponent extends BaseComponent<{}, IRobotArm> {
 	private readonly animation_id = "rbxassetid://82817842179637";
 	private status: "waiting" | "moving" | "returning" = "waiting";
 	private grabbed_cart: ICart | undefined = undefined;
 	// animation event key: "status" -> values "grab" | "release"
 	private readonly track: AnimationTrack;
-	constructor() {
+	constructor(private logger: Logger) {
 		super();
 		const animator = this.instance.AnimationController.Animator;
 		const animation = new Instance("Animation");
@@ -26,6 +29,7 @@ export class RobotArmComponent extends BaseComponent<{}, IRobotArm> {
                     break;
             }
         })
+		logger.log("RobotArmComponent initialized");
 	}
 	pickAndPlace(cart: ICart) {
 		if (this.status !== "waiting") {

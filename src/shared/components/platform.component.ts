@@ -98,7 +98,7 @@ export class PlatformComponent
 
 	// ─── Server ───────────────────────────────────────────────────────────────
 
-	private setupServerListeners(): void {
+	protected setupServerListeners(): void {
 		ServerEvents.PlatformService.onEnter.connect((player, platform) => {
 			if (platform !== this.instance) return
 			if (!this.validatePlayerNearPlatform(player)) return
