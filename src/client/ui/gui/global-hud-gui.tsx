@@ -43,6 +43,7 @@ export function CashLabel() {
 			BorderSizePixel={0}
 			Size={UDim2.fromScale(1, 1)}
 		>
+			<uiscale Scale={1.4}/>
 			<textlabel
 				key="CashText"
 				AnchorPoint={new Vector2(1, 0.5)}
@@ -66,9 +67,11 @@ export function CashLabel() {
 					}
 					Rotation={-90}
 				/>
-				<uistroke Color={Color3.fromRGB(45, 45, 45)} 
-						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
-						Thickness={0.1} />
+				<uistroke
+					Color={Color3.fromRGB(45, 45, 45)}
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.1}
+				/>
 			</textlabel>
 			<uigradient
 				Rotation={180}
@@ -100,7 +103,9 @@ export function CashLabel() {
 				BorderSizePixel={0}
 				Position={new UDim2(0.08, 0, 0.5, 0)}
 				Size={new UDim2(0.55, 0, 0.55, 0)}
-				Event={{ MouseButton1Click: () => navigator.setOpenGui("rotten-shop") }}
+				Event={{
+					MouseButton1Click: () => navigator.setOpenGui("rotten-shop"),
+				}}
 			>
 				<uiaspectratioconstraint AspectRatio={0.985} />
 				<textlabel
@@ -113,9 +118,10 @@ export function CashLabel() {
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke 
+					<uistroke
 						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
-						Thickness={0.1}/>
+						Thickness={0.1}
+					/>
 				</textlabel>
 				<imagelabel
 					key="Tile"
@@ -136,9 +142,10 @@ export function CashLabel() {
 					Position={new UDim2(0, 0, 0.921, 0)}
 					Size={new UDim2(1, 0, 0.079, 0)}
 				/>
-				<uistroke 
-						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
-						Thickness={0.1} />
+				<uistroke
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.1}
+				/>
 				<uigradient
 					Color={
 						new ColorSequence([
