@@ -102,7 +102,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 			Size={new UDim2(0.99, 0, 0.491, 0)}
 			Position={UDim2.fromScale(0.005, 0)}
 		>
-			<uistroke Thickness={5} />
+			<uistroke
+				StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+				Thickness={0.02}
+			/>
 			<uigradient
 				Color={
 					new ColorSequence([
@@ -142,7 +145,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 						LayoutOrder={-1}
 					>
 						<uiaspectratioconstraint />
-						<uistroke Thickness={4} />
+						<uistroke
+							StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+							Thickness={0.02}
+						/>
 						<textlabel
 							AnchorPoint={new Vector2(0.5, 1)}
 							BackgroundTransparency={1}
@@ -163,7 +169,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 							TextWrapped={true}
 							ZIndex={10}
 						>
-							<uistroke Thickness={3} />
+							<uistroke
+								StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+								Thickness={0.1}
+							/>
 						</textlabel>
 						<ViewportHelper
 							model={model}
@@ -211,7 +220,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 								BorderSizePixel={0}
 								ZIndex={6}
 							>
-								<uistroke Thickness={4} />
+								<uistroke
+									StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+									Thickness={0.05}
+								/>
 								{!!image_id && (
 									<imagelabel
 										key="Icon"
@@ -245,7 +257,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 									TextXAlignment={Enum.TextXAlignment.Left}
 									ZIndex={8}
 								>
-									<uistroke Thickness={3} />
+									<uistroke
+										StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+										Thickness={0.05}
+									/>
 								</textlabel>
 								<textlabel
 									BackgroundTransparency={1}
@@ -266,7 +281,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 									TextWrapped={true}
 									ZIndex={8}
 								>
-									<uistroke Thickness={3} />
+									<uistroke
+										StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+										Thickness={0.05}
+									/>
 								</textlabel>
 								<uigradient
 									Rotation={-90}
@@ -320,7 +338,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					TextWrapped={true}
 					TextXAlignment={Enum.TextXAlignment.Left}
 				>
-					<uistroke Thickness={3} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.05}
+					/>
 				</textlabel>
 				<textlabel
 					key="Save Text"
@@ -348,7 +369,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					TextXAlignment={Enum.TextXAlignment.Right}
 					Visible={discountPercentage !== undefined}
 				>
-					<uistroke Thickness={3} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.05}
+					/>
 					<uigradient
 						Color={
 							new ColorSequence([
@@ -386,11 +410,14 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					<frame
 						BorderSizePixel={0}
 						BackgroundColor3={Color3.fromRGB(200, 20, 20)}
-						Size={UDim2.fromScale(.6, 0.15)}
+						Size={UDim2.fromScale(0.6, 0.15)}
 						AnchorPoint={UIDIM.A_CENTER}
 						Position={UIDIM.CENTER}
 					/>
-					<uistroke Thickness={4} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.05}
+					/>
 				</textlabel>
 			)}
 			<imagebutton
@@ -406,7 +433,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					MouseButton1Click: handleBuyClick,
 				}}
 			>
-				<uistroke Thickness={5} />
+				<uistroke
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.05}
+				/>
 				<uigradient
 					Color={
 						new ColorSequence([
@@ -464,7 +494,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.05}
+					/>
 				</textlabel>
 			</imagebutton>
 			<imagelabel
@@ -547,7 +580,10 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 				TextWrapped={true}
 				ZIndex={50}
 			>
-				<uistroke Thickness={3} />
+				<uistroke
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.05}
+				/>
 			</textlabel>
 			<imagelabel
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}

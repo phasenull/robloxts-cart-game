@@ -107,7 +107,8 @@ function ShopHonkEntry({
 			}}
 		>
 			<uiaspectratioconstraint AspectRatio={1} />
-			<uistroke Thickness={3} Transparency={0.2} />
+			<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.03} Transparency={0.2} />
 			<uigradient
 				Color={
 					new ColorSequence([
@@ -140,7 +141,8 @@ function ShopHonkEntry({
 				TextWrapped={true}
 				ZIndex={5}
 			>
-				<uistroke Thickness={2} />
+				<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 			</textlabel>
 			<textlabel
 				AnchorPoint={new Vector2(0.5, 1)}
@@ -155,7 +157,8 @@ function ShopHonkEntry({
 				TextXAlignment={Enum.TextXAlignment.Right}
 				ZIndex={5}
 			>
-				<uistroke Thickness={2} />
+				<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 			</textlabel>
 			{isHovered && (
 				<imagelabel
@@ -208,7 +211,8 @@ export function ShopHonkGrid({
 			Position={new UDim2(0.99, 0, 0.88, 0)}
 			Size={new UDim2(0.19, 0, 0.56, 0)}
 		>
-			<uistroke Thickness={5} />
+			<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.01} />
 			<imagelabel
 				key="Tile"
 				AnchorPoint={new Vector2(0.5, 0.5)}
@@ -227,7 +231,8 @@ export function ShopHonkGrid({
 				Position={new UDim2(0, 0, 0, 0)}
 				Size={new UDim2(1, 0, 0.1, 0)}
 			>
-				<uistroke Thickness={5} />
+				<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.01} />
 				<imagelabel
 					key="Tile"
 					AnchorPoint={new Vector2(0.5, 0.5)}
@@ -257,7 +262,8 @@ export function ShopHonkGrid({
 					TextColor3={Color3.fromRGB(255, 255, 255)}
 					TextScaled={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.01} />
 				</textlabel>
 				<uigradient
 					Color={

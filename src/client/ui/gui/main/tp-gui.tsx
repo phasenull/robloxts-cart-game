@@ -1,36 +1,39 @@
-import React, { useEffect } from "@rbxts/react"
-import { RottenButton } from "client/ui/components/buttons/rotten-button"
-import { UIDIM } from "client/ui/constants"
-import { useCheckpoint } from "../cart/hooks/useCheckpoint"
-import { A } from "shared/assets"
-import Object from "@rbxts/object-utils"
-import { useMutation, useQuery } from "@rbxts/react-query"
-import { ClientFunctions } from "shared/network.helper"
-import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
-import { GoofyButton } from "client/ui/components/buttons/goofy-button"
-import { useNavigator } from "client/ui/hooks/useNavigator"
-import { UIHelper } from "client/ui.helper"
-import { Dependency } from "@flamework/core"
-import { CartController } from "client/controllers/cart.controller"
-import { useCart } from "client/ui/contexts/cart.context"
-import { getCheckpointDataFromIndex, ISLAND_CONFIG } from "shared/cart.helper"
-import { calculateBigCheckpointSkips, getIslandSkipProduct } from "shared/purchasables"
-import { MarketplaceService } from "@rbxts/services"
+import React, { useEffect } from "@rbxts/react";
+import { RottenButton } from "client/ui/components/buttons/rotten-button";
+import { UIDIM } from "client/ui/constants";
+import { useCheckpoint } from "../cart/hooks/useCheckpoint";
+import { A } from "shared/assets";
+import Object from "@rbxts/object-utils";
+import { useMutation, useQuery } from "@rbxts/react-query";
+import { ClientFunctions } from "shared/network.helper";
+import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper";
+import { GoofyButton } from "client/ui/components/buttons/goofy-button";
+import { useNavigator } from "client/ui/hooks/useNavigator";
+import { UIHelper } from "client/ui.helper";
+import { Dependency } from "@flamework/core";
+import { CartController } from "client/controllers/cart.controller";
+import { useCart } from "client/ui/contexts/cart.context";
+import { getCheckpointDataFromIndex, ISLAND_CONFIG } from "shared/cart.helper";
+import {
+	calculateBigCheckpointSkips,
+	getIslandSkipProduct,
+} from "shared/purchasables";
+import { MarketplaceService } from "@rbxts/services";
 
 export function TPGui() {
-	const { collectedCheckpoints, refresh } = useCheckpoint()
-	const navigator = useNavigator()
+	const { collectedCheckpoints, refresh } = useCheckpoint();
+	const navigator = useNavigator();
 	useQuery({
 		queryKey: ["tpCheckpointState"],
 		queryFn: async () => {
 			if (__IS_EDIT__) {
-				return true
+				return true;
 			}
-			await refresh()
-			return true
+			await refresh();
+			return true;
 		},
-		enabled: !__IS_EDIT__
-	})
+		enabled: !__IS_EDIT__,
+	});
 	return (
 		<frame
 			key="Teleport"
@@ -42,13 +45,16 @@ export function TPGui() {
 			Size={new UDim2(1.3, 0, 1.3, 0)}
 		>
 			<uiaspectratioconstraint AspectRatio={0.9} />
-			<uistroke Thickness={5} />
+			<uistroke
+				StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+				Thickness={0.01}
+			/>
 			<uigradient
 				Rotation={90}
 				Transparency={
 					new NumberSequence([
 						new NumberSequenceKeypoint(0, 0.6, 0),
-						new NumberSequenceKeypoint(1, 0.256, 0)
+						new NumberSequenceKeypoint(1, 0.256, 0),
 					])
 				}
 			/>
@@ -85,7 +91,7 @@ export function TPGui() {
 						checkpoint_index={tonumber(checkpoint_index) as number}
 						is_locked={
 							!collectedCheckpoints.includes(
-								tonumber(checkpoint_index) as number
+								tonumber(checkpoint_index) as number,
 							)
 						}
 						collectedCheckpoints={collectedCheckpoints}
@@ -108,7 +114,10 @@ export function TPGui() {
 				Size={new UDim2(1.05, 0, 0.10400000000000001, 0)}
 				ClipsDescendants={false}
 			>
-				<uistroke Thickness={5} />
+				<uistroke
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.1}
+				/>
 				<frame
 					key="Bottom"
 					BackgroundColor3={Color3.fromRGB(0, 0, 0)}
@@ -124,7 +133,7 @@ export function TPGui() {
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.105, 0, 0.177, 0)}
@@ -135,7 +144,10 @@ export function TPGui() {
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1}
+					/>
 					<uiaspectratioconstraint
 						AspectRatio={3.25}
 						AspectType={Enum.AspectType.ScaleWithParentSize}
@@ -157,7 +169,7 @@ export function TPGui() {
 					Color={
 						new ColorSequence([
 							new ColorSequenceKeypoint(0, Color3.fromRGB(0, 128, 255)),
-							new ColorSequenceKeypoint(1, Color3.fromRGB(148, 215, 248))
+							new ColorSequenceKeypoint(1, Color3.fromRGB(148, 215, 248)),
 						])
 					}
 					Rotation={-90}
@@ -188,7 +200,7 @@ export function TPGui() {
 					AnchorPoint={new Vector2(0.5, 0.5)}
 					Position={new UDim2(0.96, 0, 0.5, 0)}
 					OnClick={() => {
-						navigator.closeAll()
+						navigator.closeAll();
 					}}
 					Size={new UDim2(1, 0, 1, 0)}
 					Text=""
@@ -199,7 +211,7 @@ export function TPGui() {
 						Color={
 							new ColorSequence([
 								new ColorSequenceKeypoint(0, Color3.fromRGB(255, 0, 0)),
-								new ColorSequenceKeypoint(1, Color3.fromRGB(249, 54, 106))
+								new ColorSequenceKeypoint(1, Color3.fromRGB(249, 54, 106)),
 							])
 						}
 						Rotation={-90}
@@ -212,7 +224,7 @@ export function TPGui() {
 							new Font(
 								"rbxasset://fonts/families/GothamSSm.json",
 								Enum.FontWeight.Heavy,
-								Enum.FontStyle.Normal
+								Enum.FontStyle.Normal,
 							)
 						}
 						Position={new UDim2(0.45, 0, 0.5, 0)}
@@ -223,9 +235,15 @@ export function TPGui() {
 						TextSize={14}
 						TextWrapped={true}
 					>
-						<uistroke Thickness={3} />
+						<uistroke
+							StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+							Thickness={0.1}
+						/>
 					</textlabel>
-					<uistroke Thickness={5.1000000000000005} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1}
+					/>
 					<imagelabel
 						key="Tile"
 						AnchorPoint={new Vector2(0.5, 0.5)}
@@ -241,64 +259,68 @@ export function TPGui() {
 				</GoofyButton>
 			</frame>
 		</frame>
-	)
+	);
 }
 function CheckpointEntry(props: {
-	checkpoint_index: number
-	is_locked: boolean
-	collectedCheckpoints: number[]
+	checkpoint_index: number;
+	is_locked: boolean;
+	collectedCheckpoints: number[];
 }) {
-	const config = getCheckpointDataFromIndex(props.checkpoint_index)
-	const navigator = useNavigator()
-	
+	const config = getCheckpointDataFromIndex(props.checkpoint_index);
+	const navigator = useNavigator();
+
 	// Calculate highest unlocked checkpoint
-	const highestUnlocked = props.collectedCheckpoints.sort((a, b) => a > b)[0] || 0
-	
+	const highestUnlocked =
+		props.collectedCheckpoints.sort((a, b) => a > b)[0] || 0;
+
 	// Calculate how many islands need to be skipped
-	const skipCount = calculateBigCheckpointSkips(highestUnlocked, props.checkpoint_index)
-	
+	const skipCount = calculateBigCheckpointSkips(
+		highestUnlocked,
+		props.checkpoint_index,
+	);
+
 	const { mutate, isLoading } = useMutation({
 		queryKey: [`tpToCheckpoint-${props.checkpoint_index}`],
 		mutationFn: async (checkpoint_index: number) => {
 			if (props.is_locked) {
 				// Prompt purchase based on skip count
-				const product_id = getIslandSkipProduct(skipCount)
+				const product_id = getIslandSkipProduct(skipCount);
 				if (product_id) {
 					MarketplaceService.PromptProductPurchase(
 						game.GetService("Players").LocalPlayer,
-						product_id
-					)
+						product_id,
+					);
 				} else {
-					UIHelper.playSound(A.sounds.error)
-					warn(`No product found for skip count: ${skipCount}`)
+					UIHelper.playSound(A.sounds.error);
+					warn(`No product found for skip count: ${skipCount}`);
 				}
-				return true
+				return true;
 			}
 			if (__IS_EDIT__) {
-				return true
+				return true;
 			}
 			await ClientFunctions.CheckpointService.tpMeToCheckpoint
 				.invokeWithTimeout(5000, checkpoint_index)
 				.then((result) => {
 					if (!result) {
-						print("Failed to tp to checkpoint")
-						return
+						print("Failed to tp to checkpoint");
+						return;
 					}
-					const [success, err] = result
+					const [success, err] = result;
 					if (err || !success) {
-						print(`Error tp to checkpoint: ${err}`)
-						return
+						print(`Error tp to checkpoint: ${err}`);
+						return;
 					}
-					print(`Successfully tp to checkpoint ${checkpoint_index}`)
-					navigator.closeAll()
+					print(`Successfully tp to checkpoint ${checkpoint_index}`);
+					navigator.closeAll();
 				})
 				.catch((err) => {
-					print(`Error tp to checkpoint: ${err}`)
-				})
-			return true
-		}
-	})
-	if (!config) return
+					print(`Error tp to checkpoint: ${err}`);
+				});
+			return true;
+		},
+	});
+	if (!config) return;
 	return (
 		<frame
 			key="CheckpointEntry"
@@ -327,7 +349,10 @@ function CheckpointEntry(props: {
 				Size={new UDim2(1.0010000000000001, 0, 1.088, 0)}
 				ZIndex={0}
 			/>
-			<uistroke Thickness={5} />
+			<uistroke
+				StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+				Thickness={0.05}
+			/>
 			<imagelabel
 				key="Tile"
 				AnchorPoint={new Vector2(0.5, 0.5)}
@@ -363,8 +388,8 @@ function CheckpointEntry(props: {
 						: new Color3(0.01, 1, 0.34)
 				}
 				onClick={() => {
-					if (isLoading) return
-					mutate(props.checkpoint_index)
+					if (isLoading) return;
+					mutate(props.checkpoint_index);
 				}}
 				Text={props.is_locked ? "UNLOCK" : "TP"}
 				AnchorPoint={UIDIM.A_BOTTOM_RIGHT}
@@ -386,7 +411,7 @@ function CheckpointEntry(props: {
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.481, 0, 0.481, 0)}
@@ -398,9 +423,10 @@ function CheckpointEntry(props: {
 					TextWrapped={true}
 					TextXAlignment={Enum.TextXAlignment.Left}
 				>
-					<uistroke Thickness={3} />
+					<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				</textlabel>
 			</frame>
 		</frame>
-	)
+	);
 }

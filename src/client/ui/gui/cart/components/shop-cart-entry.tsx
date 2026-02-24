@@ -1,15 +1,15 @@
-import React, { useEffect, useRef } from "@rbxts/react"
-import { IShopItem } from "shared/type.helper"
-import { useProductPrice } from "client/ui/hooks/useProductPrice"
-import { useCartModel } from "../hooks/useCartModel"
-import { Workspace } from "@rbxts/services"
+import React, { useEffect, useRef } from "@rbxts/react";
+import { IShopItem } from "shared/type.helper";
+import { useProductPrice } from "client/ui/hooks/useProductPrice";
+import { useCartModel } from "../hooks/useCartModel";
+import { Workspace } from "@rbxts/services";
 
 interface ShopCartEntryProps {
-	item: IShopItem
-	isSelected: boolean
-	isOwned: boolean
-	isEquipped: boolean
-	onClick: () => void
+	item: IShopItem;
+	isSelected: boolean;
+	isOwned: boolean;
+	isEquipped: boolean;
+	onClick: () => void;
 }
 
 export function ShopCartEntry({
@@ -17,60 +17,60 @@ export function ShopCartEntry({
 	isSelected,
 	isOwned,
 	isEquipped,
-	onClick
+	onClick,
 }: ShopCartEntryProps) {
 	// Fetch Robux price if item has product_id
 	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
 		productId: item.product_id,
-		enabled: !!item.product_id && !isOwned
-	})
+		enabled: !!item.product_id && !isOwned,
+	});
 
 	// Determine display price and colors
-	let displayPrice: string
-	let textColor: Color3
-	const model = useCartModel(item.name)
+	let displayPrice: string;
+	let textColor: Color3;
+	const model = useCartModel(item.name);
 	if (isEquipped) {
-		displayPrice = "EQUIPPED"
-		textColor = Color3.fromRGB(255, 215, 0)
+		displayPrice = "EQUIPPED";
+		textColor = Color3.fromRGB(255, 215, 0);
 	} else if (isOwned) {
-		displayPrice = "OWNED"
-		textColor = Color3.fromRGB(150, 255, 150)
+		displayPrice = "OWNED";
+		textColor = Color3.fromRGB(150, 255, 150);
 	} else if (item.product_id !== undefined) {
 		// Robux item
 		if (isPriceLoading) {
-			displayPrice = "..."
+			displayPrice = "...";
 		} else if (priceInRobux !== undefined) {
-			displayPrice = `\u{E002} ${priceInRobux}`
+			displayPrice = `\u{E002} ${priceInRobux}`;
 		} else {
-			displayPrice = "\u{E002} ???"
+			displayPrice = "\u{E002} ???";
 		}
-		textColor = Color3.fromRGB(255, 255, 255)
+		textColor = Color3.fromRGB(255, 255, 255);
 	} else {
 		// Cash item
-		displayPrice = `$${item.price ?? 0}`
-		textColor = Color3.fromRGB(255, 255, 255)
+		displayPrice = `$${item.price ?? 0}`;
+		textColor = Color3.fromRGB(255, 255, 255);
 	}
 
 	const bgColor = isOwned
 		? Color3.fromRGB(100, 200, 100)
 		: isSelected
 			? Color3.fromRGB(255, 200, 0)
-			: Color3.fromRGB(255, 92, 224)
-	const vpf = useRef<ViewportFrame>(undefined)
+			: Color3.fromRGB(255, 92, 224);
+	const vpf = useRef<ViewportFrame>(undefined);
 
 	if (vpf.current && model) {
-		model.Parent = vpf.current
+		model.Parent = vpf.current;
 		const camera =
 			(Workspace.FindFirstChild("ViewportFrameCamera") as Camera) ||
-			new Instance("Camera", Workspace)
-		camera.Name = "ViewportFrameCamera"
-		assert(camera, "Camera not found in workspace")
-		vpf.current.CurrentCamera = camera
+			new Instance("Camera", Workspace);
+		camera.Name = "ViewportFrameCamera";
+		assert(camera, "Camera not found in workspace");
+		vpf.current.CurrentCamera = camera;
 		model.PivotTo(
 			camera.CFrame.mul(new CFrame(0, 1, -7)).mul(
-				CFrame.Angles(math.rad(20), math.rad(-130), 0)
-			)
-		)
+				CFrame.Angles(math.rad(20), math.rad(-130), 0),
+			),
+		);
 	}
 	return (
 		<imagebutton
@@ -82,7 +82,7 @@ export function ShopCartEntry({
 			Size={new UDim2(0.227, 0, 0.18, 0)}
 			// ZIndex={isSelected ? 10 : 5}
 			Event={{
-				MouseButton1Click: onClick
+				MouseButton1Click: onClick,
 			}}
 		>
 			<textlabel
@@ -97,7 +97,10 @@ export function ShopCartEntry({
 				TextWrapped={true}
 				ZIndex={5}
 			>
-				<uistroke Thickness={2} />
+				<uistroke
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.01}
+				/>
 			</textlabel>
 			<imagelabel
 				key="Tile"
@@ -111,7 +114,8 @@ export function ShopCartEntry({
 				TileSize={new UDim2(0, 50, 0, 50)}
 			/>
 			<uistroke
-				Thickness={isSelected ? 6 : 4}
+				StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+				Thickness={isSelected ? 0.02 : 0.01}
 				Transparency={isSelected ? 0 : 0.14}
 			/>
 			<uiaspectratioconstraint
@@ -137,7 +141,7 @@ export function ShopCartEntry({
 				Color={
 					new ColorSequence([
 						new ColorSequenceKeypoint(0, Color3.fromRGB(170, 169, 170)),
-						new ColorSequenceKeypoint(1, Color3.fromRGB(255, 255, 255))
+						new ColorSequenceKeypoint(1, Color3.fromRGB(255, 255, 255)),
 					])
 				}
 				Rotation={-90}
@@ -159,5 +163,5 @@ export function ShopCartEntry({
 				LightDirection={new Vector3(0, 0, 0)}
 			/>
 		</imagebutton>
-	)
+	);
 }

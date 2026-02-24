@@ -24,6 +24,12 @@ export namespace A {
 		rebirth: "rbxassetid://121185824614656",
 		backpack: "rbxassetid://120361956794366",
 		hammer: "rbxassetid://135491521827812",
+		ace: {
+			shop: "rbxassetid://137901908005067",
+			clover: "rbxassetid://82529853756707",
+			rebirth_green: "rbxassetid://82260899147277",
+			leaderboard : "rbxassetid://108990632074249",
+		}
 	};
 	export const ui = {
 		loading_indicator_white: "rbxassetid://106340732495073",

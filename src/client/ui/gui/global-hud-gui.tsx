@@ -1,40 +1,40 @@
-import React, { useEffect, useState } from "@rbxts/react"
-import { UIDIM } from "../constants"
-import { ClientEvents, ClientFunctions } from "shared/network.helper"
-import { formatCash } from "shared/util.helper"
-import { useQuery } from "@rbxts/react-query"
-import { __IS_EDIT__ } from "shared/config.helper"
-import { MOCK_CASH } from "shared/mocks"
-import { useInputType } from "../hooks/useInputType"
-import { useNavigator } from "../hooks/useNavigator"
+import React, { useEffect, useState } from "@rbxts/react";
+import { UIDIM } from "../constants";
+import { ClientEvents, ClientFunctions } from "shared/network.helper";
+import { formatCash } from "shared/util.helper";
+import { useQuery } from "@rbxts/react-query";
+import { __IS_EDIT__ } from "shared/config.helper";
+import { MOCK_CASH } from "shared/mocks";
+import { useInputType } from "../hooks/useInputType";
+import { useNavigator } from "../hooks/useNavigator";
 
 export function CashLabel() {
-	const [cash, setCash] = useState<number | undefined>(MOCK_CASH)
-	const navigator = useNavigator()
+	const [cash, setCash] = useState<number | undefined>(MOCK_CASH);
+	const navigator = useNavigator();
 
 	const { data: initialCash } = useQuery({
 		queryKey: ["player-cash"],
 		queryFn: async () => {
 			if (__IS_EDIT__) {
-				return MOCK_CASH
+				return MOCK_CASH;
 			}
-			const [result, err] = await ClientFunctions.DataService.getCash()
+			const [result, err] = await ClientFunctions.DataService.getCash();
 			if (err || result === false) {
-				throw err
+				throw err;
 			}
-			setCash(result)
-			return result
+			setCash(result);
+			return result;
 		},
-		refetchInterval: 30_000
-	})
+		refetchInterval: 30_000,
+	});
 
 	useEffect(() => {
 		if (__IS_EDIT__) return;
 		const conn = ClientEvents.DataService.updatePlayerCash.connect((amount) => {
-			setCash(amount)
-		})
-		return () => conn.Disconnect()
-	}, [])
+			setCash(amount);
+		});
+		return () => conn.Disconnect();
+	}, []);
 
 	return (
 		<frame
@@ -48,8 +48,8 @@ export function CashLabel() {
 				AnchorPoint={new Vector2(1, 0.5)}
 				BackgroundTransparency={1}
 				Font={Enum.Font.GothamBlack}
-				Position={new UDim2(.97, 0, 0.5, 0)}
-				Size={new UDim2(.75, 0, 0.807, 0)}
+				Position={new UDim2(0.97, 0, 0.5, 0)}
+				Size={new UDim2(0.75, 0, 0.807, 0)}
 				Text={formatCash(cash ?? 0)}
 				TextColor3={Color3.fromRGB(255, 255, 255)}
 				TextScaled={true}
@@ -61,29 +61,34 @@ export function CashLabel() {
 					Color={
 						new ColorSequence([
 							new ColorSequenceKeypoint(0, Color3.fromRGB(66, 214, 0)),
-							new ColorSequenceKeypoint(1, Color3.fromRGB(255, 251, 0))
+							new ColorSequenceKeypoint(1, Color3.fromRGB(255, 251, 0)),
 						])
 					}
 					Rotation={-90}
 				/>
-				<uistroke Color={Color3.fromRGB(45, 45, 45)} Thickness={3.2} />
+				<uistroke Color={Color3.fromRGB(45, 45, 45)} 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 			</textlabel>
 			<uigradient
 				Rotation={180}
 				Transparency={
 					new NumberSequence([
 						new NumberSequenceKeypoint(0, 0.294, 0),
-						new NumberSequenceKeypoint(1, 1, 0)
+						new NumberSequenceKeypoint(1, 1, 0),
 					])
 				}
 			/>
-			<uistroke Thickness={4}>
+			<uistroke
+				StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+				Thickness={0.1}
+			>
 				<uigradient
 					Rotation={180}
 					Transparency={
 						new NumberSequence([
 							new NumberSequenceKeypoint(0, 0.806, 0),
-							new NumberSequenceKeypoint(1, 1, 0)
+							new NumberSequenceKeypoint(1, 1, 0),
 						])
 					}
 				/>
@@ -108,7 +113,9 @@ export function CashLabel() {
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={2.5} />
+					<uistroke 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1}/>
 				</textlabel>
 				<imagelabel
 					key="Tile"
@@ -129,12 +136,14 @@ export function CashLabel() {
 					Position={new UDim2(0, 0, 0.921, 0)}
 					Size={new UDim2(1, 0, 0.079, 0)}
 				/>
-				<uistroke Thickness={3} />
+				<uistroke 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				<uigradient
 					Color={
 						new ColorSequence([
 							new ColorSequenceKeypoint(0, Color3.fromRGB(62, 216, 40)),
-							new ColorSequenceKeypoint(1, Color3.fromRGB(171, 248, 71))
+							new ColorSequenceKeypoint(1, Color3.fromRGB(171, 248, 71)),
 						])
 					}
 					Rotation={-90}
@@ -153,7 +162,7 @@ export function CashLabel() {
 					Transparency={
 						new NumberSequence([
 							new NumberSequenceKeypoint(0, 0.294, 0),
-							new NumberSequenceKeypoint(1, 1, 0)
+							new NumberSequenceKeypoint(1, 1, 0),
 						])
 					}
 				/>
@@ -164,29 +173,28 @@ export function CashLabel() {
 				DominantAxis={Enum.DominantAxis.Height}
 			/>
 		</frame>
-	)
+	);
 }
 
 export function GlobalHUDGui() {
-	const device = useInputType()
+	const device = useInputType();
 	return (
 		<frame Size={UIDIM.ONE} BackgroundTransparency={1}>
 			<textlabel
 				BackgroundTransparency={1}
-
-				Size={UDim2.fromScale(0.2, .03)}
+				Size={UDim2.fromScale(0.2, 0.03)}
 				TextScaled={true}
 				TextXAlignment={Enum.TextXAlignment.Left}
 				Position={new UDim2(0, 5, 1, -5)}
 				Interactable={false}
 				Font={Enum.Font.GothamMedium}
-				TextColor3={new Color3(1,1,1)}
+				TextColor3={new Color3(1, 1, 1)}
 				AnchorPoint={new Vector2(0, 1)}
 				TextStrokeTransparency={0}
-				Text={`v${game.PlaceVersion}-${device.sub(0,1)}`}
+				Text={`v${game.PlaceVersion}-${device.sub(0, 1)}`}
 			>
 				<uiaspectratioconstraint AspectRatio={5} />
 			</textlabel>
 		</frame>
-	)
+	);
 }

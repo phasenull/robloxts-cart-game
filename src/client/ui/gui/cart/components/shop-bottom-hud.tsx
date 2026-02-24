@@ -166,7 +166,9 @@ export function ShopBottomHud({
 					}
 				}}
 			>
-				<uistroke Thickness={5} />
+				<uistroke 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				<frame
 					key="Bottom"
 					BackgroundColor3={
@@ -246,7 +248,9 @@ export function ShopBottomHud({
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				</textlabel>
 				<uiaspectratioconstraint
 					AspectRatio={3.932}
@@ -275,7 +279,9 @@ export function ShopBottomHud({
 					}
 				}}
 			>
-				<uistroke Thickness={5} />
+				<uistroke 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				<frame
 					key="Bottom"
 					BackgroundColor3={Color3.fromRGB(78, 16, 0)}
@@ -331,7 +337,9 @@ export function ShopBottomHud({
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				</textlabel>
 			</imagebutton>
 			<frame
@@ -343,7 +351,9 @@ export function ShopBottomHud({
 				Position={new UDim2(0.5, 0, 0, 0)}
 				Size={new UDim2(1, 0, 0.575, 0)}
 			>
-				<uistroke Thickness={5} />
+				<uistroke 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.05} />
 				<imagelabel
 					key="Tile"
 					AnchorPoint={new Vector2(0.5, 0.5)}
@@ -378,7 +388,9 @@ export function ShopBottomHud({
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				</textlabel>
 				<textlabel
 					key="Name"
@@ -393,7 +405,8 @@ export function ShopBottomHud({
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1}/>
 				</textlabel>
 				<textlabel
 					key="Rarity"
@@ -408,7 +421,9 @@ export function ShopBottomHud({
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke 
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				</textlabel>
 				<uigradient
 					Rotation={90}
@@ -446,7 +461,9 @@ export function ShopBottomHud({
 						Size={new UDim2(1, 0, 1, 0)}
 						TileSize={new UDim2(0, 50, 0, 50)}
 					/>
-					<uistroke Thickness={5} />
+					<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1}/>
+					
 					<frame
 						key="Bottom"
 						BackgroundColor3={Color3.fromRGB(0, 0, 0)}

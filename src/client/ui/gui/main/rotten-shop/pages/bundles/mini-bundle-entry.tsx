@@ -1,85 +1,96 @@
-import React from "@rbxts/react"
-import { useMutation, useQuery } from "@rbxts/react-query"
-import { MarketplaceService, Players } from "@rbxts/services"
-import { UIHelper } from "client/ui.helper"
-import { __STUDIO__ } from "client/ui/constants"
-import { ViewportHelper } from "client/ui/components/viewport-helper"
-import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel"
-import { A } from "shared/assets"
-import { ClientFunctions } from "shared/network.helper"
-import { __IS_EDIT__ } from "shared/config.helper"
-import { useBundleData } from "client/ui/hooks/useBundleData"
-import { getRewardDisplay } from "shared/cart.helper"
+import React from "@rbxts/react";
+import { useMutation, useQuery } from "@rbxts/react-query";
+import { MarketplaceService, Players } from "@rbxts/services";
+import { UIHelper } from "client/ui.helper";
+import { __STUDIO__ } from "client/ui/constants";
+import { ViewportHelper } from "client/ui/components/viewport-helper";
+import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
+import { A } from "shared/assets";
+import { ClientFunctions } from "shared/network.helper";
+import { __IS_EDIT__ } from "shared/config.helper";
+import { useBundleData } from "client/ui/hooks/useBundleData";
+import { getRewardDisplay } from "shared/cart.helper";
 
 export interface MiniBundleEntryProps {
-	productId: number
-	cartName: string
-	side: "left" | "right"
-	onBuy?: () => void
+	productId: number;
+	cartName: string;
+	side: "left" | "right";
+	onBuy?: () => void;
 }
 
 export function MiniBundleEntry(props: MiniBundleEntryProps) {
-	const { productId, cartName, side } = props
-	const x_anchor = side === "left" ? 0 : 1
+	const { productId, cartName, side } = props;
+	const x_anchor = side === "left" ? 0 : 1;
 	const { data: productInfo, isLoading } = useQuery({
 		queryKey: ["product-info", productId],
 		queryFn: async () => {
 			const info = MarketplaceService.GetProductInfoAsync(
 				productId,
-				Enum.InfoType.Product
-			) as DeveloperProductInfo
-			return info
+				Enum.InfoType.Product,
+			) as DeveloperProductInfo;
+			return info;
 		},
-		staleTime: 300_000
-	})
+		staleTime: 300_000,
+	});
 
 	const { data: is_owned = false, refetch: refetchOwned } = useQuery({
 		queryKey: ["cart-owned", cartName],
 		queryFn: async () => {
-			if (__IS_EDIT__) return false
-			const [owned, err] = await ClientFunctions.ShopService.doesPlayerOwnItem.invoke("cart", cartName)
-			if (err) return false
-			return owned as boolean
-		}
-	})
+			if (__IS_EDIT__) return false;
+			const [owned, err] =
+				await ClientFunctions.ShopService.doesPlayerOwnItem.invoke(
+					"cart",
+					cartName,
+				);
+			if (err) return false;
+			return owned as boolean;
+		},
+	});
 
-	const bundleTitle = productInfo?.Name ?? "..."
-	const priceInRobux = productInfo?.PriceInRobux
-	const priceText = isLoading ? "..." : priceInRobux !== undefined ? `${priceInRobux} R$` : "N/A"
+	const bundleTitle = productInfo?.Name ?? "...";
+	const priceInRobux = productInfo?.PriceInRobux;
+	const priceText = isLoading
+		? "..."
+		: priceInRobux !== undefined
+			? `${priceInRobux} R$`
+			: "N/A";
 
 	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
 		mutationFn: async () => {
-			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId)
-			let result = false
+			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId);
+			let result = false;
 			if (__STUDIO__) {
-				task.wait(1)
-				result = true
+				task.wait(1);
+				result = true;
 			} else {
-				const [_, __, new_result] = MarketplaceService.PromptProductPurchaseFinished.Wait()
-				result = new_result
+				const [_, __, new_result] =
+					MarketplaceService.PromptProductPurchaseFinished.Wait();
+				result = new_result;
 			}
 			if (result) {
-				UIHelper.playSound(A.sounds.purchase_success)
-				refetchOwned()
-				props.onBuy?.()
+				UIHelper.playSound(A.sounds.purchase_success);
+				refetchOwned();
+				props.onBuy?.();
 			}
-			return result
-		}
-	})
+			return result;
+		},
+	});
 
 	const handleBuyClick = () => {
 		if (is_owned || isPromptLoading) {
-			UIHelper.playSound(A.sounds.error)
-			return
+			UIHelper.playSound(A.sounds.error);
+			return;
 		}
-		promptPurchase()
-	}
+		promptPurchase();
+	};
 
-	const model = useCartModel(cartName, true)
-	model?.FindFirstChild("HandBrake")?.Destroy()
-	model?.FindFirstChild("Honk")?.Destroy()
-	const bundleData = useBundleData(productId)
-	const rewards = ((bundleData?.rewards ?? []) as Array<{ type: string; value: number }>).filter((r) => r.type !== "cash")
+	const model = useCartModel(cartName, true);
+	model?.FindFirstChild("HandBrake")?.Destroy();
+	model?.FindFirstChild("Honk")?.Destroy();
+	const bundleData = useBundleData(productId);
+	const rewards = (
+		(bundleData?.rewards ?? []) as Array<{ type: string; value: number }>
+	).filter((r) => r.type !== "cash");
 
 	return (
 		<frame
@@ -89,7 +100,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 			BorderSizePixel={0}
 			ClipsDescendants={true}
 			LayoutOrder={2}
-			Position={new UDim2(x_anchor === 0 ? 0.005 : .995, 0, 1, 0)}
+			Position={new UDim2(x_anchor === 0 ? 0.005 : 0.995, 0, 1, 0)}
 			Size={new UDim2(0.48, 0, 0.45, 0)}
 		>
 			<frame
@@ -109,7 +120,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.481, 0, 0.481, 0)}
@@ -121,7 +132,10 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					TextWrapped={true}
 					TextXAlignment={Enum.TextXAlignment.Left}
 				>
-					<uistroke Thickness={3} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1}
+					/>
 				</textlabel>
 			</frame>
 			<imagelabel
@@ -146,7 +160,10 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 				Size={new UDim2(1.0010000000000001, 0, 1.088, 0)}
 				ZIndex={0}
 			/>
-			<uistroke Thickness={5} />
+			<uistroke
+				StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+				Thickness={0.03}
+			/>
 			<imagelabel
 				key="Tile"
 				AnchorPoint={new Vector2(0.5, 0.5)}
@@ -162,7 +179,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 				Color={
 					new ColorSequence([
 						new ColorSequenceKeypoint(0, Color3.fromRGB(239, 35, 35)),
-						new ColorSequenceKeypoint(1, Color3.fromRGB(203, 28, 28))
+						new ColorSequenceKeypoint(1, Color3.fromRGB(203, 28, 28)),
 					])
 				}
 				Offset={new Vector2(-0.15, 0)}
@@ -189,7 +206,10 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					LayoutOrder={2}
 					Size={new UDim2(0.5, 0, 1, 0)}
 				>
-					<uistroke Thickness={4} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.03}
+					/>
 					<uiaspectratioconstraint />
 					<textlabel
 						AnchorPoint={new Vector2(0.5, 1)}
@@ -199,7 +219,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 							new Font(
 								"rbxasset://fonts/families/GothamSSm.json",
 								Enum.FontWeight.Heavy,
-								Enum.FontStyle.Normal
+								Enum.FontStyle.Normal,
 							)
 						}
 						Position={new UDim2(0.5, 0, 1, 0)}
@@ -211,14 +231,17 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						TextWrapped={true}
 						ZIndex={10}
 					>
-						<uistroke Thickness={3} />
+						<uistroke
+							StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+							Thickness={0.1}
+						/>
 					</textlabel>
 					<uigradient
 						Rotation={-90}
 						Transparency={
 							new NumberSequence([
 								new NumberSequenceKeypoint(0, 0, 0),
-								new NumberSequenceKeypoint(1, 0.581, 0)
+								new NumberSequenceKeypoint(1, 0.581, 0),
 							])
 						}
 					/>
@@ -238,7 +261,9 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 							position={new UDim2(0, 0, 0, 0)}
 							fieldOfView={70}
 							autoFit={true}
-							modelOffset={new CFrame(0, 5, 0).mul(CFrame.Angles(math.rad(10), math.rad(180), 0))}
+							modelOffset={new CFrame(0, 5, 0).mul(
+								CFrame.Angles(math.rad(10), math.rad(180), 0),
+							)}
 							lightDirection={Vector3.zero}
 							enableRotationAnimation={true}
 							rotationSpeed={30}
@@ -249,8 +274,8 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					)}
 				</frame>
 				{rewards.map((reward, i) => {
-					if (reward.type === "cart") return
-					const { countText, nameText, image_id } = getRewardDisplay(reward)
+					if (reward.type === "cart") return;
+					const { countText, nameText, image_id } = getRewardDisplay(reward);
 					return (
 						<frame
 							key={`RewardItem${i}`}
@@ -260,7 +285,10 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 							LayoutOrder={4 + i * 2}
 							Size={new UDim2(0.22, 0, 0.501, 0)}
 						>
-							<uistroke Thickness={4} />
+							<uistroke
+								StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+								Thickness={0.05}
+							/>
 							<uiaspectratioconstraint />
 							{!!image_id && (
 								<imagelabel
@@ -281,7 +309,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 									new Font(
 										"rbxasset://fonts/families/GothamSSm.json",
 										Enum.FontWeight.Heavy,
-										Enum.FontStyle.Normal
+										Enum.FontStyle.Normal,
 									)
 								}
 								Position={new UDim2(-0.112, 0, -0.141, 0)}
@@ -295,7 +323,10 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 								TextXAlignment={Enum.TextXAlignment.Left}
 								ZIndex={8}
 							>
-								<uistroke Thickness={3} />
+								<uistroke
+									StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+									Thickness={0.1}
+								/>
 							</textlabel>
 							<textlabel
 								BackgroundTransparency={1}
@@ -304,7 +335,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 									new Font(
 										"rbxasset://fonts/families/GothamSSm.json",
 										Enum.FontWeight.Heavy,
-										Enum.FontStyle.Normal
+										Enum.FontStyle.Normal,
 									)
 								}
 								Position={new UDim2(0.087, 0, 0.629, 0)}
@@ -316,14 +347,17 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 								TextWrapped={true}
 								ZIndex={8}
 							>
-								<uistroke Thickness={3} />
+								<uistroke
+									StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+									Thickness={0.1}
+								/>
 							</textlabel>
 							<uigradient
 								Rotation={-90}
 								Transparency={
 									new NumberSequence([
 										new NumberSequenceKeypoint(0, 0, 0),
-										new NumberSequenceKeypoint(1, 0.581, 0)
+										new NumberSequenceKeypoint(1, 0.581, 0),
 									])
 								}
 							/>
@@ -337,7 +371,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 								ZIndex={5}
 							/>
 						</frame>
-					)
+					);
 				})}
 			</frame>
 			<frame
@@ -378,7 +412,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 				ZIndex={5}
 				Active={!is_owned && !isPromptLoading}
 				Event={{
-					MouseButton1Click: handleBuyClick
+					MouseButton1Click: handleBuyClick,
 				}}
 			>
 				<frame
@@ -408,7 +442,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.181, 0, 0.167, 0)}
@@ -419,9 +453,15 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1}
+					/>
 				</textlabel>
-				<uistroke Thickness={5.1000000000000005} />
+				<uistroke
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.01}
+				/>
 				<uigradient
 					Color={
 						new ColorSequence([
@@ -429,19 +469,19 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 								0,
 								is_owned
 									? Color3.fromRGB(100, 100, 100)
-									: Color3.fromRGB(255, 148, 0)
+									: Color3.fromRGB(255, 148, 0),
 							),
 							new ColorSequenceKeypoint(
 								1,
 								is_owned
 									? Color3.fromRGB(150, 150, 150)
-									: Color3.fromRGB(247, 248, 148)
-							)
+									: Color3.fromRGB(247, 248, 148),
+							),
 						])
 					}
 					Rotation={-90}
 				/>
 			</imagebutton>
 		</frame>
-	)
+	);
 }

@@ -126,7 +126,9 @@ export function SoleCartEntry({
 			}}
 		>
 			<uiaspectratioconstraint AspectRatio={0.862} />
-			<uistroke Thickness={5} />
+			<uistroke 
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.02}/>
 			<imagelabel
 				key="Shadow"
 				BackgroundTransparency={1}
@@ -175,7 +177,8 @@ export function SoleCartEntry({
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.1} />
 				</textlabel>
 			</frame>
 			<imagebutton
@@ -191,7 +194,8 @@ export function SoleCartEntry({
 					MouseButton1Click: handleBuyClick,
 				}}
 			>
-				<uistroke Thickness={5} />
+				<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.05} />
 				<uigradient
 					Color={
 						new ColorSequence([
@@ -248,7 +252,8 @@ export function SoleCartEntry({
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={4} />
+					<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.05} />
 				</textlabel>
 			</imagebutton>
 			<textlabel
@@ -272,7 +277,8 @@ export function SoleCartEntry({
 				ZIndex={4}
 			>
 				{textChildren}
-				<uistroke Thickness={3} />
+				<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.05} />
 			</textlabel>
 			<imagelabel
 				key="Backgroundimage"

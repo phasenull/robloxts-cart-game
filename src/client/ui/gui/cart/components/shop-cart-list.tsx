@@ -107,7 +107,8 @@ export function ShopCartList({
 			Position={new UDim2(0.019, 0, 0.491, 0)}
 			Size={new UDim2(0.8, 0, 0.8, 0)}
 		>
-			<uistroke Thickness={5} />
+			<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.01} />
 			<imagelabel
 				key="Tile"
 				AnchorPoint={new Vector2(0.5, 0.5)}
@@ -137,7 +138,8 @@ export function ShopCartList({
 					Size={new UDim2(1, 0, 1, 0)}
 					TileSize={new UDim2(0, 50, 0, 50)}
 				/>
-				<uistroke Thickness={5} />
+				<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 				<frame
 					key="Bottom"
 					BackgroundColor3={Color3.fromRGB(0, 0, 0)}
@@ -157,7 +159,8 @@ export function ShopCartList({
 					TextSize={14}
 					TextWrapped={true}
 				>
-					<uistroke Thickness={3} />
+					<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1} />
 					<uiaspectratioconstraint
 						AspectRatio={3.25}
 						AspectType={Enum.AspectType.ScaleWithParentSize}

@@ -1,23 +1,23 @@
-import React, { useRef, useEffect } from "@rbxts/react"
-import { PurchasableContainer } from "client/ui/components/purchasable-container"
-import { useNavigator } from "client/ui/hooks/useNavigator"
-import { purchasables } from "shared/purchasables"
-import { RottenShopList } from "./rotten-shop-list"
-import { UIHelper } from "client/ui.helper"
+import React, { useRef, useEffect } from "@rbxts/react";
+import { PurchasableContainer } from "client/ui/components/purchasable-container";
+import { useNavigator } from "client/ui/hooks/useNavigator";
+import { purchasables } from "shared/purchasables";
+import { RottenShopList } from "./rotten-shop-list";
+import { UIHelper } from "client/ui.helper";
 
 export function RottenShopGui() {
-	const { closeAll } = useNavigator()
-	const closeButtonRef = useRef<ImageButton>()
+	const { closeAll } = useNavigator();
+	const closeButtonRef = useRef<ImageButton>();
 
 	useEffect(() => {
-		const button = closeButtonRef.current
+		const button = closeButtonRef.current;
 		if (button) {
-			UIHelper.bind(button, 5)
+			UIHelper.bind(button, 5);
 			return () => {
-				UIHelper.unbind(button)
-			}
+				UIHelper.unbind(button);
+			};
 		}
-	}, [])
+	}, []);
 
 	return (
 		<frame
@@ -34,13 +34,16 @@ export function RottenShopGui() {
 				AspectType={Enum.AspectType.ScaleWithParentSize}
 				DominantAxis={Enum.DominantAxis.Height}
 			/>
-			<uistroke Thickness={5} />
+			<uistroke
+				StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+				Thickness={0.01}
+			/>
 			<uigradient
 				Rotation={90}
 				Transparency={
 					new NumberSequence([
 						new NumberSequenceKeypoint(0, 0.6, 0),
-						new NumberSequenceKeypoint(1, 0.256, 0)
+						new NumberSequenceKeypoint(1, 0.256, 0),
 					])
 				}
 			/>
@@ -51,12 +54,15 @@ export function RottenShopGui() {
 				Position={new UDim2(0, 0, 0, 0)}
 				Size={new UDim2(1, 0, 0.10400000000000001, 0)}
 			>
-				<uistroke Thickness={5} />
+				<uistroke
+					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Thickness={0.01}
+				/>
 				<uigradient
 					Color={
 						new ColorSequence([
 							new ColorSequenceKeypoint(0, Color3.fromRGB(0, 128, 255)),
-							new ColorSequenceKeypoint(1, Color3.fromRGB(148, 215, 248))
+							new ColorSequenceKeypoint(1, Color3.fromRGB(148, 215, 248)),
 						])
 					}
 					Rotation={-90}
@@ -76,7 +82,7 @@ export function RottenShopGui() {
 						new Font(
 							"rbxasset://fonts/families/GothamSSm.json",
 							Enum.FontWeight.Heavy,
-							Enum.FontStyle.Normal
+							Enum.FontStyle.Normal,
 						)
 					}
 					Position={new UDim2(0.058, 0, 0.177, 0)}
@@ -88,7 +94,10 @@ export function RottenShopGui() {
 					TextWrapped={true}
 					ZIndex={5}
 				>
-					<uistroke Thickness={3} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.01}
+					/>
 					<uiaspectratioconstraint
 						AspectRatio={3.25}
 						AspectType={Enum.AspectType.ScaleWithParentSize}
@@ -116,19 +125,22 @@ export function RottenShopGui() {
 					ScaleType={Enum.ScaleType.Fit}
 					Size={new UDim2(1, 0, 1, 0)}
 					Event={{
-						MouseButton1Click: () => closeAll()
+						MouseButton1Click: () => closeAll(),
 					}}
 				>
 					<uigradient
 						Color={
 							new ColorSequence([
 								new ColorSequenceKeypoint(0, Color3.fromRGB(255, 0, 0)),
-								new ColorSequenceKeypoint(1, Color3.fromRGB(249, 54, 106))
+								new ColorSequenceKeypoint(1, Color3.fromRGB(249, 54, 106)),
 							])
 						}
 						Rotation={-90}
 					/>
-					<uistroke Thickness={5.1000000000000005} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.08}
+					/>
 					<uiaspectratioconstraint />
 					<frame
 						key="Bottom"
@@ -146,7 +158,7 @@ export function RottenShopGui() {
 							new Font(
 								"rbxasset://fonts/families/GothamSSm.json",
 								Enum.FontWeight.Heavy,
-								Enum.FontStyle.Normal
+								Enum.FontStyle.Normal,
 							)
 						}
 						Position={new UDim2(0.5, 0, 0.5, 0)}
@@ -158,7 +170,10 @@ export function RottenShopGui() {
 						TextWrapped={true}
 						ZIndex={4}
 					>
-						<uistroke Thickness={3} />
+						<uistroke
+							StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+							Thickness={0.01}
+						/>
 					</textlabel>
 					<imagelabel
 						key="Tile"
@@ -215,11 +230,11 @@ export function RottenShopGui() {
 					SortOrder={Enum.SortOrder.LayoutOrder}
 				/>
 				<uipadding
-					PaddingLeft={new UDim(.02,0)}
-					PaddingRight={new UDim(.02,0)}
+					PaddingLeft={new UDim(0.02, 0)}
+					PaddingRight={new UDim(0.02, 0)}
 				/>
 				<RottenShopList />
 			</scrollingframe>
 		</frame>
-	)
+	);
 }

@@ -49,7 +49,8 @@ export function TileEntry({ title }: TileEntryProps) {
 				TextSize={14}
 				TextWrapped={true}
 			>
-				<uistroke Thickness={3} />
+				<uistroke StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.01} />
 			</textlabel>
 		</frame>
 	)

@@ -86,7 +86,9 @@ export function SpeedometerHud(props: {
 			const fovAlpha = math.clamp((camera.FieldOfView - 70) / 30, 0, 1);
 			const scale = baseScale * (1 + fovAlpha * 0.5);
 			speedlinesPart.ScaleTo(scale);
-			speedlinesPart.PivotTo(camera.CFrame.mul(new CFrame(0, 0, -SPEEDLINES_OFFSET)));
+			speedlinesPart.PivotTo(
+				camera.CFrame.mul(new CFrame(0, 0, -SPEEDLINES_OFFSET)),
+			);
 		});
 
 		return () => {
@@ -173,7 +175,11 @@ export function SpeedometerHud(props: {
 					ImageTransparency={0.5}
 					BackgroundTransparency={1}
 				>
-					<uistroke Thickness={10} Color={new Color3(0, 0, 0)} />
+					<uistroke
+						StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+						Thickness={0.1}
+						Color={new Color3(0, 0, 0)}
+					/>
 					<uicorner CornerRadius={new UDim(1, 0)} />
 				</imagelabel>
 				<uicorner CornerRadius={new UDim(1, 0)} />
