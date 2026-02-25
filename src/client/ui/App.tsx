@@ -25,6 +25,7 @@ import { RottenShopGui } from "./gui/rotten-shop/rotten-shop-gui";
 import { TPGui } from "./gui/tp-gui";
 import { SettingsGui } from "./gui/settings-gui";
 import { FadeGui } from "./gui/fade-gui";
+import { CashHUD } from "./components/cash-hud";
 const query_client = new QueryClient({
 	mutations: {
 		onError: (err) => {}
@@ -48,6 +49,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 									<SettingsProvider>
 										<GlobalHUDGui />
 										<FadeGui />
+										<CashHUD/>
 										<DeathGui />
 										<RightSidebar />
 										<CartHud />

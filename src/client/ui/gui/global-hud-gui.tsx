@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "@rbxts/react";
+import React, { useEffect, useRef, useState } from "@rbxts/react";
 import { UIDIM } from "../constants";
 import { ClientEvents, ClientFunctions } from "shared/network.helper";
 import { formatCash } from "shared/util.helper";
@@ -7,11 +7,11 @@ import { __IS_EDIT__ } from "shared/config.helper";
 import { MOCK_CASH } from "shared/mocks";
 import { useInputType } from "../hooks/useInputType";
 import { useNavigator } from "../hooks/useNavigator";
+import { CashPopupSignal } from "../components/cash-hud";
 
 export function CashLabel() {
 	const [cash, setCash] = useState<number | undefined>(MOCK_CASH);
 	const navigator = useNavigator();
-
 	const { data: initialCash } = useQuery({
 		queryKey: ["player-cash"],
 		queryFn: async () => {
@@ -29,13 +29,16 @@ export function CashLabel() {
 	});
 
 	useEffect(() => {
+		if (thisRef.current) {
+			(_G as any).cash_label = thisRef.current;
+		}
 		if (__IS_EDIT__) return;
 		const conn = ClientEvents.DataService.updatePlayerCash.connect((amount) => {
 			setCash(amount);
 		});
 		return () => conn.Disconnect();
 	}, []);
-
+	const thisRef = useRef<TextLabel>();
 	return (
 		<frame
 			key="CashLabel"
@@ -54,6 +57,7 @@ export function CashLabel() {
 				Text={formatCash(cash ?? 0)}
 				TextColor3={Color3.fromRGB(255, 255, 255)}
 				TextScaled={true}
+				ref={thisRef}
 				TextSize={14}
 				TextWrapped={true}
 				TextXAlignment={Enum.TextXAlignment.Right}
@@ -90,8 +94,8 @@ export function CashLabel() {
 					Rotation={180}
 					Transparency={
 						new NumberSequence([
-							new NumberSequenceKeypoint(1, 1, 0),
 							new NumberSequenceKeypoint(0, 0.806, 0),
+							new NumberSequenceKeypoint(1, 1, 0),
 						])
 					}
 				/>
@@ -104,7 +108,13 @@ export function CashLabel() {
 				Position={new UDim2(0.08, 0, 0.5, 0)}
 				Size={new UDim2(0.55, 0, 0.55, 0)}
 				Event={{
-					MouseButton1Click: () => navigator.setOpenGui("rotten-shop"),
+					MouseButton1Click: () => {
+						// navigator.setOpenGui("rotten-shop");
+						CashPopupSignal.Fire(Vector3.zero);
+						CashPopupSignal.Fire(Vector3.zero);
+						CashPopupSignal.Fire(Vector3.zero);
+						CashPopupSignal.Fire(Vector3.zero);
+					},
 				}}
 			>
 				<uiaspectratioconstraint AspectRatio={0.985} />

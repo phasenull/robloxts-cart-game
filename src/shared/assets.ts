@@ -25,6 +25,7 @@ export namespace A {
 		backpack: "rbxassetid://120361956794366",
 		hammer: "rbxassetid://135491521827812",
 		ace: {
+			cash: "rbxassetid://94954789147155",
 			shop: "rbxassetid://137901908005067",
 			clover: "rbxassetid://82529853756707",
 			rebirth_green: "rbxassetid://82260899147277",
@@ -95,6 +96,10 @@ export namespace A {
 		click_kaan: "rbxassetid://876939830",
 		cash_kaan: "rbxassetid://134952684776633",
 		reward_earned: "rbxassetid://4612375802",
+		ace: {
+			cash: "rbxassetid://112283037672337",
+			cash_ui: "rbxassetid://114151646303220"
+		}
 	};
 }
 export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {

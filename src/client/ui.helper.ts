@@ -18,7 +18,7 @@ export abstract class UIHelper {
 		new_group.Parent = SoundService
 		return new_group
 	}
-	static playSound(soundId: string) {
+	static playSound(soundId: string,allow_multiple: boolean = false) {
 		const environment =
 			Environment?.PluginWidget ||
 			Players.LocalPlayer?.FindFirstChildOfClass("PlayerGui")
