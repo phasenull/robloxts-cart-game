@@ -7,7 +7,7 @@ import { __IS_EDIT__ } from "shared/config.helper";
 import { MOCK_CASH } from "shared/mocks";
 import { useInputType } from "../hooks/useInputType";
 import { useNavigator } from "../hooks/useNavigator";
-import { CashPopupSignal } from "../components/cash-hud";
+import { CashPopupSignal } from "shared/components/cash.component";
 
 export function CashLabel() {
 	const [cash, setCash] = useState<number | undefined>(MOCK_CASH);
@@ -109,11 +109,8 @@ export function CashLabel() {
 				Size={new UDim2(0.55, 0, 0.55, 0)}
 				Event={{
 					MouseButton1Click: () => {
-						// navigator.setOpenGui("rotten-shop");
-						CashPopupSignal.Fire(Vector3.zero);
-						CashPopupSignal.Fire(Vector3.zero);
-						CashPopupSignal.Fire(Vector3.zero);
-						CashPopupSignal.Fire(Vector3.zero);
+						navigator.setOpenGui("rotten-shop");
+						CashPopupSignal.Fire(new Vector3(0, 0, 0));
 					},
 				}}
 			>

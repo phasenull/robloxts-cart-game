@@ -2,7 +2,7 @@ import React from "@rbxts/react"
 import ReactRoblox from "@rbxts/react-roblox"
 import { InferFusionProps,Number } from "@rbxts/ui-labs"
 import { App } from "client/ui/App"
-import { CashPopupSignal } from "client/ui/components/cash-hud";
+import { CashPopupSignal } from "shared/components/cash.component";
 
 const controls = {
     emit: Number(3,0,30,1),

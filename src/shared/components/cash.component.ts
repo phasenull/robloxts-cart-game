@@ -8,6 +8,7 @@ import {
 	BuildWeldConstraints,
 } from "shared/util.helper";
 import { CartTouch } from "./cart-touch.component";
+import Signal from "@rbxts/signal";
 
 @Component({ tag: "CashComponent" })
 export class CashComponent extends CartTouch<
@@ -116,7 +117,7 @@ export class CashComponent extends CartTouch<
 				conn.Disconnect();
 			}
 		});
-
+		CashPopupSignal.Fire(this.touch_part.Position);
 		task.spawn(() => {
 			task.wait(this.DEBOUNCE_DURATION);
 			this.client_collected = false;
@@ -128,3 +129,5 @@ export class CashComponent extends CartTouch<
 		});
 	}
 }
+
+export const CashPopupSignal = new Signal<(position: Vector3) => void>();

@@ -3,7 +3,8 @@ import { TweenService, Workspace } from "@rbxts/services";
 import useAnimateValue from "../hooks/useAnimateValue";
 import { A } from "shared/assets";
 import { UIDIM } from "../constants";
-import { UIHelper } from "client/ui.helper";
+import { calculatePitch,
+UIHelper } from "client/ui.helper";
 const DURATION = 0.5;
 export function CashVFX(props: { spawnPosition: Vector3; seed: number }) {
 	const { spawnPosition } = props;
@@ -91,7 +92,8 @@ export function CashVFX(props: { spawnPosition: Vector3; seed: number }) {
 		task.spawn(() => {
 			if (thisRef.current) {
 				animateCashText();
-                UIHelper.playSound(A.sounds.ace.cash_ui);
+                const sound = UIHelper.playSound(A.sounds.ace.cash_ui);
+				
 				thisRef.current?.Destroy()
 			}
 		});

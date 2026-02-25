@@ -3,7 +3,29 @@ import { A } from "../shared/assets"
 import Signal from "@rbxts/signal"
 import { FadeGuiEvent } from "./ui/gui/fade-gui";
 import { Environment } from "@rbxts/ui-labs";
-
+const PITCH_VARIATION = 0.1;
+interface PitchEntry {
+	last_played: number;
+	last_pitch: number;
+}
+const PITCH_CONFIG : Record<string, PitchEntry> = {}
+export function calculatePitch(sound_id:string) {
+	const config = PITCH_CONFIG[sound_id]
+	const now = tick()
+	if (config && now - config.last_played < 1) {
+		const new_pitch = (config.last_pitch + PITCH_VARIATION)
+		PITCH_CONFIG[sound_id] = {
+			last_played: now,
+			last_pitch: new_pitch
+		}
+		return math.clamp(new_pitch,0,3)
+	}
+	PITCH_CONFIG[sound_id] = {
+		last_played: now,
+		last_pitch: 1
+	}
+	return 1
+}
 export abstract class UIHelper {
 	static toggleFade(toggle: boolean) {
 		FadeGuiEvent.Fire(toggle)
