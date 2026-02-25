@@ -7,10 +7,10 @@ import { ViewportHelper } from "client/ui/components/viewport-helper";
 import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
 import { A } from "shared/assets";
 import { ClientFunctions } from "shared/network.helper";
-import { __IS_EDIT__ } from "../../../../../../../shared/config.helper";
 import { useBundleData } from "client/ui/hooks/useBundleData";
 import { capitalizeFirstLetter } from "shared/util.helper";
 import { getRewardDisplay } from "shared/cart.helper";
+import { __IS_EDIT__ } from "shared/config.helper";
 
 export interface GlitchBundleEntryProps {
 	productId: number;

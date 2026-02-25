@@ -1,8 +1,8 @@
 import { Players, SoundService, TweenService } from "@rbxts/services"
-import { Environment } from "ui-labs"
 import { A } from "../shared/assets"
 import Signal from "@rbxts/signal"
-import { FadeGuiEvent } from "./ui/gui/main/fade-gui"
+import { FadeGuiEvent } from "./ui/gui/fade-gui";
+import { Environment } from "@rbxts/ui-labs";
 
 export abstract class UIHelper {
 	static toggleFade(toggle: boolean) {

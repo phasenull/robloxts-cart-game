@@ -1,7 +1,6 @@
 import React, { useEffect } from "@rbxts/react";
 import { RottenButton } from "client/ui/components/buttons/rotten-button";
 import { UIDIM } from "client/ui/constants";
-import { useCheckpoint } from "../cart/hooks/useCheckpoint";
 import { A } from "shared/assets";
 import Object from "@rbxts/object-utils";
 import { useMutation, useQuery } from "@rbxts/react-query";
@@ -19,6 +18,7 @@ import {
 	getIslandSkipProduct,
 } from "shared/purchasables";
 import { MarketplaceService } from "@rbxts/services";
+import { useCheckpoint } from "./cart/hooks/useCheckpoint";
 
 export function TPGui() {
 	const { collectedCheckpoints, refresh } = useCheckpoint();

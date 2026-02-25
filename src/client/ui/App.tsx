@@ -10,23 +10,21 @@ import { CartProvider } from "./contexts/cart.context"
 import { NotificationProvider } from "./contexts/notification.context"
 import { NotificationListener } from "./components/notification-listener"
 import BlurGui from "./gui/blur-gui"
-import { SettingsGui } from "./gui/main/settings-gui"
-import { PassShopGui } from "./gui/main/pass-shop-gui"
-import { RottenShopGui } from "./gui/main/rotten-shop/rotten-shop-gui"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
-import { CartGui } from "./gui/main/cart-gui"
 import { CartHud } from "./gui/cart/cart-hud"
 import { DeathGui } from "./gui/cart/death-gui"
 import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
-import { FadeGui } from "./gui/main/fade-gui"
 import { CheckpointProvider } from "./gui/cart/hooks/useCheckpoint"
 import { RightSidebar } from "./components/right-sidebar"
-import { TPGui } from "./gui/main/tp-gui"
 import Sidebar from "./gui/sidebar"
-import { NotificationsGui } from "./gui/main/notifications/notifications-gui"
 import { CartCustomizationGui } from "./gui/cart/shop-gui"
 import { GlobalHUDGui } from "./gui/global-hud-gui"
-import { LeaderboardGui } from "./gui/main/leaderboard/leaderboard-gui"
+import { NotificationsGui } from "./gui/notifications/notifications-gui";
+import { CartGui } from "./gui/cart-gui";
+import { RottenShopGui } from "./gui/rotten-shop/rotten-shop-gui";
+import { TPGui } from "./gui/tp-gui";
+import { SettingsGui } from "./gui/settings-gui";
+import { FadeGui } from "./gui/fade-gui";
 const query_client = new QueryClient({
 	mutations: {
 		onError: (err) => {}

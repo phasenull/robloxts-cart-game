@@ -43,7 +43,7 @@ export function CashLabel() {
 			BorderSizePixel={0}
 			Size={UDim2.fromScale(1, 1)}
 		>
-			<uiscale Scale={1.4}/>
+			<uiscale Scale={1.4} />
 			<textlabel
 				key="CashText"
 				AnchorPoint={new Vector2(1, 0.5)}
@@ -68,8 +68,8 @@ export function CashLabel() {
 					Rotation={-90}
 				/>
 				<uistroke
-					Color={Color3.fromRGB(45, 45, 45)}
 					StrokeSizingMode={Enum.StrokeSizingMode.ScaledSize}
+					Color={Color3.fromRGB(45, 45, 45)}
 					Thickness={0.1}
 				/>
 			</textlabel>
@@ -90,8 +90,8 @@ export function CashLabel() {
 					Rotation={180}
 					Transparency={
 						new NumberSequence([
-							new NumberSequenceKeypoint(0, 0.806, 0),
 							new NumberSequenceKeypoint(1, 1, 0),
+							new NumberSequenceKeypoint(0, 0.806, 0),
 						])
 					}
 				/>

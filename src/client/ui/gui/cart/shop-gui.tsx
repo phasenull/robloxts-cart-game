@@ -11,9 +11,9 @@ import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation";
 import { useGarageCamera } from "./hooks/useGarageCamera";
 import { MOCK_CART_SHOP, MOCK_HONK_INVENTORY, MOCK_HONK_SHOP, MOCK_INVENTORY } from "shared/mocks";
 import { UIHelper } from "client/ui.helper";
-import { ShopWorldviewGuis } from "./shop/shopWorldviewGuis";
 import { ShopHonkGrid } from "./components/shop-honk-grid";
 import { Workspace } from "@rbxts/services";
+import { ShopWorldviewGuis } from "../customization/shopWorldviewGuis";
 
 export function CartCustomizationGui() {
 	const isFirstRenderRef = useRef(true);

@@ -1,9 +1,9 @@
 import React, { useEffect } from "@rbxts/react"
 import ReactRoblox from "@rbxts/react-roblox"
 import { InferFusionProps, Number } from "@rbxts/ui-labs"
-import { NotificationsGui } from "client/ui/gui/main/notifications/notifications-gui"
 import { NotificationProvider } from "client/ui/contexts/notification.context"
 import { useNotifications } from "client/ui/contexts/notification.context"
+import { NotificationsGui } from "client/ui/gui/notifications/notifications-gui";
 
 const controls = {
 	notification_count: Number(3, 0, 10, 1),

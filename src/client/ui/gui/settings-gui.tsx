@@ -1,6 +1,7 @@
-import React from "@rbxts/react"
-import { PRIMARY, UIDIM } from "../../constants"
-import { A } from "shared/assets"
+import React from "@rbxts/react";
+
+import { A } from "shared/assets";
+import { PRIMARY, UIDIM } from "../constants";
 export function SettingsGui() {
 	return (
 		<imagelabel
@@ -14,5 +15,5 @@ export function SettingsGui() {
 		>
 			<uicorner CornerRadius={new UDim(0.1, 0)} />
 		</imagelabel>
-	)
+	);
 }
