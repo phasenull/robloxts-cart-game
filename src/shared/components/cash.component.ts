@@ -21,7 +21,7 @@ export class CashComponent extends CartTouch<
 	}
 > {
 	private readonly debounce: Map<Model, number> = new Map();
-	private readonly DEBOUNCE_DURATION = 3;
+	private readonly DEBOUNCE_DURATION = 120;
 	private readonly CASH_AMOUNT = 50;
 	private client_collected = false;
 
