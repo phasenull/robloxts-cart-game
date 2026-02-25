@@ -2,6 +2,7 @@ import { Components } from "@flamework/components";
 import { Dependency } from "@flamework/core";
 import { ReplicatedStorage, Workspace } from "@rbxts/services";
 import { log_base } from "./type.helper";
+import { BuildDeepWeldConstraints } from "./util.helper";
 
 export namespace A {
 	export const icons = {
@@ -106,6 +107,7 @@ export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {
 	log_base: log_base;
 	carts: Folder;
 	honks: Folder;
+	CashVisuals: Model
 	CheckpointVisuals: Model & { checkpoint_visual: Part };
 	PointArrow: BasePart;
 	Speedlines: Model & {

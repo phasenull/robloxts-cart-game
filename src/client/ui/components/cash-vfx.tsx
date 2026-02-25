@@ -87,7 +87,6 @@ export function CashVFX(props: { spawnPosition: Vector3; seed: number }) {
 		),
 	});
 	const final_pos = path(value);
-	if (!is_on_screen) return;
 	if (value === 1) {
 		task.spawn(() => {
 			if (thisRef.current) {

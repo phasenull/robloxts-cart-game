@@ -9,42 +9,48 @@ import {
 } from "shared/util.helper";
 import { CartTouch } from "./cart-touch.component";
 import Signal from "@rbxts/signal";
+import { assets } from "shared/assets";
+import { Children } from "@rbxts/react";
+import { Logger } from "shared/logger";
+import { __IS_CLIENT__ } from "shared/config.helper";
 
 @Component({ tag: "CashComponent" })
 export class CashComponent extends CartTouch<
 	Model & {
-		Visuals: Model;
 		Trigger: BasePart;
 	}
 > {
 	private readonly debounce: Map<Model, number> = new Map();
-	private readonly DEBOUNCE_DURATION = 120;
+	private readonly DEBOUNCE_DURATION = 3;
 	private readonly CASH_AMOUNT = 50;
 	private client_collected = false;
 
-	constructor() {
+	constructor(private logger: Logger) {
 		super();
-
 		this.touch_part.Anchored = true;
 
-		const visuals = this.instance.FindFirstChild("Visuals") as
-			| Model
-			| undefined;
-		if (!visuals) return;
-
-		const root =
-			visuals.PrimaryPart ?? visuals.FindFirstChildWhichIsA("BasePart");
-		if (!root) return;
-
+		if (!__IS_CLIENT__) {
+			return;
+		}
+		const cloned = assets.CashVisuals.Clone();
+		cloned.PivotTo(this.instance.GetPivot());
+		cloned.Parent = this.instance;
+		cloned.Name = "Visuals";
+		const visuals = cloned;
 		for (const d of visuals.GetDescendants()) {
 			if (!d.IsA("BasePart")) continue;
 			d.Massless = true;
 			d.CanCollide = false;
 		}
-
+		const root =
+			visuals.PrimaryPart ??
+			visuals.FindFirstChildWhichIsA("BasePart") ??
+			visuals.FindFirstChildWhichIsA("MeshPart");
+		assert(root, "Visuals must have a BasePart or MeshPart as a root");
 		BuildDeepWeldConstraints(root, visuals);
 		// Weld the Visuals root to the Trigger so moving Trigger moves everything
 		BuildWeldConstraints(this.touch_part, root);
+		this.touch_part.Transparency = 1;
 	}
 
 	override onTouch(other_part: BasePart, cart_model: Model): void {
@@ -92,13 +98,19 @@ export class CashComponent extends CartTouch<
 		const start_pos = this.touch_part.Position;
 
 		// Hide original visuals by making parts fully transparent
-		const visuals = this.instance.FindFirstChild("Visuals") as Model | undefined;
-		const visual_parts = (visuals?.GetDescendants().filter((d) => d.IsA("BasePart")) ?? []) as BasePart[];
+		const visuals = this.instance.FindFirstChild("Visuals") as
+			| Model
+			| undefined;
+		const visual_parts = (visuals
+			?.GetDescendants()
+			.filter((d) => d.IsA("BasePart")) ?? []) as BasePart[];
 		for (const part of visual_parts) part.Transparency = 1;
 
 		// Get clone parts for fade
 		const clone_visuals = clone.FindFirstChild("Visuals") as Model | undefined;
-		const clone_parts = (clone_visuals?.GetDescendants().filter((d) => d.IsA("BasePart")) ?? []) as BasePart[];
+		const clone_parts = (clone_visuals
+			?.GetDescendants()
+			.filter((d) => d.IsA("BasePart")) ?? []) as BasePart[];
 		const original_transparencies = clone_parts.map((p) => p.Transparency);
 
 		const DURATION = 0.5;
@@ -110,7 +122,11 @@ export class CashComponent extends CartTouch<
 			clone.PivotTo(new CFrame(start_pos.Lerp(end_pos, alpha)));
 			// Fade out clone parts
 			for (let i = 0; i < clone_parts.size(); i++) {
-				clone_parts[i].Transparency = math.lerp(original_transparencies[i], 1, alpha);
+				clone_parts[i].Transparency = math.lerp(
+					original_transparencies[i],
+					1,
+					alpha,
+				);
 			}
 			if (alpha >= 1) {
 				clone.Destroy();
@@ -121,7 +137,9 @@ export class CashComponent extends CartTouch<
 		task.spawn(() => {
 			task.wait(this.DEBOUNCE_DURATION);
 			this.client_collected = false;
-			const current_visuals = this.instance.FindFirstChild("Visuals") as Model | undefined;
+			const current_visuals = this.instance.FindFirstChild("Visuals") as
+				| Model
+				| undefined;
 			if (!current_visuals) return;
 			for (const d of current_visuals.GetDescendants()) {
 				if (d.IsA("BasePart")) d.Transparency = 0;
