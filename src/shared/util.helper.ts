@@ -165,3 +165,9 @@ export function OutlineHighlight(parent: Instance) {
 	highlight.Parent = parent
 	return highlight
 }
+export function ProximityPrompt(parent:Instance) {
+	const prompt = new Instance("ProximityPrompt")
+	prompt.Parent = parent
+	prompt.HoldDuration = 0.5
+	return prompt
+}

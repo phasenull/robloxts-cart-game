@@ -26,6 +26,7 @@ import { TPGui } from "./gui/tp-gui";
 import { SettingsGui } from "./gui/settings-gui";
 import { FadeGui } from "./gui/fade-gui";
 import { CashHUD } from "./components/cash-hud";
+import { ProductPurchasing } from "./gui/suspense/product-purchasing";
 const query_client = new QueryClient({
 	mutations: {
 		onError: (err) => {}
@@ -49,6 +50,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 									<SettingsProvider>
 										<GlobalHUDGui />
 										<FadeGui />
+										<ProductPurchasing/>
 										<CashHUD/>
 										<DeathGui />
 										<RightSidebar />
