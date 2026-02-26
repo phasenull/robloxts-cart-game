@@ -1,12 +1,14 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { MarketplaceService,
-Players, TweenService } from "@rbxts/services";
+Players, RunService, TweenService, Workspace } from "@rbxts/services";
 import { PromptPurchaseSignal } from "client/ui/gui/suspense/product-purchasing";
 import { getConfig } from "shared/config.helper";
 import { Logger } from "shared/logger";
 import { ClientFunctions } from "shared/network.helper";
 import { MasslessPart,
 ProximityPrompt } from "shared/util.helper";
+
+const ANIMATE_DISTANCE = 100;
 
 const WAVE_AMPLITUDE = .4;
 const WAVE_DURATION = 1.5;
@@ -99,9 +101,9 @@ export class PurchaseComponent extends BaseComponent<{},Model> {
 		wavyNum.Parent = this.instance;
 		wavyNum.Changed.Connect((v) => { bobValue = v; updatePivot(); });
 
-		TweenService.Create(wavyNum, new TweenInfo(
+		const bobTween = TweenService.Create(wavyNum, new TweenInfo(
 			bobDuration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true,
-		), { Value: bobValue > 0.5 ? 0 : 1 }).Play();
+		), { Value: bobValue > 0.5 ? 0 : 1 });
 
 		const windNum = new Instance("NumberValue");
 		windNum.Value = windValue;
@@ -109,9 +111,33 @@ export class PurchaseComponent extends BaseComponent<{},Model> {
 		windNum.Parent = this.instance;
 		windNum.Changed.Connect((v) => { windValue = v; updatePivot(); });
 
-		TweenService.Create(windNum, new TweenInfo(
+		const windTween = TweenService.Create(windNum, new TweenInfo(
 			windDuration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true,
-		), { Value: windValue > 0.5 ? 0 : 1 }).Play();
+		), { Value: windValue > 0.5 ? 0 : 1 });
+
+		let animating = false;
+		const camera = Workspace.CurrentCamera;
+		RunService.Heartbeat.Connect(() => {
+			const character = Players.LocalPlayer.Character;
+			const rootPart = character?.FindFirstChild("HumanoidRootPart") as BasePart | undefined;
+			const position = this.instance.GetPivot().Position;
+
+			const nearEnough = rootPart !== undefined &&
+				rootPart.Position.sub(position).Magnitude <= ANIMATE_DISTANCE;
+			const inViewport = camera !== undefined &&
+				camera.WorldToViewportPoint(position)[1] === true;
+
+			const shouldAnimate = nearEnough && inViewport;
+			if (shouldAnimate && !animating) {
+				animating = true;
+				bobTween.Play();
+				windTween.Play();
+			} else if (!shouldAnimate && animating) {
+				animating = false;
+				bobTween.Pause();
+				windTween.Pause();
+			}
+		});
 	}
 }
 function findProductIdFromModel(model: Model): number | undefined {
