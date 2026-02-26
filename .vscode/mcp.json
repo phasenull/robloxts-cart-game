@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "Roblox_Studio": {
+      "args": [
+        "--stdio"
+      ],
+      "command": "/Users/phasenull/Downloads/RobloxStudioMCP.app/Contents/MacOS/rbx-studio-mcp"
+    }
+  }
+}
