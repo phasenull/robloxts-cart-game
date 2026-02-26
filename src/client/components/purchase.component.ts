@@ -56,11 +56,24 @@ export class PurchaseComponent extends BaseComponent<{},Model> {
 			}
 		});
 
-		this.prompt.Triggered.Connect((player) => {
+		this.prompt.Triggered.Connect(async (player) => {
 			if (player !== Players.LocalPlayer) return;
-            if (!product_id) {return}
-            PromptPurchaseSignal.Fire(true);
-            MarketplaceService.PromptProductPurchase(player, product_id);
+			if (!product_id) return;
+			// Re-check ownership right before prompting to prevent double-purchase
+			const result = await ClientFunctions?.ShopService.doesPlayerOwnItem.invoke("cart", this.instance.Name);
+			if (result && result[0] === true) {
+				this.prompt.Enabled = false;
+				return;
+			}
+			PromptPurchaseSignal.Fire(true);
+			MarketplaceService.PromptProductPurchase(player, product_id);
+		});
+
+		MarketplaceService.PromptProductPurchaseFinished.Connect((_productId, _wasPurchased) => {
+			if (_productId !== product_id) return;
+			if (!_wasPurchased) return;
+			// Immediately hide the prompt — server may not have processed the grant yet
+			this.prompt.Enabled = false;
 		});
 
 		// Wavy bob + wind tilt animation — randomised per instance so no two carts sync up
