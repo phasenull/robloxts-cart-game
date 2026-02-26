@@ -45,11 +45,6 @@ export class CartServerComponent
 			}
 			this.setOwnership(player)
 			this.rider = player
-			const descriptor = (this.instance.FindFirstChild("Descriptor") as StringValue)?.Value
-			if (descriptor === "Armored Cart") {
-				const cart_service = Dependency<CartService>()
-				cart_service.addShield(this.instance,900)
-			}
 			char?.GetDescendants().forEach((descendant) => {
 				if (descendant.IsA("BasePart")) {
 					descendant.Massless = true

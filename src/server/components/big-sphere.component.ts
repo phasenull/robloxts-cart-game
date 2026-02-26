@@ -13,6 +13,7 @@ export class BigSphereComponent
 
 	onStart(): void {
 		this.instance.Anchored = false
+		this.instance.CollisionGroup = "BigSphere"
 		this.setupRope()
 		this.applyRandomVelocity()
 	}

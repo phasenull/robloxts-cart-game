@@ -299,6 +299,7 @@ export class CartService implements OnStart {
 		const hitbox_group = PhysicsService.RegisterCollisionGroup("Hitbox")
 		const invincible_group = PhysicsService.RegisterCollisionGroup("Invincible")
 		PhysicsService.RegisterCollisionGroup("Players")
+		PhysicsService.RegisterCollisionGroup("BigSphere")
 		PhysicsService.CollisionGroupSetCollidable("Spike", "Players", false)
 		PhysicsService.CollisionGroupSetCollidable("Hitbox", "Players", false)
 		PhysicsService.CollisionGroupSetCollidable("Players", "Players", false)
@@ -314,6 +315,9 @@ export class CartService implements OnStart {
 		)
 		PhysicsService.CollisionGroupSetCollidable("Invincible", "Spike", false)
 		PhysicsService.CollisionGroupSetCollidable("Invincible", "Players", false)
+		PhysicsService.CollisionGroupSetCollidable("BigSphere", "Invincible", false)
+		PhysicsService.CollisionGroupSetCollidable("BigSphere", "Default", false)
+		PhysicsService.CollisionGroupSetCollidable("BigSphere", "Players", false)
 	}
 	destroyPlayerCart(player: Player) {}
 	getPlayerCart(player: Player): ICart | undefined {
@@ -545,8 +549,12 @@ export class CartService implements OnStart {
 	 * @param parts Array of parts to drop
 	 */
 	makePartsDrop(cart: Model, parts: BasePart[]) {
-		// Check if cart has shield protection
+		// Check if cart has shield protection or is an Armored Cart
 		if (this.hasShield(cart)) {
+			return
+		}
+		const cartIdentifier = (cart.FindFirstChild("CartIdentifier") as StringValue | undefined)?.Value ?? cart.Name.split("_")[0]
+		if (cartIdentifier === "Armored Cart") {
 			return
 		}
 		// Get or initialize rate tracker

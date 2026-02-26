@@ -42,9 +42,17 @@ export class PurchaseComponent extends BaseComponent<{},Model> {
 
 		// Check ownership before allowing purchase prompt
 		task.spawn(async () => {
-			const result = await ClientFunctions?.ShopService.doesPlayerOwnItem.invoke("cart", this.instance.Name);
-			if (result && result[0] !== true) {
-				this.prompt.Enabled = false;
+			for (let i = 0; i < 5; i++) {
+				const result = await ClientFunctions?.ShopService.doesPlayerOwnItem.invoke("cart", this.instance.Name);
+				// result[1] being set means an error occurred (e.g. profile not loaded yet), retry
+				if (result && result[1] !== undefined) {
+					task.wait(2);
+					continue;
+				}
+				if (result && result[0] === true) {
+					this.prompt.Enabled = false;
+				}
+				break;
 			}
 		});
 

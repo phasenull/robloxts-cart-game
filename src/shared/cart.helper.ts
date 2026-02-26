@@ -35,7 +35,7 @@ export function RigCartModel(cart_model: ICart) {
 	// logger.log(`Initializing cart: ${cart_model.GetFullName()}`)
 	const sv = new Instance("StringValue", cart_model)
 	sv.Name = "CartIdentifier"
-	sv.Value = cart_model.Name
+	sv.Value = cart_model.Name.split("_")[0]
 	// build required parts
 	const wheels = cart_model.Wheels
 	const [bounding_box, _] = cart_model.GetBoundingBox()
