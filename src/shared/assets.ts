@@ -25,6 +25,8 @@ export namespace A {
 		rebirth: "rbxassetid://121185824614656",
 		backpack: "rbxassetid://120361956794366",
 		hammer: "rbxassetid://135491521827812",
+		sound: "rbxassetid://7743720717",
+		sound_muted: "rbxassetid://7743720870",
 		ace: {
 			cash: "rbxassetid://94954789147155",
 			shop: "rbxassetid://137901908005067",
@@ -107,6 +109,7 @@ export const assets = ReplicatedStorage.FindFirstChild("assets") as Folder & {
 	log_base: log_base;
 	carts: Folder;
 	honks: Folder;
+	musics: Folder;
 	CashVisuals: Model
 	CheckpointVisuals: Model & { checkpoint_visual: Part };
 	PointArrow: BasePart;
