@@ -20,7 +20,7 @@ export class CashComponent extends CartTouch<
 		Trigger: BasePart;
 	}
 > {
-	private readonly debounce: Map<Model, number> = new Map();
+	private readonly debounce: Map<Player, number> = new Map();
 	private readonly DEBOUNCE_DURATION = 120;
 	private readonly CASH_AMOUNT = 50;
 	private client_collected = false;
@@ -54,17 +54,16 @@ export class CashComponent extends CartTouch<
 	}
 
 	override onTouch(other_part: BasePart, cart_model: Model): void {
-		const now = os.clock();
-		const last = this.debounce.get(cart_model) ?? 0;
-		if (now - last < this.DEBOUNCE_DURATION) return;
-		this.debounce.set(cart_model, now);
-
 		if (RunService.IsServer()) {
 			this.onServerTouch(other_part, cart_model);
 		} else {
 			const local_player = Players.LocalPlayer;
 			const suffix = `_${local_player.Name}`;
 			if (cart_model.Name.sub(-suffix.size()) !== suffix) return;
+			const now = os.clock();
+			const last = this.debounce.get(local_player) ?? 0;
+			if (now - last < this.DEBOUNCE_DURATION) return;
+			this.debounce.set(local_player, now);
 			this.onClientTouch(other_part, cart_model);
 		}
 	}
@@ -73,8 +72,18 @@ export class CashComponent extends CartTouch<
 		const cart_component =
 			Dependency<Components>().getComponent<CartServerComponent>(cart_model);
 		if (!cart_component) return;
-		const player = cart_component.resolvePlayer();
+		// Fall back to resolving via VehicleSeat occupant in case rider isn't set yet
+		const player =
+			cart_component.resolvePlayer() ??
+			Players.GetPlayerFromCharacter(
+				(cart_model.FindFirstChildWhichIsA("Seat") as Seat | undefined)
+					?.Occupant?.Parent as Model,
+			);
 		if (!player) return;
+		const now = os.clock();
+		const last = this.debounce.get(player) ?? 0;
+		if (now - last < this.DEBOUNCE_DURATION) return;
+		this.debounce.set(player, now);
 		Dependency<DataService>().grantPlayerCash(
 			player,
 			this.CASH_AMOUNT,

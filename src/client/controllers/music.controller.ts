@@ -26,7 +26,7 @@ export class MusicController implements OnStart {
 		const index = math.random(1, songs.size()) - 1
 		const chosen = songs[index].Clone() as Sound
 		chosen.Parent = SoundService
-		chosen.Volume = this.muted ? 0 : MusicVolume.value
+		chosen.Volume = this.muted ? 0 : .05
 		chosen.Play()
 		this.sound = chosen
 
