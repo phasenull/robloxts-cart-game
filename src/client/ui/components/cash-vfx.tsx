@@ -6,13 +6,12 @@ import { UIDIM } from "../constants";
 import { calculatePitch,
 UIHelper } from "client/ui.helper";
 const DURATION = 0.5;
-export function CashVFX(props: { spawnPosition: Vector3; seed: number }) {
-	const { spawnPosition } = props;
+export function CashVFX(props: { seed: number }) {
 	const thisRef = useRef<Frame>();
 	const camera = Workspace.CurrentCamera;
-	const [location, is_on_screen] = camera!.WorldToScreenPoint(spawnPosition)!;
 	const this_size = thisRef.current?.AbsoluteSize ?? new Vector2(0, 0);
-	const start_location = (location as Vector3)
+	assert(camera, "Camera not found");
+	const start_location = new Vector3(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2, 0)
 		.add(
 			new Vector3(
 				math.noise(props.seed) * 400,
@@ -48,7 +47,6 @@ export function CashVFX(props: { spawnPosition: Vector3; seed: number }) {
 		return new Vector2(x, y);
 	};
 	useEffect(() => {
-		if (!is_on_screen) return;
 		if (thisRef.current) {
 			thisRef.current.Position = new UDim2(
 				0,

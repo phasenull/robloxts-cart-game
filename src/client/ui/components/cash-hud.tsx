@@ -32,7 +32,6 @@ export function CashHUD() {
 			{popups.map((popup) => (
 				<CashVFX
 					key={popup.id}
-					spawnPosition={popup.position}
 					seed={popup.id}
 				/>
 			))}
