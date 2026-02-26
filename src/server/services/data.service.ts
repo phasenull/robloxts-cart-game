@@ -18,8 +18,8 @@ const PROFILE_TEMPLATE = {
 	cash: 0,
 	playtime: 0,
 	robux_spent: 0,
-	revives: 999,
-	flips: 999,
+	revives: 0,
+	flips: 1,
 	collected_checkpoints: [0] as number[],
 	inventory: {
 		vehicles: ["Cart"], // Default cart for all players
