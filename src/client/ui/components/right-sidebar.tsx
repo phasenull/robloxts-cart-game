@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "@rbxts/react";
+import React from "@rbxts/react";
 import { UIDIM } from "@common/client/ui/constants";
 import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
 import { useNavigator } from "@common/client/ui/hooks/useNavigator";
@@ -27,15 +27,8 @@ export function RightSidebar() {
 			Enum.EasingDirection.Out,
 		),
 	});
-	const chatInputBar = TextChatService.FindFirstChildOfClass("ChatInputBarConfiguration") as ChatInputBarConfiguration | undefined;
-	const [is_chat_open, set_is_chat_open] = useState(chatInputBar?.IsFocused ?? false);
-	useEffect(() => {
-		if (!chatInputBar) return;
-		const conn = chatInputBar.GetPropertyChangedSignal("IsFocused").Connect(() => {
-			set_is_chat_open(chatInputBar.IsFocused);
-		});
-		return () => conn.Disconnect();
-	}, []);
+	const chatWindow = TextChatService.FindFirstChildOfClass("ChatWindowConfiguration") as ChatWindowConfiguration | undefined;
+	const is_chat_open = chatWindow?.Enabled ?? true;
 	return (
 		<frame
 			key={"right-sidebar"}

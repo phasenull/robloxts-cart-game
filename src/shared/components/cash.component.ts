@@ -22,7 +22,7 @@ export class CashComponent extends CartTouch<
 	}
 > {
 	private readonly debounce: Map<Player, number> = new Map();
-	private readonly DEBOUNCE_DURATION = 120;
+	private readonly DEBOUNCE_DURATION = 300;
 	private readonly CASH_AMOUNT = 50;
 	private client_collected = false;
 
@@ -67,18 +67,23 @@ export class CashComponent extends CartTouch<
 	private onServerTouch(_other_part: BasePart, cart_model: Model): void {
 		const cart_component =
 			Dependency<Components>().getComponent<CartServerComponent>(cart_model);
-		if (!cart_component) return;
-		// Fall back to resolving via VehicleSeat occupant in case rider isn't set yet
-		const player =
-			cart_component.resolvePlayer() ??
-			Players.GetPlayerFromCharacter(
-				(cart_model.FindFirstChildWhichIsA("Seat") as Seat | undefined)
-					?.Occupant?.Parent as Model,
-			);
-		if (!player) return;
+		if (!cart_component) {
+			this.logger.warn(`[CashComponent] Touch on ${this.instance.Name}: no CartServerComponent found on ${cart_model.Name}`);
+			return;
+		}
+		const player = cart_component.resolvePlayer();
+		if (!player) {
+			this.logger.warn(`[CashComponent] Touch on ${this.instance.Name}: cart ${cart_model.Name} has no rider yet`);
+			return;
+		}
 		const now = os.clock();
 		const last = this.debounce.get(player) ?? 0;
-		if (now - last < this.DEBOUNCE_DURATION) return;
+		const remaining = this.DEBOUNCE_DURATION - (now - last);
+		if (remaining > 0) {
+			this.logger.warn(`[CashComponent] ${player.Name} is on cooldown for ${this.instance.Name} — ${math.floor(remaining)}s remaining`);
+			return;
+		}
+		this.logger.log(`[CashComponent] Granting $${this.CASH_AMOUNT} to ${player.Name} from ${this.instance.Name}`);
 		this.debounce.set(player, now);
 		Dependency<DataService>().grantPlayerCash(
 			player,
