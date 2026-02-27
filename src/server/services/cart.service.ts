@@ -63,13 +63,6 @@ export class CartService implements OnStart {
 		return player_carts.includes(cart_name)
 	}
 	playerAdded(player: Player) {
-		const is_tester = isTester(player)
-		if (is_tester) {
-			task.delay(5, () => {
-				this.incrementPlayerRevives(player, 25)
-				this.incrementPlayerFlips(player, 25)
-			})
-		}
 
 		// Set default cart and honk preferences if none exist
 		task.delay(1, () => {

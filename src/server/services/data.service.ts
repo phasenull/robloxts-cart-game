@@ -27,7 +27,7 @@ const PROFILE_TEMPLATE = {
 };
 
 const PROFILE_STORE = ProfileService.GetProfileStore(
-	"players",
+	"players_2",
 	PROFILE_TEMPLATE,
 );
 
