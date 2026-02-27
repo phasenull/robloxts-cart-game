@@ -178,9 +178,9 @@ export class ShopService implements OnStart {
 	): ProperReturns<boolean> {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
-				`Tried to check affordability for player ${player.Name} but profile was not loaded`
-			)
+			// this.logger.warn(
+			// 	`Tried to check affordability for player ${player.Name} but profile was not loaded`
+			// )
 			return [false, "Profile not loaded"]
 		}
 
@@ -265,9 +265,9 @@ export class ShopService implements OnStart {
 	): ProperReturns<boolean> {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
-				`Tried to check ownership for player ${player.Name} but profile was not loaded`
-			)
+			// this.logger.warn(
+			// 	`Tried to check ownership for player ${player.Name} but profile was not loaded`
+			// )
 			return [false, "Profile not loaded"]
 		}
 
