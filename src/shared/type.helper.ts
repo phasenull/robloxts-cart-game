@@ -1,4 +1,4 @@
-export type ProperReturns<T> = [T] | [false, string]
+
 export type MovementDirection = 1 | -1 | 0
 export type log_base = Model & {
 	Hitbox: Part & {
