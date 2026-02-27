@@ -1,16 +1,13 @@
 {
 	"name": "roblox-ts-game",
-	"globIgnorePaths": [
-		"**/package.json",
-		"**/tsconfig.json"
-	],
+	"globIgnorePaths": ["**/package.json", "**/tsconfig.json"],
 	"tree": {
 		"$className": "DataModel",
 		"ServerScriptService": {
 			"$className": "ServerScriptService",
 			"TS": {
 				"$path": "out/server",
-				"common": {
+				"@common": {
 					"$className": "Folder",
 					"$path": "out/common/server"
 				}
@@ -35,7 +32,7 @@
 			},
 			"TS": {
 				"$path": "out/shared",
-				"common": {
+				"@common": {
 					"$className": "Folder",
 					"$path": "out/common/shared"
 				}
@@ -46,12 +43,11 @@
 			"StarterPlayerScripts": {
 				"$className": "StarterPlayerScripts",
 				"TS": {
-					"$path": "out/client"
-				},
-
-				"common": {
-					"$className": "Folder",
-					"$path": "out/common/client"
+					"$path": "out/client",
+					"@common": {
+						"$className": "Folder",
+						"$path": "out/common/client"
+					}
 				}
 			}
 		},
