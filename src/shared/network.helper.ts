@@ -35,6 +35,9 @@ interface ServerToClientEvents {
 	},
 	DataService: {
 		updatePlayerCash: (cash: number) => void
+	},
+	CashService: {
+		cashCollected: (position: Vector3) => void
 	}
 }
 

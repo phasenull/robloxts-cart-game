@@ -13,6 +13,7 @@ import { assets } from "@common/shared/assets";
 import { Children } from "@rbxts/react";
 import { Logger } from "@common/shared/logger";
 import { __IS_CLIENT__ } from "@common/shared/config.builder";
+import { ClientEvents, ServerEvents } from "shared/network.helper";
 
 @Component({ tag: "CashComponent" })
 export class CashComponent extends CartTouch<
@@ -32,6 +33,10 @@ export class CashComponent extends CartTouch<
 		if (!__IS_CLIENT__) {
 			return;
 		}
+		ClientEvents.CashService.cashCollected.connect((position) => {
+			if (this.touch_part.Position.sub(position).Magnitude > 1) return;
+			this.onClientTouch();
+		});
 		const cloned = assets.CashVisuals.Clone();
 		cloned.PivotTo(this.instance.GetPivot());
 		cloned.Parent = this.instance;
@@ -56,15 +61,6 @@ export class CashComponent extends CartTouch<
 	override onTouch(other_part: BasePart, cart_model: Model): void {
 		if (RunService.IsServer()) {
 			this.onServerTouch(other_part, cart_model);
-		} else {
-			const local_player = Players.LocalPlayer;
-			const suffix = `_${local_player.Name}`;
-			if (cart_model.Name.sub(-suffix.size()) !== suffix) return;
-			const now = os.clock();
-			const last = this.debounce.get(local_player) ?? 0;
-			if (now - last < this.DEBOUNCE_DURATION) return;
-			this.debounce.set(local_player, now);
-			this.onClientTouch(other_part, cart_model);
 		}
 	}
 
@@ -91,9 +87,10 @@ export class CashComponent extends CartTouch<
 			undefined,
 			true,
 		);
+		ServerEvents.CashService.cashCollected.fire(player, this.touch_part.Position);
 	}
 
-	private onClientTouch(_other_part: BasePart, _cart_model: Model): void {
+	private onClientTouch(): void {
 		if (this.client_collected) return;
 		this.client_collected = true;
 

@@ -1,4 +1,4 @@
-import React from "@rbxts/react";
+import React, { useEffect, useState } from "@rbxts/react";
 import { UIDIM } from "@common/client/ui/constants";
 import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
 import { useNavigator } from "@common/client/ui/hooks/useNavigator";
@@ -11,6 +11,7 @@ import { useSettings } from "@common/client/ui/contexts/settings.context";
 import { A } from "@common/shared/assets";
 import { Icon } from "@common/client/ui/components/icon";
 import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { TextChatService } from "@rbxts/services";
 
 export function RightSidebar() {
 	const navigator = useNavigator();
@@ -26,12 +27,20 @@ export function RightSidebar() {
 			Enum.EasingDirection.Out,
 		),
 	});
-
+	const chatInputBar = TextChatService.FindFirstChildOfClass("ChatInputBarConfiguration") as ChatInputBarConfiguration | undefined;
+	const [is_chat_open, set_is_chat_open] = useState(chatInputBar?.IsFocused ?? false);
+	useEffect(() => {
+		if (!chatInputBar) return;
+		const conn = chatInputBar.GetPropertyChangedSignal("IsFocused").Connect(() => {
+			set_is_chat_open(chatInputBar.IsFocused);
+		});
+		return () => conn.Disconnect();
+	}, []);
 	return (
 		<frame
 			key={"right-sidebar"}
 			Size={UDim2.fromScale(0.6, 0.34)}
-			Position={UIDIM.LEFT.sub(UDim2.fromScale(0, 0.1))
+			Position={UIDIM.LEFT.add(UDim2.fromScale(0, is_chat_open ? .1 : -.1))
 				.add(UDim2.fromOffset(10, 0))
 				.add(UDim2.fromScale(-0.4 * animatedValue, 0))}
 			AnchorPoint={UIDIM.A_LEFT}
@@ -42,7 +51,7 @@ export function RightSidebar() {
 				SortOrder={Enum.SortOrder.LayoutOrder}
 				VerticalAlignment={Enum.VerticalAlignment.Center}
 				HorizontalAlignment={Enum.HorizontalAlignment.Left}
-				Padding={new UDim(0.1, 0)}
+				Padding={new UDim(0.05, 0)}
 			/>
 			<uipadding PaddingRight={new UDim(0.1, 0)} />
 			<uiaspectratioconstraint AspectRatio={0.5} />
