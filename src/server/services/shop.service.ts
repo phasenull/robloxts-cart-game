@@ -3,7 +3,6 @@ import { Logger } from "@common/shared/logger"
 import {
 	IShopItemTypes,
 	IShopItem,
-	ProperReturns,
 	ICartEntry,
 	IInventoryData,
 	IReward,
@@ -16,6 +15,7 @@ import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { A, assets } from "@common/shared/assets"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { PRODUCTS } from "shared/purchasables"
+import { ProperReturns } from "@common/shared/util.helper";
 
 @Service()
 export class ShopService implements OnStart {

@@ -14,10 +14,10 @@ import { CartClientComponent } from "client/components/cart.client.component"
 import { Logger } from "@common/shared/logger"
 import { ClientEvents, ClientFunctions } from "shared/network.helper"
 import { PRODUCTS } from "shared/purchasables"
-import { ProperReturns } from "shared/type.helper"
 import { assets } from "@common/shared/assets"
 import { getNextSmallCheckpoint } from "shared/cart.helper"
 import { UIHelper } from "@common/client/ui.helper";
+import { ProperReturns } from "@common/shared/util.helper";
 
 @Controller({ loadOrder: 5 })
 export class CartController implements OnStart {

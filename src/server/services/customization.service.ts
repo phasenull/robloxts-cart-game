@@ -1,10 +1,10 @@
 import { Dependency, OnStart, Service } from "@flamework/core"
 import { Players } from "@rbxts/services"
 import { Logger } from "@common/shared/logger"
-import { ProperReturns } from "shared/type.helper"
 import { DataService } from "./data.service"
 import { ServerFunctions } from "shared/network.helper"
 import { ShopService } from "./shop.service"
+import { ProperReturns } from "@common/shared/util.helper";
 
 export type ICustomizable = "cart" | "honk" | (string & {})
 
