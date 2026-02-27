@@ -47,12 +47,28 @@ interface ServerToClientEvents {
 
 */
 
+interface IFeedbackItem {
+	id: number
+	user_id: number
+	description: string
+	status: "pending" | "rejected" | "approved"
+	response: string | undefined
+	responded_at: number | undefined
+	deleted_at: number | undefined
+	created_at: number
+}
+
 interface ClientToServerFunctions {
 	CartService: {
 		getConfig: () => ProperReturns<ICartConfig>
 		reset: () => void
 		useProduct: (product_key: string) => ProperReturns<true>
 		revive: (target: CFrame, stage: number) => ProperReturns<true>
+	}
+
+	FeedbackService: {
+		submitFeedback: (description: string) => ProperReturns<IFeedbackItem>
+		getMyFeedbacks: () => ProperReturns<IFeedbackItem[]>
 	}
 	
 	CheckpointService: {

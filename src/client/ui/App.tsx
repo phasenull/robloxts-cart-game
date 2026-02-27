@@ -23,6 +23,7 @@ import { CartGui } from "./gui/cart-gui";
 import { RottenShopGui } from "./gui/rotten-shop/rotten-shop-gui";
 import { TPGui } from "./gui/tp-gui";
 import { SettingsGui } from "./gui/settings-gui";
+import { FeedbackGui } from "./gui/feedback-gui";
 import { FadeGui } from "@common/client/ui/gui/fade-gui";
 import { CashHUD } from "./components/cash-hud";
 import { ProductPurchasing } from "./gui/suspense/product-purchasing";
@@ -80,6 +81,9 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										</PopGui>
 										<PopGui id={"leaderboard"}>
 											{/* <LeaderboardGui/> */}
+										</PopGui>
+										<PopGui id={"feedback"} Size={new UDim2(0.55, 0, 0.75, 0)}>
+											<FeedbackGui />
 										</PopGui>
 										{/* <PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
 											<PassShopGui />

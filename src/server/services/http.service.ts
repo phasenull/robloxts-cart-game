@@ -25,6 +25,15 @@ export class HttpService {
 			this.logger.warn(`Failed to sync player ${data.user_id} to leaderboard: ${err}`)
 		})
 	}
+	async submitFeedback(user_id: number, description: string) {
+		return await this.request<PostFeedbackResponse>(`/feedback`, {
+			method: "POST",
+			body: this.HttpService.JSONEncode({ user_id, description }),
+		} as unknown as Request)
+	}
+	async getPlayerFeedbacks(user_id: number) {
+		return await this.request<GetFeedbackResponse>(`/feedback?limit=20&offset=0`)
+	}
 	private async updatePlayer(body: PostPlayerRequest) {
 		return await this.request<PostPlayerResponse>(`/leaderboard/update-player`, {
 			method: "POST",
@@ -73,6 +82,24 @@ interface PostPlayerRequest {
 	cash: number
 	playtime: number
 	robux_spent: number
+}
+interface IFeedbackItem {
+	id: number
+	user_id: number
+	description: string
+	status: "pending" | "rejected" | "approved"
+	response: string | undefined
+	responded_at: number | undefined
+	deleted_at: number | undefined
+	created_at: number
+}
+interface PostFeedbackResponse {
+	success: boolean
+	feedback: IFeedbackItem
+}
+interface GetFeedbackResponse {
+	feedback: IFeedbackItem[]
+	total: number
 }
 interface LeaderBoardResponse {
 	cash: [

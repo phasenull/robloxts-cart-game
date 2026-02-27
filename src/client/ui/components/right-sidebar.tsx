@@ -31,7 +31,7 @@ export function RightSidebar() {
 		<frame
 			key={"right-sidebar"}
 			Size={UDim2.fromScale(0.6, 0.34)}
-			Position={UIDIM.LEFT.add(UDim2.fromScale(0, -.1))
+			Position={UIDIM.LEFT.add(UDim2.fromScale(0, -0.1))
 				.add(UDim2.fromOffset(10, 0))
 				.add(UDim2.fromScale(-0.4 * animatedValue, 0))}
 			AnchorPoint={UIDIM.A_LEFT}
@@ -47,7 +47,6 @@ export function RightSidebar() {
 			<uipadding PaddingRight={new UDim(0.1, 0)} />
 			<uiaspectratioconstraint AspectRatio={0.5} />
 			<CashLabel />
-
 
 			<RottenButton
 				Color={new Color3(0, 0.35, 1)}
@@ -83,24 +82,47 @@ export function RightSidebar() {
 					navigator.setOpenGui("leaderboard")
 				}}
 			/> */}
-			<RottenButton
-				key={"mute-button"}
-				Color={musicMuted ? new Color3(0.77, 0, 0) : new Color3(0, 0.6, 0.2)}
-				Size={UDim2.fromScale(0.4, 1)}
-				Ratio={1}
-				Text={"Music"}
-				onClick={() => { if (!__IS_EDIT__) setMusicMuted(!musicMuted); }}
-			>
-				<Icon
-					Image={musicMuted ? A.icons.sound_muted : A.icons.sound}
-					Size={new UDim2(0.35, 0, 0.35, 0)}
-					Position={new UDim2(0.95, 0, 0.05, 0)}
-					AnchorPoint={new Vector2(1, 0)}
-					Color3={new Color3(1, 1, 1)}
-					Transparency={0.2}
-					ZIndex={5}
+			<frame key={"bottom-buttons"} Size={UDim2.fromScale(1,1)} BackgroundTransparency={1}>
+				<uiaspectratioconstraint AspectRatio={2} />
+				<uilistlayout
+					FillDirection={Enum.FillDirection.Horizontal}
+					SortOrder={Enum.SortOrder.LayoutOrder}
+					HorizontalAlignment={Enum.HorizontalAlignment.Center}
+					VerticalAlignment={Enum.VerticalAlignment.Center}
+					HorizontalFlex={"SpaceBetween"}
+					Padding={new UDim(0.04, 0)}
 				/>
-			</RottenButton>
+				<RottenButton
+					key={"feedback-button"}
+					Color={new Color3(0.2, 0.5, 1)}
+					Size={UDim2.fromScale(0.4, 1)}
+					Ratio={1}
+					Text={"DM"}
+					onClick={() => navigator.setOpenGui("feedback")}
+				>
+					
+				</RottenButton>
+				<RottenButton
+					key={"mute-button"}
+					Color={musicMuted ? new Color3(0.77, 0, 0) : new Color3(0, 0.6, 0.2)}
+					Size={UDim2.fromScale(0.4, 1)}
+					Ratio={1}
+					Text={"Music"}
+					onClick={() => {
+						if (!__IS_EDIT__) setMusicMuted(!musicMuted);
+					}}
+				>
+					<Icon
+						Image={musicMuted ? A.icons.sound_muted : A.icons.sound}
+						Size={new UDim2(0.35, 0, 0.35, 0)}
+						Position={new UDim2(0.95, 0, 0.05, 0)}
+						AnchorPoint={new Vector2(1, 0)}
+						Color3={new Color3(1, 1, 1)}
+						Transparency={0.2}
+						ZIndex={5}
+					/>
+				</RottenButton>
+			</frame>
 		</frame>
 	);
 }
