@@ -1,18 +1,14 @@
+import { Logger } from "@common/shared/logger";
 import { Dependency, OnStart, Service } from "@flamework/core";
-import { HttpService } from "./http.service";
 import ProfileService from "@rbxts/profileservice";
 import { Profile } from "@rbxts/profileservice/globals";
 import {
-	DataStoreService,
-	MarketplaceService,
-	Players,
-	ReplicatedStorage,
-	RunService,
-	Workspace,
+    Players,
+    RunService
 } from "@rbxts/services";
 import Signal from "@rbxts/signal";
-import { Logger } from "@common/shared/logger";
 import { ServerEvents, ServerFunctions } from "shared/network.helper";
+import { HttpService } from "./http.service";
 const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],
 	cash: 0,
@@ -29,13 +25,7 @@ const PROFILE_TEMPLATE = {
 		honk: ["Quack"], // Default equipped honk
 	} as Record<string, string[]>,
 };
-type PurchaseHistoryEntry = {
-	purchase_type: "robux" | "cash";
-	price: number;
-	product_name: string;
-	product_type: "item" | "case" | "gamepass";
-	created_at: number;
-};
+
 const PROFILE_STORE = ProfileService.GetProfileStore(
 	"players",
 	PROFILE_TEMPLATE,
@@ -73,29 +63,6 @@ export class DataService implements OnStart {
 			}
 			return [profile.Data.cash as number];
 		});
-		// ServerFunctions.getDailyRewardData.setCallback((player) => {
-		// 	const profile = this.getProfile(player);
-		// 	const data = profile?.Data.daily_reward;
-		// 	return [
-		// 		{
-		// 			last_claimed_at: data?.last_claimed_at || 0,
-		// 			last_claimed_index: data?.day_index || -1,
-		// 			reward_list: getConfig().daily_rewards || [],
-		// 		},
-		// 	];
-		// });
-		// this.logger.log("DataService started and listening to player events");
-
-		// while (true) {
-		// 	const board = Workspace.FindFirstChild("KillsBoard")?.FindFirstChild("leaderboard") as ScreenGui;
-		// 	const playtime_board = Workspace.FindFirstChild("PlaytimeBoard")?.FindFirstChild(
-		// 		"leaderboard",
-		// 	) as ScreenGui;
-		// 	if (!board) continue;
-		// 	this.refreshLeaderboard(board, "kills");
-		// 	this.refreshLeaderboard(playtime_board, "playtime");
-		// 	task.wait(30);
-		// }
 	}
 
 	public grantPlayerCash(
@@ -133,8 +100,6 @@ export class DataService implements OnStart {
 		}
 		return profile.Data.cash as number;
 	}
-	public refreshLeaderboard(leaderboard: ScreenGui, stat: string) {}
-	public list100ByStat() {}
 
 	public playerAdded(player: Player) {
 		const profile = PROFILE_STORE.LoadProfileAsync(`${player.UserId}`);
