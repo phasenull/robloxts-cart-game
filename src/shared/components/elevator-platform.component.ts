@@ -4,7 +4,7 @@ import { RunService } from "@rbxts/services"
 import { t } from "@rbxts/t"
 import type { RobotArmComponent } from "server/components/robot-arm.component"
 import type { CartService } from "server/services/cart.service"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import { ICart } from "shared/type.helper"
 import { PlatformComponent } from "./platform.component"
 

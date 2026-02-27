@@ -3,9 +3,9 @@ import { Dependency } from "@flamework/core"
 import { useEffect, useState } from "@rbxts/react"
 import { Workspace } from "@rbxts/services"
 import { CartClientComponent } from "client/components/cart.client.component"
-import { assets } from "shared/assets"
+import { assets } from "@common/shared/assets"
 import { CartAnimator, RigCartModel } from "shared/cart.helper"
-import { __IS_EDIT__ } from "shared/config.helper"
+import { __IS_EDIT__ } from "@common/shared/config.builder"
 import { ICart } from "shared/type.helper"
 
 export function useCartModel(cart_name?: string, auto_destroy = true) {

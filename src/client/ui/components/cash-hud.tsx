@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "@rbxts/react";
-import Signal from "@rbxts/signal";
-import { CashVFX } from "./cash-vfx";
-import { calculatePitch, UIHelper } from "client/ui.helper";
-import { A } from "shared/assets";
-import { CashPopupSignal } from "shared/components/cash.component";
+import { CashVFX } from "@common/client/ui/components/cash-vfx";
+import { calculatePitch, UIHelper } from "@common/client/ui.helper";
+import { A } from "@common/shared/assets";
+import { CashPopupSignal } from "@common/shared/cash-popup.signal";
 import { useCart } from "../contexts/cart.context";
 
 interface CashPopup {

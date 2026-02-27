@@ -7,20 +7,20 @@ import {
 	TweenService,
 	Workspace
 } from "@rbxts/services"
-import { ProgressBarComponent } from "client/ui/components/progressbar-component"
-import { useRendering } from "client/ui/hooks/useRendering"
-import { sphere } from "@rbxts/better-gizmos"
-import { GoofyText } from "client/ui/components/goofy-text"
-import { PRIMARY, UIDIM } from "client/ui/constants"
 import {
 	getCheckpointDataFromIndex,
 	getCheckpointModelByIndex,
 	getNextBigCheckpoint,
 	getPreviousBigCheckpoint
 } from "shared/cart.helper"
-import { PlayerAvatar } from "client/ui/components/player-avatar"
-import { RottenButton } from "client/ui/components/buttons/rotten-button"
 import { PRODUCTS } from "shared/purchasables"
+import { useRendering } from "@common/client/ui/hooks/useRendering";
+import { ProgressBarComponent } from "@common/client/ui/components/progressbar-component";
+import { PRIMARY,
+UIDIM } from "@common/client/ui/constants";
+import { PlayerAvatar } from "@common/client/ui/components/player-avatar";
+import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
+import { GoofyText } from "@common/client/ui/components/goofy-text";
 export function StageProgress() {
 	const { cart } = useCart()
 	const { currentCheckpoint } = useCheckpoint()

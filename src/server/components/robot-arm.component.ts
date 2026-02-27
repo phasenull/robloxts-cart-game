@@ -1,6 +1,6 @@
+import { Logger } from "@common/shared/logger";
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
-import { Logger } from "shared/logger";
 import { ICart } from "shared/type.helper";
 
 @Component({
@@ -50,7 +50,7 @@ export class RobotArmComponent
 			// Wait until track.Length is populated, then delay to just before the end
 			task.delay(this.track.Length - 0.1, () => {
 				// Freeze on the last frame — replicates correctly since the track is still "playing"
-				this.track.TimePosition = this.track.Length-0.1;
+				this.track.TimePosition = this.track.Length - 0.1;
 				this.track.AdjustSpeed(0);
 				this.status = "waiting";
 				this.logger.log(
@@ -68,7 +68,7 @@ export class RobotArmComponent
 		weld.Name = "CartWeld";
 		weld.Part0 = this.instance.GrabRoot;
 		weld.Part1 = this.grabbed_cart.Root;
-		weld.C1 = new CFrame(0,0,0)
+		weld.C1 = new CFrame(0, 0, 0);
 		weld.Parent = this.instance;
 	}
 	releaseCart() {

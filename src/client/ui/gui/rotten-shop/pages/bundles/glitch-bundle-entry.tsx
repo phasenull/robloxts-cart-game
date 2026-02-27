@@ -1,16 +1,16 @@
 import React from "@rbxts/react";
 import { useMutation, useQuery } from "@rbxts/react-query";
 import { MarketplaceService, Players } from "@rbxts/services";
-import { UIHelper } from "client/ui.helper";
-import { __STUDIO__, UIDIM } from "client/ui/constants";
-import { ViewportHelper } from "client/ui/components/viewport-helper";
+import { UIHelper } from "@common/client/ui.helper";
+import { __STUDIO__, UIDIM } from "@common/client/ui/constants";
+import { ViewportHelper } from "@common/client/ui/components/viewport-helper";
 import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
-import { A } from "shared/assets";
+import { A } from "@common/shared/assets";
 import { ClientFunctions } from "shared/network.helper";
 import { useBundleData } from "client/ui/hooks/useBundleData";
-import { capitalizeFirstLetter } from "shared/util.helper";
+import { capitalizeFirstLetter } from "@common/shared/util.helper";
 import { getRewardDisplay } from "shared/cart.helper";
-import { __IS_EDIT__ } from "shared/config.helper";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
 
 export interface GlitchBundleEntryProps {
 	productId: number;

@@ -1,15 +1,15 @@
 import React, { useRef, useEffect } from "@rbxts/react";
 import { useMutation, useQuery } from "@rbxts/react-query";
 import { MarketplaceService, Players } from "@rbxts/services";
-import { UIHelper } from "client/ui.helper";
-import { __STUDIO__,UIDIM } from "client/ui/constants";
-import { ViewportHelper } from "client/ui/components/viewport-helper";
+import { UIHelper } from "@common/client/ui.helper";
+import { __STUDIO__,UIDIM } from "@common/client/ui/constants";
+import { ViewportHelper } from "@common/client/ui/components/viewport-helper";
 import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
 import { useCartProductId } from "client/ui/hooks/useCartProductId";
-import { useProductPrice } from "client/ui/hooks/useProductPrice";
-import { __IS_EDIT__ } from "shared/config.helper";
+import { useProductPrice } from "@common/client/ui/hooks/useProductPrice";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
 import { ClientFunctions } from "shared/network.helper";
-import { A } from "shared/assets";
+import { A } from "@common/shared/assets";
 
 interface SoleCartEntryProps {
 	cartName: string;

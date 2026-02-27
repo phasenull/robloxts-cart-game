@@ -1,11 +1,10 @@
-import React, {
+import { __IS_EDIT__ } from "@common/shared/config.builder";import React, {
 	createContext,
 	useContext,
 	useEffect,
 	useState
 } from "@rbxts/react"
 import Signal from "@rbxts/signal"
-import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ClientEvents, ClientFunctions } from "shared/network.helper"
 
 export const CheckpointContext = createContext<{

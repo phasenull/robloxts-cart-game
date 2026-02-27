@@ -2,7 +2,7 @@ import { Dependency, OnStart, Service } from "@flamework/core"
 import { AnalyticsService, MarketplaceService, Players } from "@rbxts/services"
 import { t } from "@rbxts/t"
 import { getConfig } from "shared/config.helper"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import { PRODUCTS, ISLAND_SKIP_PRODUCTS, getAllBigCheckpoints } from "shared/purchasables"
 import { IPurchasableConfig, IReward, IRewardType } from "shared/type.helper"
 import { CartService } from "./cart.service"
@@ -15,7 +15,7 @@ import {
 	getNextBigCheckpoint
 } from "shared/cart.helper"
 import { ServerEvents } from "shared/network.helper"
-import { A } from "shared/assets"
+import { A } from "@common/shared/assets"
 
 @Service()
 export class MonetizationService implements OnStart {

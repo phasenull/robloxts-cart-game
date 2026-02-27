@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
-import { GoofyText } from "client/ui/components/goofy-text"
-import { LoadingIndicator } from "client/ui/components/loading-indicator"
-import { PRIMARY, UIDIM } from "client/ui/constants"
+import { GoofyText } from "@common/client/ui/components/goofy-text"
+import { LoadingIndicator } from "@common/client/ui/components/loading-indicator"
+import { PRIMARY, UIDIM } from "@common/client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
-import { useErrorPage } from "client/ui/contexts/error.context"
-import { useNavigator } from "client/ui/hooks/useNavigator"
-import { A } from "shared/assets"
+import { useErrorPage } from "@common/client/ui/contexts/error.context"
+import { useNavigator } from "@common/client/ui/hooks/useNavigator"
+import { A } from "@common/shared/assets"
 
 export function CartGui() {
 	const { showError } = useErrorPage()

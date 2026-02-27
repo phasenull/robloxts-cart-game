@@ -2,9 +2,9 @@ import React from "@rbxts/react"
 import ReactRoblox from "@rbxts/react-roblox"
 import { InferFusionProps } from "@rbxts/ui-labs"
 import { App } from "client/ui/App"
-import { GoofyButton } from "client/ui/components/buttons/goofy-button"
-import { RottenButton } from "client/ui/components/buttons/rotten-button"
-import PopGui from "client/ui/components/pop-gui"
+import { GoofyButton } from "@common/client/ui/components/buttons/goofy-button"
+import { RottenButton } from "@common/client/ui/components/buttons/rotten-button"
+import PopGui from "@common/client/ui/components/pop-gui"
 import Sidebar from "client/ui/gui/sidebar"
 
 const controls = {

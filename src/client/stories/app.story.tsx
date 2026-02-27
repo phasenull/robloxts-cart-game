@@ -2,7 +2,7 @@ import React from "@rbxts/react"
 import ReactRoblox from "@rbxts/react-roblox"
 import { Choose, InferFusionProps } from "@rbxts/ui-labs"
 import { App } from "client/ui/App"
-import { GUI_KEYS } from "client/ui/constants"
+import { GUI_KEYS } from "@common/client/ui/constants"
 
 const controls = {
 	initial_gui: Choose(["", "Shop", "Cart", "Settings","carts", "rotten-shop"]),

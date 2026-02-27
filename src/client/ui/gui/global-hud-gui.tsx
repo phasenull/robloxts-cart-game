@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "@rbxts/react";
-import { UIDIM } from "../constants";
+import { UIDIM } from "@common/client/ui/constants";
 import { ClientEvents, ClientFunctions } from "shared/network.helper";
-import { formatCash } from "shared/util.helper";
+import { formatCash } from "@common/shared/util.helper";
 import { useQuery } from "@rbxts/react-query";
-import { __IS_EDIT__ } from "shared/config.helper";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
 import { MOCK_CASH } from "shared/mocks";
-import { useInputType } from "../hooks/useInputType";
-import { useNavigator } from "../hooks/useNavigator";
+import { useInputType } from "@common/client/ui/hooks/useInputType";
+import { useNavigator } from "@common/client/ui/hooks/useNavigator";
 import { CashPopupSignal } from "shared/components/cash.component";
 
 export function CashLabel() {

@@ -3,18 +3,18 @@ import React, { useEffect } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
-import { UIHelper } from "client/ui.helper"
-import { RottenButton } from "client/ui/components/buttons/rotten-button"
-import { GoofyText } from "client/ui/components/goofy-text"
-import { RadialProgress } from "client/ui/components/radial-progress"
-import { REVIVE_TIME, UIDIM } from "client/ui/constants"
+import { REVIVE_TIME, UIDIM } from "@common/client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
-import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { ClientFunctions } from "shared/network.helper"
 import { useCheckpoint } from "../hooks/useCheckpoint"
 import Object from "@rbxts/object-utils"
 import { PRODUCTS } from "shared/purchasables"
 import Signal from "@rbxts/signal"
+import { UIHelper } from "@common/client/ui.helper";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { RadialProgress } from "@common/client/ui/components/radial-progress";
+import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
+import { GoofyText } from "@common/client/ui/components/goofy-text";
 
 interface DeathButtonsProps {
 	transparency: number

@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from "@rbxts/react";
 import { useMutation, useQuery } from "@rbxts/react-query";
 import { MarketplaceService, Players } from "@rbxts/services";
-import { UIHelper } from "client/ui.helper";
-import { __STUDIO__ } from "client/ui/constants";
-import { A } from "shared/assets";
+import { UIHelper } from "@common/client/ui.helper";
+import { __STUDIO__ } from "@common/client/ui/constants";
+import { A } from "@common/shared/assets";
 
 interface CurrencyEntryProps {
 	productId: number;

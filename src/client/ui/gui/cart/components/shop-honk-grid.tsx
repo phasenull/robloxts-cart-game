@@ -3,10 +3,10 @@ import { useMutation } from "@rbxts/react-query";
 import { MarketplaceService } from "@rbxts/services";
 import { IShopItem } from "shared/type.helper";
 import { ClientFunctions } from "shared/network.helper";
-import { __IS_EDIT__ } from "shared/config.helper";
-import { A, assets } from "shared/assets";
-import { UIHelper } from "client/ui.helper";
-import { useProductPrice } from "client/ui/hooks/useProductPrice";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { A, assets } from "@common/shared/assets";
+import { UIHelper } from "@common/client/ui.helper";
+import { useProductPrice } from "@common/client/ui/hooks/useProductPrice";
 import { PRODUCTS } from "shared/purchasables";
 
 interface ShopHonkEntryProps {

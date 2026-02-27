@@ -11,7 +11,7 @@ import {
 	Workspace,
 } from "@rbxts/services";
 import Signal from "@rbxts/signal";
-import { Logger } from "shared/logger";
+import { Logger } from "@common/shared/logger";
 import { ServerEvents, ServerFunctions } from "shared/network.helper";
 const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],

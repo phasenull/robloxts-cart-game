@@ -6,8 +6,8 @@ import { TileEntry } from "./tile-entry";
 import { Br } from "./br";
 import { SoleCartsFrame } from "./pages/carts/sole-carts-frame";
 import { SoleCartEntry } from "./pages/carts/sole-cart-entry";
-import { A } from "shared/assets";
-import { RainbowGradient } from "shared/util.helper";
+import { A } from "@common/shared/assets";
+import { RainbowGradient } from "@common/shared/util.helper";
 import { CurrenciesFrame } from "./pages/currencies/currencies-frame";
 import { CurrencyEntry } from "./pages/currencies/currency-entry";
 

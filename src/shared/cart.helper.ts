@@ -1,15 +1,14 @@
 import { TweenService, Workspace } from "@rbxts/services"
-import { A, assets } from "./assets"
-import { __IS_STUDIO__, getConfig } from "./config.helper"
 import { ICart, IWheel } from "./type.helper"
-import {
-	BuildDeepWeldConstraints,
-	BuildWeldConstraints,
-	capitalizeFirstLetter,
-	MasslessPart,
-	OutlineHighlight
-} from "./util.helper"
+
 import StringUtils from "@rbxts/string-utils"
+import { BuildDeepWeldConstraints,
+BuildWeldConstraints,
+capitalizeFirstLetter,MasslessPart, 
+OutlineHighlight} from "@common/shared/util.helper";
+import { A,
+assets } from "@common/shared/assets";
+import { getConfig } from "./config.helper";
 export type IHandBrake = Model & {
 	RootPart: BasePart & {
 		WeldConstraint: WeldConstraint

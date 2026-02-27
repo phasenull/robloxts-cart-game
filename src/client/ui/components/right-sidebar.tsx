@@ -1,16 +1,16 @@
 import React from "@rbxts/react";
-import { UIDIM } from "../constants";
-import { RottenButton } from "./buttons/rotten-button";
-import { useNavigator } from "../hooks/useNavigator";
+import { UIDIM } from "@common/client/ui/constants";
+import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
+import { useNavigator } from "@common/client/ui/hooks/useNavigator";
 import { useCart } from "../contexts/cart.context";
 import { useCheckpoint } from "../gui/cart/hooks/useCheckpoint";
-import useAnimateValue from "../hooks/useAnimateValue";
-import { UIHelper } from "client/ui.helper";
+import useAnimateValue from "@common/client/ui/hooks/useAnimateValue";
+import { UIHelper } from "@common/client/ui.helper";
 import { CashLabel } from "../gui/global-hud-gui";
-import { useSettings } from "../contexts/settings.context";
-import { A } from "shared/assets";
-import { Icon } from "./icon";
-import { __IS_EDIT__ } from "shared/config.helper";
+import { useSettings } from "@common/client/ui/contexts/settings.context";
+import { A } from "@common/shared/assets";
+import { Icon } from "@common/client/ui/components/icon";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
 
 export function RightSidebar() {
 	const navigator = useNavigator();

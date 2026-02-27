@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "@rbxts/react";
 import { IShopItem } from "shared/type.helper";
-import { useProductPrice } from "client/ui/hooks/useProductPrice";
+import { useProductPrice } from "@common/client/ui/hooks/useProductPrice";
 import { useCartModel } from "../hooks/useCartModel";
 import { Workspace } from "@rbxts/services";
 

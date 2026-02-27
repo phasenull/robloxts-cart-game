@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "@rbxts/react";
 import { MarketplaceService, Players } from "@rbxts/services";
 import Signal from "@rbxts/signal";
-import { LoadingIndicator } from "client/ui/components/loading-indicator";
-import { UIDIM } from "client/ui/constants";
-import useAnimateValue from "client/ui/hooks/useAnimateValue";
+import { LoadingIndicator } from "@common/client/ui/components/loading-indicator";
+import { UIDIM } from "@common/client/ui/constants";
+import useAnimateValue from "@common/client/ui/hooks/useAnimateValue";
 import { FlashingContainer } from "./flashing-container";
 
 export function ProductPurchasing() {

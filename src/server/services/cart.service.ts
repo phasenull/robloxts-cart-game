@@ -8,9 +8,9 @@ import {
 } from "@rbxts/services"
 import { t } from "@rbxts/t"
 import { CartServerComponent } from "server/components/cart.server.component"
-import { A, assets } from "shared/assets"
+import { A, assets } from "@common/shared/assets"
 import { getConfig } from "shared/config.helper"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { ButtonModel, ICart } from "shared/type.helper"
 import { DataService } from "./data.service"
@@ -19,8 +19,8 @@ import { CheckpointService } from "./checkpoint.service"
 import { CustomizationService } from "./customization.service"
 import { arrow } from "@rbxts/better-gizmos"
 import StringUtils from "@rbxts/string-utils"
-import { isTester } from "shared/role.utils"
-import { OutlineHighlight } from "shared/util.helper"
+import { isTester } from "@common/shared/role.utils"
+import { OutlineHighlight } from "@common/shared/util.helper"
 
 @Service()
 export class CartService implements OnStart {

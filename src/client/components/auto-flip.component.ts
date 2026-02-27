@@ -4,7 +4,7 @@ import { Players } from "@rbxts/services"
 import { CartClientComponent } from "client/components/cart.client.component"
 import { CartTriggerComponent } from "client/components/cart-trigger.component"
 import { CartController } from "client/controllers/cart.controller"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 
 interface AutoFlipTrigger extends Model {
 	Trigger: BasePart

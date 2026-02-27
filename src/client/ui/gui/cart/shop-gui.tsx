@@ -2,18 +2,17 @@ import React, { useEffect, useRef, useState } from "@rbxts/react";
 import { useQuery } from "@rbxts/react-query";
 import { ICart, IInventoryData, IShopItem } from "shared/type.helper";
 import { ClientFunctions } from "shared/network.helper";
-import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper";
 import { ShopCartList } from "./components/shop-cart-list";
 import { ShopBottomHud } from "./components/shop-bottom-hud";
-import PopGui from "client/ui/components/pop-gui";
 import { useShopPreview } from "./hooks/useShopPreview";
 import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation";
 import { useGarageCamera } from "./hooks/useGarageCamera";
 import { MOCK_CART_SHOP, MOCK_HONK_INVENTORY, MOCK_HONK_SHOP, MOCK_INVENTORY } from "shared/mocks";
-import { UIHelper } from "client/ui.helper";
+import { UIHelper } from "@common/client/ui.helper";
 import { ShopHonkGrid } from "./components/shop-honk-grid";
 import { Workspace } from "@rbxts/services";
 import { ShopWorldviewGuis } from "../customization/shopWorldviewGuis";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
 
 export function CartCustomizationGui() {
 	const isFirstRenderRef = useRef(true);

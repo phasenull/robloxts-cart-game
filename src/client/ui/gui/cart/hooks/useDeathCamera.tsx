@@ -1,6 +1,6 @@
 import { useEffect } from "@rbxts/react"
 import { Players, Workspace } from "@rbxts/services"
-import useAnimateValue from "client/ui/hooks/useAnimateValue"
+import useAnimateValue from "@common/client/ui/hooks/useAnimateValue"
 
 interface UseDeathCameraProps {
 	spawnPoint: CFrame | undefined

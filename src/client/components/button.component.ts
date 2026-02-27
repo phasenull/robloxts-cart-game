@@ -2,7 +2,7 @@ import { BaseComponent, Component } from "@flamework/components"
 import { OnStart } from "@flamework/core"
 import { Players, TweenService } from "@rbxts/services"
 import Signal from "@rbxts/signal"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import { ClientEvents } from "shared/network.helper"
 import { ButtonModel } from "shared/type.helper"
 

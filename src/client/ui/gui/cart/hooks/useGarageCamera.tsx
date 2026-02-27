@@ -1,6 +1,6 @@
 import { useEffect } from "@rbxts/react"
 import { Workspace } from "@rbxts/services"
-import { SHOP_CAMERA_OFFSET, SHOP_CAMERA_FOV } from "client/ui/constants"
+import { SHOP_CAMERA_OFFSET, SHOP_CAMERA_FOV } from "@common/client/ui/constants"
 
 const GARAGE_PIVOT_PATH = ["GaragePreview", "CartPreviewAttachment"] as const
 const GARAGE_FOV = SHOP_CAMERA_FOV

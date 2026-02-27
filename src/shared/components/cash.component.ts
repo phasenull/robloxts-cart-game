@@ -6,13 +6,13 @@ import type { DataService } from "server/services/data.service";
 import {
 	BuildDeepWeldConstraints,
 	BuildWeldConstraints,
-} from "shared/util.helper";
+} from "@common/shared/util.helper";
 import { CartTouch } from "./cart-touch.component";
-import Signal from "@rbxts/signal";
-import { assets } from "shared/assets";
+import { CashPopupSignal } from "@common/shared/cash-popup.signal";
+import { assets } from "@common/shared/assets";
 import { Children } from "@rbxts/react";
-import { Logger } from "shared/logger";
-import { __IS_CLIENT__ } from "shared/config.helper";
+import { Logger } from "@common/shared/logger";
+import { __IS_CLIENT__ } from "@common/shared/config.builder";
 
 @Component({ tag: "CashComponent" })
 export class CashComponent extends CartTouch<
@@ -157,4 +157,4 @@ export class CashComponent extends CartTouch<
 	}
 }
 
-export const CashPopupSignal = new Signal<(position: Vector3) => void>();
+export { CashPopupSignal } from "@common/shared/cash-popup.signal";

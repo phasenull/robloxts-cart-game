@@ -1,5 +1,5 @@
 import { Dependency, OnStart, Service } from "@flamework/core"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import {
 	IShopItemTypes,
 	IShopItem,
@@ -13,7 +13,7 @@ import { DataService } from "./data.service"
 import { CartService } from "./cart.service"
 import { getConfig } from "shared/config.helper"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
-import { A, assets } from "shared/assets"
+import { A, assets } from "@common/shared/assets"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { PRODUCTS } from "shared/purchasables"
 

@@ -2,7 +2,7 @@ import { Component } from "@flamework/components"
 import { Dependency } from "@flamework/core"
 import { CartService } from "server/services/cart.service"
 import { CartTouch } from "shared/components/cart-touch.component"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 
 @Component({ tag: "DamageComponent" })
 export class DamageComponent extends CartTouch {

@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from "@rbxts/react";
-import { PurchasableContainer } from "client/ui/components/purchasable-container";
-import { useNavigator } from "client/ui/hooks/useNavigator";
+import { PurchasableContainer } from "@common/client/ui/components/purchasable-container";
+import { useNavigator } from "@common/client/ui/hooks/useNavigator";
 import { purchasables } from "shared/purchasables";
 import { RottenShopList } from "./rotten-shop-list";
-import { UIHelper } from "client/ui.helper";
+import { UIHelper } from "@common/client/ui.helper";
 
 export function RottenShopGui() {
 	const { closeAll } = useNavigator();

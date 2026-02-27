@@ -1,14 +1,12 @@
 import React, { useEffect } from "@rbxts/react";
-import { RottenButton } from "client/ui/components/buttons/rotten-button";
-import { UIDIM } from "client/ui/constants";
-import { A } from "shared/assets";
+import { UIDIM } from "@common/client/ui/constants";
+import { A } from "@common/shared/assets";
 import Object from "@rbxts/object-utils";
 import { useMutation, useQuery } from "@rbxts/react-query";
 import { ClientFunctions } from "shared/network.helper";
-import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper";
-import { GoofyButton } from "client/ui/components/buttons/goofy-button";
-import { useNavigator } from "client/ui/hooks/useNavigator";
-import { UIHelper } from "client/ui.helper";
+import { GoofyButton } from "@common/client/ui/components/buttons/goofy-button";
+import { useNavigator } from "@common/client/ui/hooks/useNavigator";
+import { UIHelper } from "@common/client/ui.helper";
 import { Dependency } from "@flamework/core";
 import { CartController } from "client/controllers/cart.controller";
 import { useCart } from "client/ui/contexts/cart.context";
@@ -19,6 +17,8 @@ import {
 } from "shared/purchasables";
 import { MarketplaceService } from "@rbxts/services";
 import { useCheckpoint } from "./cart/hooks/useCheckpoint";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
 
 export function TPGui() {
 	const { collectedCheckpoints, refresh } = useCheckpoint();

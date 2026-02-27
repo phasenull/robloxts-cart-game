@@ -1,7 +1,7 @@
 import { useEffect } from "@rbxts/react"
 import { ClientEvents } from "shared/network.helper"
 import { useNotifications } from "../contexts/notification.context"
-import { __IS_EDIT__ } from "shared/config.helper"
+import { __IS_EDIT__ } from "@common/shared/config.builder";
 
 export function useNotificationListener() {
 	const { addNotification } = useNotifications()

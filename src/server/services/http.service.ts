@@ -1,6 +1,6 @@
 import { OnStart, Service } from "@flamework/core"
 import { fetch, Request } from "@rbxts/fetch-patched"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 
 
 @Service()

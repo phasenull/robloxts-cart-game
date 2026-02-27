@@ -1,8 +1,8 @@
 import { BaseComponent, Component } from "@flamework/components"
 import { TweenService } from "@rbxts/services"
 import { t } from "@rbxts/t"
-import { assets } from "shared/assets"
-import { Logger } from "shared/logger"
+import { assets } from "@common/shared/assets"
+import { Logger } from "@common/shared/logger"
 interface CartTrigger extends Model {
 	Trigger: BasePart
 }

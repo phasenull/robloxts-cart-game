@@ -8,10 +8,10 @@ import React, {
 } from "@rbxts/react"
 import { Players } from "@rbxts/services"
 import { CartClientComponent } from "client/components/cart.client.component"
-import { AnimationController } from "client/controllers/animation.controller"
+import { AnimationController } from "@common/client/controllers/animation.controller"
 import { CartController } from "client/controllers/cart.controller"
-import { __IS_EDIT__ } from "shared/config.helper"
-import { Logger } from "shared/logger"
+import { __IS_EDIT__ } from "@common/shared/config.builder"
+import { Logger } from "@common/shared/logger"
 import { ClientEvents } from "shared/network.helper"
 
 const logger = new Logger("CartContext")

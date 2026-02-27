@@ -1,6 +1,6 @@
 import { useMutation } from "@rbxts/react-query"
 import { Workspace } from "@rbxts/services"
-import { assets } from "shared/assets"
+import { assets } from "@common/shared/assets"
 import {
 	AnimateGarageMovement,
 	CartAnimator,

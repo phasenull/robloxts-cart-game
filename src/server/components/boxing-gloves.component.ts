@@ -9,7 +9,7 @@ import {
 	MasslessPart,
 	OutlineHighlight,
 	TweenValue
-} from "shared/util.helper"
+} from "@common/shared/util.helper"
 import { CartService } from "server/services/cart.service"
 
 @Component({

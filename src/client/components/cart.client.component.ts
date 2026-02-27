@@ -6,12 +6,9 @@ import { MarketplaceService, Players, Workspace } from "@rbxts/services"
 import Signal from "@rbxts/signal"
 import StringUtils from "@rbxts/string-utils"
 import { t } from "@rbxts/t"
-import { AnimationController } from "client/controllers/animation.controller"
 import { CartController } from "client/controllers/cart.controller"
-import { UIHelper } from "client/ui.helper"
-import { __STUDIO__ } from "client/ui/constants"
 import { IHandBrake } from "shared/cart.helper"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import { ClientEvents, ClientFunctions } from "shared/network.helper"
 import { PRODUCTS } from "shared/purchasables"
 import { ICart, ICartEntry, IWheel } from "shared/type.helper"
@@ -19,7 +16,8 @@ import {
 	calculateSteepDiffFromHumanoid,
 	normalizeVector3,
 	OutlineHighlight
-} from "shared/util.helper"
+} from "@common/shared/util.helper"
+import { AnimationController } from "@common/client/controllers/animation.controller";
 
 @Component({
 	tag: "CartComponent",

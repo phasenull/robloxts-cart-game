@@ -7,8 +7,9 @@ import {
 	ClientHandler as ClientHandlerFunction,
 	ServerHandler as ServerHandlerFunction
 } from "@flamework/networking/out/functions/types"
-import { __IS_CLIENT__, __IS_EDIT__, __IS_SERVER__ } from "./config.helper"
-import { ButtonModel, ICart, ICartConfig, IInventoryData, INotification, IShopItem, IShopItemTypes, ProperReturns } from "./type.helper"
+import { ButtonModel, ICart, ICartConfig, IInventoryData, INotification, IShopItem, IShopItemTypes } from "./type.helper"
+import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { ProperReturns } from "@common/shared/util.helper";
 /*
 
 	SERVER TO CLIENT

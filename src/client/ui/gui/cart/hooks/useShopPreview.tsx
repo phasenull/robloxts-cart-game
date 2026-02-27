@@ -1,14 +1,14 @@
 import { Workspace } from "@rbxts/services"
 import { useCartModel } from "./useCartModel"
 import { useEffect, useRef, useState } from "@rbxts/react"
-import { useMouseDelta } from "client/ui/hooks/useMouseDelta"
+import { useMouseDelta } from "@common/client/ui/hooks/useMouseDelta"
 import {
 	AnimateGarageMovement,
 	BrickifyModel,
 	RigCartModel
 } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
-import { SHOP_CAMERA_OFFSET } from "client/ui/constants"
+import { SHOP_CAMERA_OFFSET } from "@common/client/ui/constants"
 const GaragePivot = Workspace.FindFirstChild("GaragePreview")?.FindFirstChild(
 	"CartPreviewAttachment"
 ) as Attachment

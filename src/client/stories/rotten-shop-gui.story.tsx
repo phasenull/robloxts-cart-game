@@ -2,8 +2,8 @@ import React from "@rbxts/react"
 import ReactRoblox from "@rbxts/react-roblox"
 import { InferFusionProps } from "@rbxts/ui-labs"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
-import { ErrorProvider } from "client/ui/contexts/error.context"
-import { GuiProvider } from "client/ui/contexts/gui-manager.context"
+import { ErrorProvider } from "@common/client/ui/contexts/error.context"
+import { GuiProvider } from "@common/client/ui/contexts/gui-manager.context"
 import { RottenShopGui } from "client/ui/gui/rotten-shop/rotten-shop-gui";
 
 const query_client = new QueryClient({

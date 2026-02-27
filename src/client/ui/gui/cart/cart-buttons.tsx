@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from "@rbxts/react"
 
-import useAnimateValue from "../../hooks/useAnimateValue"
-import { UIDIM } from "client/ui/constants"
-import { RottenButton } from "client/ui/components/buttons/rotten-button"
+import useAnimateValue from "@common/client/ui/hooks/useAnimateValue"
+import { UIDIM } from "@common/client/ui/constants"
+import { RottenButton } from "@common/client/ui/components/buttons/rotten-button"
 import { useMutation } from "@rbxts/react-query"
 
-import { A } from "shared/assets"
+import { A } from "@common/shared/assets"
 import { TweenService } from "@rbxts/services"
-import { UIHelper } from "client/ui.helper"
+import { UIHelper } from "@common/client/ui.helper"
 import { useCart } from "client/ui/contexts/cart.context"
-import { useInputType } from "client/ui/hooks/useInputType"
+import { useInputType } from "@common/client/ui/hooks/useInputType"
 
 export function CartButtons(props: {
 	__story?: {

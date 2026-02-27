@@ -3,13 +3,13 @@ import { useEffect, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { Players, Workspace } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
-import { UIHelper } from "client/ui.helper"
+import { UIHelper } from "@common/client/ui.helper"
 import { useCart } from "client/ui/contexts/cart.context"
-import { assets } from "shared/assets"
+import { assets } from "@common/shared/assets"
 import { RigCartModel } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
 import { ClientEvents, ClientFunctions } from "shared/network.helper"
-import { __IS_EDIT__ } from "shared/config.helper"
+import { __IS_EDIT__ } from "@common/shared/config.builder"
 
 interface UseDeathPreviewProps {
 	spawnPoint: CFrame | undefined

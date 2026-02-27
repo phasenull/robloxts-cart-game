@@ -1,21 +1,20 @@
 import React, { useState } from "@rbxts/react"
-import { A } from "shared/assets"
-import { ErrorPopup } from "./components/error-popup"
-import PopGui from "./components/pop-gui"
-import { GUI_KEYS, PRIMARY, UIDIM } from "./constants"
-import { ErrorProvider, useErrorPage } from "./contexts/error.context"
-import { GuiProvider } from "./contexts/gui-manager.context"
-import { SettingsProvider } from "./contexts/settings.context"
+import { A } from "@common/shared/assets"
+import { ErrorPopup } from "@common/client/ui/components/error-popup"
+import { GUI_KEYS, PRIMARY, UIDIM } from "@common/client/ui/constants"
+import { ErrorProvider, useErrorPage } from "@common/client/ui/contexts/error.context"
+import { GuiProvider } from "@common/client/ui/contexts/gui-manager.context"
+import { SettingsProvider } from "@common/client/ui/contexts/settings.context"
 import { CartProvider } from "./contexts/cart.context"
 import { NotificationProvider } from "./contexts/notification.context"
 import { NotificationListener } from "./components/notification-listener"
-import BlurGui from "./gui/blur-gui"
+import BlurGui from "@common/client/ui/gui/blur-gui"
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
 import { CartHud } from "./gui/cart/cart-hud"
 import { DeathGui } from "./gui/cart/death-gui"
-import { __IS_EDIT__, __IS_STUDIO__ } from "shared/config.helper"
 import { CheckpointProvider } from "./gui/cart/hooks/useCheckpoint"
 import { RightSidebar } from "./components/right-sidebar"
+
 import Sidebar from "./gui/sidebar"
 import { CartCustomizationGui } from "./gui/cart/shop-gui"
 import { GlobalHUDGui } from "./gui/global-hud-gui"
@@ -24,9 +23,11 @@ import { CartGui } from "./gui/cart-gui";
 import { RottenShopGui } from "./gui/rotten-shop/rotten-shop-gui";
 import { TPGui } from "./gui/tp-gui";
 import { SettingsGui } from "./gui/settings-gui";
-import { FadeGui } from "./gui/fade-gui";
+import { FadeGui } from "@common/client/ui/gui/fade-gui";
 import { CashHUD } from "./components/cash-hud";
 import { ProductPurchasing } from "./gui/suspense/product-purchasing";
+import { __IS_EDIT__ } from "@common/shared/config.builder";
+import PopGui from "@common/client/ui/components/pop-gui";
 const query_client = new QueryClient({
 	mutations: {
 		onError: (err) => {}

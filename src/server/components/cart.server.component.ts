@@ -5,8 +5,7 @@ import { Players } from "@rbxts/services"
 import { t } from "@rbxts/t"
 import { CartService } from "server/services/cart.service";
 import { RigCartModel } from "shared/cart.helper"
-import { __IS_STUDIO__ } from "shared/config.helper"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import { ICart, IWheel } from "shared/type.helper"
 
 @Component({ tag: "CartComponent", instanceGuard: t.instanceOf("Model") })

@@ -10,13 +10,14 @@ import {
 } from "@rbxts/services"
 import Signal from "@rbxts/signal"
 import { CartClientComponent } from "client/components/cart.client.component"
-import { UIHelper } from "client/ui.helper"
-import { Logger } from "shared/logger"
+
+import { Logger } from "@common/shared/logger"
 import { ClientEvents, ClientFunctions } from "shared/network.helper"
 import { PRODUCTS } from "shared/purchasables"
 import { ProperReturns } from "shared/type.helper"
-import { assets } from "shared/assets"
+import { assets } from "@common/shared/assets"
 import { getNextSmallCheckpoint } from "shared/cart.helper"
+import { UIHelper } from "@common/client/ui.helper";
 
 @Controller({ loadOrder: 5 })
 export class CartController implements OnStart {

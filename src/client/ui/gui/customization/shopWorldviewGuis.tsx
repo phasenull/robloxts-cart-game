@@ -1,5 +1,5 @@
 import React from "@rbxts/react"
-import { GoofyText } from "client/ui/components/goofy-text"
+import { GoofyText } from "@common/client/ui/components/goofy-text"
 import { ICart } from "shared/type.helper"
 import { ShopBillboardGui } from "./shop-billboard-gui"
 import { getCartConfig } from "shared/cart.helper"

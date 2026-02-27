@@ -4,7 +4,7 @@ import {
 	BuildWeldConstraints,
 	MasslessPart,
 	TweenValue,
-} from "shared/util.helper";
+} from "@common/shared/util.helper";
 
 @Component({ tag: "IslandComponent" })
 export class IslandComponent extends BaseComponent<{}, Model> {

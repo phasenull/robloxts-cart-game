@@ -2,12 +2,13 @@ import React, { useEffect } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { ClientFunctions } from "shared/network.helper"
 import { ShopCartEntry } from "./shop-cart-entry"
-import { __IS_EDIT__, __IS_STUDIO__, getConfig } from "shared/config.helper"
-import { LoadingIndicator } from "client/ui/components/loading-indicator"
+import { LoadingIndicator } from "@common/client/ui/components/loading-indicator"
 import { IInventoryData, IShopItem } from "shared/type.helper"
-import { useNavigator } from "client/ui/hooks/useNavigator"
+import { useNavigator } from "@common/client/ui/hooks/useNavigator"
 import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks"
-import { UIDIM } from "client/ui/constants"
+import { UIDIM } from "@common/client/ui/constants"
+import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { getConfig } from "shared/config.helper";
 
 interface ShopCartListProps {
 	selectedItem: IShopItem | undefined

@@ -1,5 +1,5 @@
 import { Controller, OnStart } from "@flamework/core"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import React, { StrictMode } from "@rbxts/react"
 import { createPortal, createRoot } from "@rbxts/react-roblox"
 import { Players } from "@rbxts/services"

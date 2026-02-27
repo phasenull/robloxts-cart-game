@@ -3,7 +3,7 @@ import { AnalyticsService, Players, Workspace } from "@rbxts/services"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { CartService } from "./cart.service"
 import { DataService } from "./data.service"
-import { Logger } from "shared/logger"
+import { Logger } from "@common/shared/logger"
 import {
 	getCheckpointDataFromIndex,
 	getCheckpointModelByIndex,
