@@ -2,13 +2,18 @@ import { Logger } from "@common/shared/logger"
 import { OnStart, Service } from "@flamework/core"
 import { t } from "@rbxts/t"
 import { ServerFunctions } from "shared/network.helper"
-import { HttpService } from "./http.service"
+import { GetFeedbackResponse, HttpService } from "./http.service"
 
 const descriptionValidator = t.intersection(
 	t.string,
 	(value: unknown): value is string =>
 		typeIs(value, "string") && value.size() >= 10 && value.size() <= 1000
 )
+
+interface CacheEntry {
+	data: GetFeedbackResponse
+	expiresAt: number
+}
 
 @Service()
 export class FeedbackService implements OnStart {
@@ -18,6 +23,23 @@ export class FeedbackService implements OnStart {
 	) {}
 
 	private readonly MAX_PENDING = 10
+	private readonly CACHE_TTL = 60
+	private cache = new Map<number, CacheEntry>()
+
+	private async getCachedFeedbacks(userId: number) {
+		const now = os.clock()
+		const cached = this.cache.get(userId)
+		if (cached && cached.expiresAt > now) {
+			return cached.data
+		}
+		const result = await this.httpService.getPlayerFeedbacks(userId)
+		this.cache.set(userId, { data: result, expiresAt: now + this.CACHE_TTL })
+		return result
+	}
+
+	private invalidateCache(userId: number) {
+		this.cache.delete(userId)
+	}
 
 	onStart() {
 		ServerFunctions.FeedbackService.submitFeedback.setCallback(
@@ -27,9 +49,7 @@ export class FeedbackService implements OnStart {
 				}
 
 				// Fetch existing feedbacks to enforce pending limit
-				const existing = await this.httpService
-					.getPlayerFeedbacks(player.UserId)
-					.catch(() => undefined)
+				const existing = await this.getCachedFeedbacks(player.UserId).catch(() => undefined)
 				if (existing) {
 					const mine = existing.feedback.filter((f) => f.user_id === player.UserId)
 					const pendingCount = mine.filter((f) => f.status === "pending").size()
@@ -52,19 +72,18 @@ export class FeedbackService implements OnStart {
 				if (!result) {
 					return [false, "Failed to submit feedback"]
 				}
+				this.invalidateCache(player.UserId)
 				return [result.feedback]
 			}
 		)
 
 		ServerFunctions.FeedbackService.getMyFeedbacks.setCallback(async (player) => {
-			const result = await this.httpService
-				.getPlayerFeedbacks(player.UserId)
-				.catch((err) => {
-					this.logger.warn(
-						`Failed to fetch feedbacks for player ${player.UserId}: ${err}`
-					)
-					return undefined
-				})
+			const result = await this.getCachedFeedbacks(player.UserId).catch((err) => {
+				this.logger.warn(
+					`Failed to fetch feedbacks for player ${player.UserId}: ${err}`
+				)
+				return undefined
+			})
 			if (!result) {
 				return [false, "Failed to load feedback"]
 			}

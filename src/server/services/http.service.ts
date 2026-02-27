@@ -97,7 +97,7 @@ interface PostFeedbackResponse {
 	success: boolean
 	feedback: IFeedbackItem
 }
-interface GetFeedbackResponse {
+export interface GetFeedbackResponse {
 	feedback: IFeedbackItem[]
 	total: number
 }
