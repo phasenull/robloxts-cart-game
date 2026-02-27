@@ -27,13 +27,11 @@ export function RightSidebar() {
 			Enum.EasingDirection.Out,
 		),
 	});
-	const chatWindow = TextChatService.FindFirstChildOfClass("ChatWindowConfiguration") as ChatWindowConfiguration | undefined;
-	const is_chat_open = chatWindow?.Enabled ?? true;
 	return (
 		<frame
 			key={"right-sidebar"}
 			Size={UDim2.fromScale(0.6, 0.34)}
-			Position={UIDIM.LEFT.add(UDim2.fromScale(0, is_chat_open ? .1 : -.1))
+			Position={UIDIM.LEFT.add(UDim2.fromScale(0, -.1))
 				.add(UDim2.fromOffset(10, 0))
 				.add(UDim2.fromScale(-0.4 * animatedValue, 0))}
 			AnchorPoint={UIDIM.A_LEFT}

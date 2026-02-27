@@ -21,7 +21,8 @@ export class CashComponent extends CartTouch<
 		Trigger: BasePart;
 	}
 > {
-	private readonly debounce: Map<Player, number> = new Map();
+	// keyed by UserId to avoid Player reference issues
+	private readonly debounce: Map<number, number> = new Map();
 	private readonly DEBOUNCE_DURATION = 300;
 	private readonly CASH_AMOUNT = 50;
 	private client_collected = false;
@@ -76,15 +77,20 @@ export class CashComponent extends CartTouch<
 			this.logger.warn(`[CashComponent] Touch on ${this.instance.Name}: cart ${cart_model.Name} has no rider yet`);
 			return;
 		}
+		const cart_age = os.clock() - cart_component.spawnedAt;
+		if (cart_age < 2) {
+			this.logger.warn(`[CashComponent] Ignoring touch from ${player.Name} — cart just spawned (${string.format("%.2f", cart_age)}s ago)`);
+			return;
+		}
 		const now = os.clock();
-		const last = this.debounce.get(player) ?? 0;
+		const last = this.debounce.get(player.UserId) ?? 0;
 		const remaining = this.DEBOUNCE_DURATION - (now - last);
 		if (remaining > 0) {
 			this.logger.warn(`[CashComponent] ${player.Name} is on cooldown for ${this.instance.Name} — ${math.floor(remaining)}s remaining`);
 			return;
 		}
 		this.logger.log(`[CashComponent] Granting $${this.CASH_AMOUNT} to ${player.Name} from ${this.instance.Name}`);
-		this.debounce.set(player, now);
+		this.debounce.set(player.UserId, now);
 		Dependency<DataService>().grantPlayerCash(
 			player,
 			this.CASH_AMOUNT,

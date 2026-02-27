@@ -15,6 +15,7 @@ export class CartServerComponent
 {
 	private __is_cleaning_up = false
 	private rider: Player | undefined
+	readonly spawnedAt = os.clock()
 	cleanup(): void {
 		if (this.__is_cleaning_up) {
 			return
