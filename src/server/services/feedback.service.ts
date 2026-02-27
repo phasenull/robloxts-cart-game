@@ -1,8 +1,9 @@
 import { Logger } from "@common/shared/logger"
 import { OnStart, Service } from "@flamework/core"
 import { t } from "@rbxts/t"
+import { TextService } from "@rbxts/services"
 import { ServerFunctions } from "shared/network.helper"
-import { GetFeedbackResponse, HttpService } from "./http.service"
+import { GetFeedbackResponse, IFeedbackItem, HttpService } from "./http.service"
 
 const descriptionValidator = t.intersection(
 	t.string,
@@ -39,6 +40,14 @@ export class FeedbackService implements OnStart {
 
 	private invalidateCache(userId: number) {
 		this.cache.delete(userId)
+	}
+
+	private filterText(text: string, fromUserId: number): string {
+		const [ok, result] = pcall(() => TextService.FilterStringAsync(text, fromUserId))
+		if (!ok || !result) return text
+		const [ok2, filtered] = pcall(() => (result as TextFilterResult).GetNonChatStringForBroadcastAsync())
+		if (!ok2 || !filtered) return text
+		return filtered as string
 	}
 
 	onStart() {
@@ -88,7 +97,12 @@ export class FeedbackService implements OnStart {
 				return [false, "Failed to load feedback"]
 			}
 			const mine = result.feedback.filter((f) => f.user_id === player.UserId)
-			return [mine]
+			const filtered: IFeedbackItem[] = mine.map((f) => ({
+				...f,
+				description: this.filterText(f.description, f.user_id),
+				response: f.response !== undefined ? this.filterText(f.response, 0) : undefined,
+			}))
+			return [filtered]
 		})
 	}
 }

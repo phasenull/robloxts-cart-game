@@ -83,7 +83,7 @@ interface PostPlayerRequest {
 	playtime: number
 	robux_spent: number
 }
-interface IFeedbackItem {
+export interface IFeedbackItem {
 	id: number
 	user_id: number
 	description: string
