@@ -2,11 +2,11 @@ import { Controller, OnStart } from "@flamework/core"
 import { Logger } from "@common/shared/logger"
 import React, { StrictMode } from "@rbxts/react"
 import { createPortal, createRoot } from "@rbxts/react-roblox"
-import { GroupService, Players } from "@rbxts/services"
+import { Players } from "@rbxts/services"
 import { App } from "client/ui/App"
+import { promptGroupJoin } from "client/group-prompt"
 
-const GROUP_ID = 1059580522
-const GROUP_PROMPT_INTERVAL = 5 * 60 // 5 minutes in seconds
+const GROUP_PROMPT_INTERVAL = 180 // seconds
 
 @Controller()
 export class UIController implements OnStart {
@@ -25,17 +25,11 @@ export class UIController implements OnStart {
 
 		root.render(<StrictMode>{createPortal(<App />, screen_gui)}</StrictMode>)
 
-		const local_player = Players.LocalPlayer
-		const promptIfNotMember = () => {
-			task.spawn(() => {
-				GroupService.PromptJoinAsync(GROUP_ID)
-			})
-		}
-		promptIfNotMember()
+		promptGroupJoin()
 		task.spawn(() => {
 			while (true) {
 				task.wait(GROUP_PROMPT_INTERVAL)
-				promptIfNotMember()
+				promptGroupJoin()
 			}
 		})
 	}

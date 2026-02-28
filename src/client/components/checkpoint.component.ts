@@ -4,13 +4,12 @@ import { CartTriggerComponent } from "./cart-trigger.component"
 import { t } from "@rbxts/t"
 import { Dependency, OnStart } from "@flamework/core"
 import { CartClientComponent } from "./cart.client.component"
-import { GroupService, Players } from "@rbxts/services"
+import { Players } from "@rbxts/services"
 import { UIHelper } from "@common/client/ui.helper"
 import { A, assets } from "@common/shared/assets"
 import { sphere } from "@rbxts/better-gizmos"
 import { ClientEvents } from "shared/network.helper"
-
-const GROUP_ID = 1059580522
+import { promptGroupJoin } from "client/group-prompt"
 
 @Component({ tag: "CheckpointComponent" })
 export class CheckpointComponent
@@ -128,7 +127,7 @@ export class CheckpointComponent
 
 		const is_big_checkpoint = !!this.instance.FindFirstChild("Spawn")
 		if (is_big_checkpoint) {
-			task.spawn(() => GroupService.PromptJoinAsync(GROUP_ID))
+			promptGroupJoin()
 		}
 	}
 	public cleanup() {
