@@ -114,6 +114,10 @@ export class CashComponent extends CartTouch<
 			?.GetDescendants()
 			.filter((d) => d.IsA("BasePart")) ?? []) as BasePart[];
 		for (const part of visual_parts) part.Transparency = 1;
+		const particle_emitters = (visuals
+			?.GetDescendants()
+			.filter((d) => d.IsA("ParticleEmitter")) ?? []) as ParticleEmitter[];
+		for (const emitter of particle_emitters) emitter.Enabled = false;
 
 		// Get clone parts for fade
 		const clone_visuals = clone.FindFirstChild("Visuals") as Model | undefined;
@@ -152,6 +156,7 @@ export class CashComponent extends CartTouch<
 			if (!current_visuals) return;
 			for (const d of current_visuals.GetDescendants()) {
 				if (d.IsA("BasePart")) d.Transparency = 0;
+				if (d.IsA("ParticleEmitter")) d.Enabled = true;
 			}
 		});
 	}

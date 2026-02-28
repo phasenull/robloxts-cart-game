@@ -25,8 +25,8 @@ export function RottenShopList() {
 			<SoleCartsFrame>
 				<SoleCartEntry
 					backgroundImage={A.backgrounds.box_weld}
-					cartName="V8 Cart"
-					description="3x More Speed"
+					cartName="Ultra Fast Cart"
+					description="Gotta go fast!"
 				/>
 				<SoleCartEntry
 					backgroundImage={A.backgrounds.box_weld}
