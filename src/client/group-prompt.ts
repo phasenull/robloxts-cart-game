@@ -10,5 +10,5 @@ export function promptGroupJoin() {
 	const now = os.clock()
 	if (now - last_prompted < DEBOUNCE_DURATION) return
 	last_prompted = now
-	task.spawn(() => GroupService.PromptJoinAsync(GROUP_ID))
+	// task.spawn(() => GroupService.PromptJoinAsync(GROUP_ID))
 }
