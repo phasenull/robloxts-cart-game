@@ -20,9 +20,35 @@ export class CheckpointService implements OnStart {
 		.filter((child) => child.IsA("Model")) as Model[]
 	onStart(): void {
 		Players.PlayerAdded.Connect((player) => {
-			this.setCheckpointIndex(player, 0)
+			const data_service = Dependency<DataService>()
+			let profile_loaded = false
+
+			const applyCheckpoint = () => {
+				profile_loaded = true
+				const loaded_profile = data_service.getProfile(player)
+				if (!loaded_profile) return
+				const saved = loaded_profile.Data.collected_checkpoints
+				const last_big = saved.size() > 0 ? math.max(...saved) : 0
+				this.setCheckpointIndex(player, last_big)
+				// Respawn character at the correct checkpoint now that we know it
+				if (player.Character) {
+					this.spawnPlayerAtTheirBigCheckpoint(player)
+				}
+			}
+
+			const existing_profile = data_service.getProfile(player)
+			if (existing_profile) {
+				applyCheckpoint()
+			} else {
+				data_service.subscribePlayerDataLoaded(player).Connect(applyCheckpoint)
+			}
+
 			player.CharacterAdded.Connect(() => {
-				this.processPlayerDeath(player)
+				// Only spawn at checkpoint after profile is loaded; first spawn before
+				// profile loads is handled by applyCheckpoint above once it fires
+				if (profile_loaded) {
+					this.processPlayerDeath(player)
+				}
 			})
 		})
 		ServerFunctions.CheckpointService.tpMeToBigCheckpoint.setCallback(

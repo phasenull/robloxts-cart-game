@@ -25,11 +25,11 @@ export class UIController implements OnStart {
 
 		root.render(<StrictMode>{createPortal(<App />, screen_gui)}</StrictMode>)
 
-		promptGroupJoin()
 		task.spawn(() => {
+			task.wait(60)
 			while (true) {
-				task.wait(GROUP_PROMPT_INTERVAL)
 				promptGroupJoin()
+				task.wait(GROUP_PROMPT_INTERVAL)
 			}
 		})
 	}
