@@ -206,18 +206,10 @@ export class CartService implements OnStart {
 						this.refreshPlayerProducts(player)
 						return [true]
 					case "flips":
-						if ((profile.Data.flips || 0) <= 0) {
-							return [false, "Not enough flips"]
-						}
-						profile.Data.flips = (profile.Data.flips || 0) - 1
-						this.logger.log(
-							`Player ${player.Name} used a flip. Remaining: ${profile.Data.flips}`
-						)
 						const cart2 = this.getPlayerCart(player)
 						if (cart2) {
 							this.addShield(cart2, 10)
 						}
-						this.refreshPlayerProducts(player)
 						return [true]
 					default:
 						this.refreshPlayerProducts(player)

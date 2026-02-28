@@ -250,7 +250,7 @@ export function CartButtons(props: {
 					<RottenButton
 						Size={UIDIM.ONE}
 						Ratio={2}
-						Text={`FLIP ${products.get("flips") || 0}x`}
+						Text={"FLIP"}
 						onClick={() => mutateFlip()}
 						Color={new Color3(0.11, 0.75, 0.95)}
 						action="FLIP"

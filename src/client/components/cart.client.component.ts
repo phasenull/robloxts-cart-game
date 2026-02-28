@@ -407,32 +407,8 @@ export class CartClientComponent
 			return false
 		}
 		this.__is_flipping = true
-		const [use_result, err] =
-			await ClientFunctions.CartService.useProduct.invokeWithTimeout(
-				5000,
-				"flips"
-			)
-		if (use_result) {
-			this.flipCart()
-			return true
-		}
-		MarketplaceService.PromptProductPurchase(
-			Players.LocalPlayer,
-			PRODUCTS.flips
-		)
-		const connection = MarketplaceService.PromptProductPurchaseFinished.Connect(
-			async (user_id, assetId, wasPurchased) => {
-				if (user_id !== Players.LocalPlayer.UserId) return
-				if (assetId !== PRODUCTS.flips) return
-				connection.Disconnect()
-				if (!wasPurchased) return
-				this.flipCart()
-				await ClientFunctions.CartService.useProduct.invokeWithTimeout(
-					5000,
-					"flips"
-				)
-			}
-		)
+		await ClientFunctions.CartService.useProduct.invokeWithTimeout(5000, "flips")
+		this.flipCart()
 		return true
 	}
 	flipCart() {
