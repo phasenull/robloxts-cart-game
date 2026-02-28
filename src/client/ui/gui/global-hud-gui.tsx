@@ -19,8 +19,8 @@ export function CashLabel() {
 				return MOCK_CASH;
 			}
 			const [result, err] = await ClientFunctions.DataService.getCash();
-			if (err || result === false) {
-				throw err;
+			if (result === false || result === undefined) {
+				return false;
 			}
 			setCash(result);
 			return result;

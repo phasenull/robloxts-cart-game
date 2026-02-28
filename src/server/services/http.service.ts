@@ -3,8 +3,11 @@ import { fetch, Request } from "@rbxts/fetch-patched"
 import { Logger } from "@common/shared/logger"
 import { Players } from "@rbxts/services"
 
-interface SessionLeavePayload {
+interface SessionPayload {
 	uuid: string
+	user_id: number
+	server_version: string
+	joined_at: number
 	left_at: number
 	playtime: number
 	leave_x: number
@@ -20,7 +23,7 @@ export class HttpService implements OnStart {
 	private readonly host = "https://api.cart-game.project.phasenull.dev"
 	private readonly session_uuids = new Map<number, string>()
 	private readonly session_join_times = new Map<number, number>()
-	private readonly leave_queue: SessionLeavePayload[] = []
+	private readonly leave_queue: SessionPayload[] = []
 
 	onStart() {
 		game.BindToClose(() => {
@@ -31,39 +34,26 @@ export class HttpService implements OnStart {
 					this.enqueueLeave(player, 0)
 				}
 			}
-			this.flushLeaveQueue().await()
+			this.flushLeaveQueueSync()
 		})
 	}
 
 	sessionJoin(player: Player) {
 		const uuid = this.HttpService.GenerateGUID(false).lower()
-		const now = math.floor(os.time())
 		this.session_uuids.set(player.UserId, uuid)
 		this.session_join_times.set(player.UserId, os.clock())
-		task.spawn(async () => {
-			const [ok, err] = pcall(() =>
-				this.request<{ success: boolean }>(`/sessions/join`, {
-					method: "POST",
-					body: this.HttpService.JSONEncode({
-						uuid,
-						user_id: player.UserId,
-						server_version: tostring(game.PlaceVersion),
-						joined_at: now,
-					}),
-				} as unknown as Request).await()
-			)
-			if (!ok) this.logger.warn(`Failed to send session join for ${player.Name}: ${err}`)
-		})
 	}
 
 	sessionLeave(player: Player, last_checkpoint: number) {
 		this.enqueueLeave(player, last_checkpoint)
+		task.spawn(() => this.flushLeaveQueueSync())
 	}
 
 	private enqueueLeave(player: Player, last_checkpoint: number) {
 		const uuid = this.session_uuids.get(player.UserId)
 		if (!uuid) return
 		const join_clock = this.session_join_times.get(player.UserId) ?? os.clock()
+		const joined_at = math.floor(os.time() - (os.clock() - join_clock))
 		const playtime = math.floor(os.clock() - join_clock)
 		const left_at = math.floor(os.time())
 		const char = player.Character
@@ -72,6 +62,9 @@ export class HttpService implements OnStart {
 		this.session_join_times.delete(player.UserId)
 		this.leave_queue.push({
 			uuid,
+			user_id: player.UserId,
+			server_version: tostring(game.PlaceVersion),
+			joined_at,
 			left_at,
 			playtime,
 			leave_x: math.floor(pos?.X ?? 0),
@@ -81,23 +74,31 @@ export class HttpService implements OnStart {
 		})
 	}
 
-	private flushLeaveQueue(): Promise<void> {
+	private flushLeaveQueueSync() {
 		const payloads = [...this.leave_queue]
 		this.leave_queue.clear()
-		if (payloads.size() === 0) return Promise.resolve()
-		const pending = payloads.map((payload) =>
-			new Promise<void>((resolve) => {
-				const [ok, err] = pcall(() =>
-					this.request<{ success: boolean }>(`/sessions/leave`, {
-						method: "POST",
-						body: this.HttpService.JSONEncode(payload),
-					} as unknown as Request).await()
-				)
-				if (!ok) this.logger.warn(`Failed to send session leave: ${err}`)
-				resolve()
-			})
-		)
-		return Promise.all(pending).then(() => {})
+		this.logger.log(`Flushing ${payloads.size()} session leave(s)`)
+		const api_key = this.HttpService.GetSecret("API_KEY")
+		for (const payload of payloads) {
+			const body = this.HttpService.JSONEncode(payload)
+			this.logger.log(`Sending session leave for user ${payload.user_id}: ${body}`)
+			const [ok, result] = pcall(() =>
+				this.HttpService.RequestAsync({
+					Url: `${this.host}/sessions/leave`,
+					Method: "POST",
+					Headers: {
+						"Content-Type": "application/json",
+						Authorization: api_key.AddPrefix("Bearer "),
+					},
+					Body: body,
+				})
+			)
+			if (!ok) {
+				this.logger.warn(`Request failed for user ${payload.user_id}: ${result}`)
+			} else {
+				this.logger.log(`Response for user ${payload.user_id}: status=${result.StatusCode} body=${result.Body}`)
+			}
+		}
 	}
 
 	async getUser(user_id: number) {
