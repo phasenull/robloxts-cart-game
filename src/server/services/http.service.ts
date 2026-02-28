@@ -1,16 +1,104 @@
 import { OnStart, Service } from "@flamework/core"
 import { fetch, Request } from "@rbxts/fetch-patched"
 import { Logger } from "@common/shared/logger"
+import { Players } from "@rbxts/services"
 
+interface SessionLeavePayload {
+	uuid: string
+	left_at: number
+	playtime: number
+	leave_x: number
+	leave_y: number
+	leave_z: number
+	last_collected_checkpoint: number
+}
 
 @Service()
-export class HttpService {
+export class HttpService implements OnStart {
 	constructor(private logger: Logger) {}
 	private readonly HttpService = game.GetService("HttpService")
 	private readonly host = "https://api.cart-game.project.phasenull.dev"
+	private readonly session_uuids = new Map<number, string>()
+	private readonly session_join_times = new Map<number, number>()
+	private readonly leave_queue: SessionLeavePayload[] = []
 
+	onStart() {
+		game.BindToClose(() => {
+			// Flush any sessions still open (e.g. server shutdown before PlayerRemoving)
+			for (const [user_id] of this.session_uuids) {
+				const player = Players.GetPlayerByUserId(user_id)
+				if (player) {
+					this.enqueueLeave(player, 0)
+				}
+			}
+			this.flushLeaveQueue().await()
+		})
+	}
 
+	sessionJoin(player: Player) {
+		const uuid = this.HttpService.GenerateGUID(false).lower()
+		const now = math.floor(os.time())
+		this.session_uuids.set(player.UserId, uuid)
+		this.session_join_times.set(player.UserId, os.clock())
+		task.spawn(async () => {
+			const [ok, err] = pcall(() =>
+				this.request<{ success: boolean }>(`/sessions/join`, {
+					method: "POST",
+					body: this.HttpService.JSONEncode({
+						uuid,
+						user_id: player.UserId,
+						server_version: tostring(game.PlaceVersion),
+						joined_at: now,
+					}),
+				} as unknown as Request).await()
+			)
+			if (!ok) this.logger.warn(`Failed to send session join for ${player.Name}: ${err}`)
+		})
+	}
 
+	sessionLeave(player: Player, last_checkpoint: number) {
+		this.enqueueLeave(player, last_checkpoint)
+	}
+
+	private enqueueLeave(player: Player, last_checkpoint: number) {
+		const uuid = this.session_uuids.get(player.UserId)
+		if (!uuid) return
+		const join_clock = this.session_join_times.get(player.UserId) ?? os.clock()
+		const playtime = math.floor(os.clock() - join_clock)
+		const left_at = math.floor(os.time())
+		const char = player.Character
+		const pos = char?.PrimaryPart?.Position ?? char?.FindFirstChildWhichIsA("BasePart")?.Position
+		this.session_uuids.delete(player.UserId)
+		this.session_join_times.delete(player.UserId)
+		this.leave_queue.push({
+			uuid,
+			left_at,
+			playtime,
+			leave_x: math.floor(pos?.X ?? 0),
+			leave_y: math.floor(pos?.Y ?? 0),
+			leave_z: math.floor(pos?.Z ?? 0),
+			last_collected_checkpoint: last_checkpoint,
+		})
+	}
+
+	private flushLeaveQueue(): Promise<void> {
+		const payloads = [...this.leave_queue]
+		this.leave_queue.clear()
+		if (payloads.size() === 0) return Promise.resolve()
+		const pending = payloads.map((payload) =>
+			new Promise<void>((resolve) => {
+				const [ok, err] = pcall(() =>
+					this.request<{ success: boolean }>(`/sessions/leave`, {
+						method: "POST",
+						body: this.HttpService.JSONEncode(payload),
+					} as unknown as Request).await()
+				)
+				if (!ok) this.logger.warn(`Failed to send session leave: ${err}`)
+				resolve()
+			})
+		)
+		return Promise.all(pending).then(() => {})
+	}
 
 	async getUser(user_id: number) {
 		return await this.request<GetPlayerResponse>(

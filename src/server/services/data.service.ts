@@ -46,24 +46,30 @@ export class DataService extends BaseDataService<typeof PROFILE_TEMPLATE> implem
 	}
 
 	protected onPlayerAdded(player: Player, profile: PlayerProfile): void {
-		Dependency<HttpService>().syncPlayer({
+		const http = Dependency<HttpService>()
+		http.syncPlayer({
 			user_id: player.UserId,
 			cash: profile.Data.cash,
 			playtime: profile.Data.playtime,
 			robux_spent: profile.Data.robux_spent,
 		})
+		http.sessionJoin(player)
 		task.delay(0.5, () => {
 			ServerEvents.DataService.updatePlayerCash.fire(player, profile.Data.cash)
 		})
 	}
 
 	protected onPlayerRemoving(player: Player, profile: PlayerProfile): void {
-		Dependency<HttpService>().syncPlayer({
+		const http = Dependency<HttpService>()
+		http.syncPlayer({
 			user_id: player.UserId,
 			cash: profile.Data.cash,
 			playtime: profile.Data.playtime,
 			robux_spent: profile.Data.robux_spent,
 		})
+		const collected = profile.Data.collected_checkpoints
+		const last_checkpoint = collected.size() > 0 ? math.max(...collected) : 0
+		http.sessionLeave(player, last_checkpoint)
 	}
 
 	// ─── Cash ─────────────────────────────────────────────────────────────────
