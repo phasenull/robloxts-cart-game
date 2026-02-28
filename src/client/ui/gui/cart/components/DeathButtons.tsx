@@ -18,10 +18,7 @@ import { GoofyText } from "@common/client/ui/components/goofy-text";
 
 const GROUP_ID = 1059580522
 function promptGroupJoinIfNotMember() {
-	const local_player = Players.LocalPlayer
-	if (!local_player.IsInGroup(GROUP_ID)) {
-		GroupService.PromptJoinAsync(GROUP_ID)
-	}
+	task.spawn(() => GroupService.PromptJoinAsync(GROUP_ID))
 }
 
 interface DeathButtonsProps {

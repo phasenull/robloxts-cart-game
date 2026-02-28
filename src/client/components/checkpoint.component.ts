@@ -128,10 +128,7 @@ export class CheckpointComponent
 
 		const is_big_checkpoint = !!this.instance.FindFirstChild("Spawn")
 		if (is_big_checkpoint) {
-			const local_player = Players.LocalPlayer
-			if (!local_player.IsInGroup(GROUP_ID)) {
-				GroupService.PromptJoinAsync(GROUP_ID)
-			}
+			task.spawn(() => GroupService.PromptJoinAsync(GROUP_ID))
 		}
 	}
 	public cleanup() {

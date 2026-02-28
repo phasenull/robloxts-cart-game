@@ -27,9 +27,9 @@ export class UIController implements OnStart {
 
 		const local_player = Players.LocalPlayer
 		const promptIfNotMember = () => {
-			if (!local_player.IsInGroup(GROUP_ID)) {
+			task.spawn(() => {
 				GroupService.PromptJoinAsync(GROUP_ID)
-			}
+			})
 		}
 		promptIfNotMember()
 		task.spawn(() => {
