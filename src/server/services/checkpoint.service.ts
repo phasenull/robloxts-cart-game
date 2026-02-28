@@ -191,7 +191,8 @@ export class CheckpointService implements OnStart {
 		// SMALL CHECKPOINT
 		cframe = (checkpoint.FindFirstChild("Trigger") as BasePart)?.CFrame
 		char.PivotTo(cframe)
-		cart_service.spawnPlayerCartAtLocation(player, cframe)
+		const cart = cart_service.spawnPlayerCartAtLocation(player, cframe)
+		cart_service.addShield(cart, 5)
 	}
 	getPlayerCheckpoints(player: Player): number[] {
 		const profile_service = Dependency<DataService>()
