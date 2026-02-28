@@ -4,11 +4,13 @@ import { CartTriggerComponent } from "./cart-trigger.component"
 import { t } from "@rbxts/t"
 import { Dependency, OnStart } from "@flamework/core"
 import { CartClientComponent } from "./cart.client.component"
-import { Players } from "@rbxts/services"
+import { GroupService, Players } from "@rbxts/services"
 import { UIHelper } from "@common/client/ui.helper"
 import { A, assets } from "@common/shared/assets"
 import { sphere } from "@rbxts/better-gizmos"
 import { ClientEvents } from "shared/network.helper"
+
+const GROUP_ID = 1059580522
 
 @Component({ tag: "CheckpointComponent" })
 export class CheckpointComponent
@@ -123,7 +125,14 @@ export class CheckpointComponent
 		})
 		const name = this.instance.Name
 		ClientEvents.CheckpointService.setCheckpoint.fire(tonumber(name) || 0)
-		
+
+		const is_big_checkpoint = !!this.instance.FindFirstChild("Spawn")
+		if (is_big_checkpoint) {
+			const local_player = Players.LocalPlayer
+			if (!local_player.IsInGroup(GROUP_ID)) {
+				GroupService.PromptJoinAsync(GROUP_ID)
+			}
+		}
 	}
 	public cleanup() {
 		this.is_collected = false

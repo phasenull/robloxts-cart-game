@@ -1,7 +1,7 @@
 import { Dependency } from "@flamework/core"
 import React, { useEffect } from "@rbxts/react"
 import { useMutation } from "@rbxts/react-query"
-import { MarketplaceService, Players } from "@rbxts/services"
+import { GroupService, MarketplaceService, Players } from "@rbxts/services"
 import { CartController } from "client/controllers/cart.controller"
 import { REVIVE_TIME, UIDIM } from "@common/client/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
@@ -15,6 +15,14 @@ import { __IS_EDIT__ } from "@common/shared/config.builder";
 import { RadialProgress } from "@common/client/ui/components/radial-progress";
 import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
 import { GoofyText } from "@common/client/ui/components/goofy-text";
+
+const GROUP_ID = 1059580522
+function promptGroupJoinIfNotMember() {
+	const local_player = Players.LocalPlayer
+	if (!local_player.IsInGroup(GROUP_ID)) {
+		GroupService.PromptJoinAsync(GROUP_ID)
+	}
+}
 
 interface DeathButtonsProps {
 	transparency: number
@@ -109,6 +117,7 @@ export function DeathButtons({
 				warn("No spawn point set for death screen")
 				return false
 			}
+			promptGroupJoinIfNotMember()
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
 			confirmHardReset()
