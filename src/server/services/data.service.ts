@@ -1,14 +1,10 @@
-import { Logger } from "@common/shared/logger";
-import { Dependency, OnStart, Service } from "@flamework/core";
-import ProfileService from "@rbxts/profileservice";
-import { Profile } from "@rbxts/profileservice/globals";
-import {
-    Players,
-    RunService
-} from "@rbxts/services";
-import Signal from "@rbxts/signal";
-import { ServerEvents, ServerFunctions } from "shared/network.helper";
-import { HttpService } from "./http.service";
+import { Logger } from "@common/shared/logger"
+import { BaseDataService } from "@common/server/base-data.service"
+import { Dependency, OnStart, Service } from "@flamework/core"
+import { Profile } from "@rbxts/profileservice/globals"
+import { ServerEvents, ServerFunctions } from "shared/network.helper"
+import { HttpService } from "./http.service"
+
 const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],
 	cash: 0,
@@ -18,167 +14,82 @@ const PROFILE_TEMPLATE = {
 	flips: 1,
 	collected_checkpoints: [0] as number[],
 	inventory: {
-		vehicles: ["Cart"], // Default cart for all players
-		honk: ["Quack"], // Default honk for all players
+		vehicles: ["Cart"],
+		honk: ["Quack"],
 	} as Record<string, string[]>,
 	customization: {
-		honk: ["Quack"], // Default equipped honk
+		honk: ["Quack"],
 	} as Record<string, string[]>,
-};
+}
 
-const PROFILE_STORE = ProfileService.GetProfileStore(
-	"players_2",
-	PROFILE_TEMPLATE,
-);
+export type PlayerProfile = Profile<typeof PROFILE_TEMPLATE>
 
 @Service({ loadOrder: 0 })
-export class DataService implements OnStart {
-	private state = new Map<number, Profile<typeof PROFILE_TEMPLATE>>();
-	private playtime_state = new Map<number, number>();
-	constructor(private logger: Logger) {}
+export class DataService extends BaseDataService<typeof PROFILE_TEMPLATE> implements OnStart {
+	protected readonly TEMPLATE = PROFILE_TEMPLATE
+	protected readonly STORE_NAME = "players_2"
 
-	public player_listeners = new Map<number, Signal<() => void>>();
-	public subscribePlayerDataLoaded(player: Player) {
-		let listener = this.player_listeners.get(player.UserId);
-		if (!listener) {
-			listener = new Signal<() => void>();
-			this.player_listeners.set(player.UserId, listener);
-		}
-		return listener;
+	constructor(logger: Logger) {
+		super(logger)
 	}
+
+	// ─── Lifecycle ────────────────────────────────────────────────────────────
+
 	public onStart(): void {
-		Players.PlayerAdded.Connect((player) => this.playerAdded(player));
-		Players.PlayerRemoving.Connect((player) => this.playerRemoving(player));
-		game.BindToClose(() => {
-			for (const player of Players.GetPlayers()) {
-				this.playerRemoving(player);
-			}
-		});
+		this.init()
 
-		// Setup network callbacks
 		ServerFunctions.DataService.getCash.setCallback((player) => {
-			const profile = this.getProfile(player);
-			if (!profile) {
-				return [false, "Profile not loaded"];
-			}
-			return [profile.Data.cash as number];
-		});
+			const profile = this.getProfile(player)
+			if (!profile) return [false, "Profile not loaded"]
+			return [profile.Data.cash]
+		})
 	}
+
+	protected onPlayerAdded(player: Player, profile: PlayerProfile): void {
+		Dependency<HttpService>().syncPlayer({
+			user_id: player.UserId,
+			cash: profile.Data.cash,
+			playtime: profile.Data.playtime,
+			robux_spent: profile.Data.robux_spent,
+		})
+		task.delay(0.5, () => {
+			ServerEvents.DataService.updatePlayerCash.fire(player, profile.Data.cash)
+		})
+	}
+
+	protected onPlayerRemoving(player: Player, profile: PlayerProfile): void {
+		Dependency<HttpService>().syncPlayer({
+			user_id: player.UserId,
+			cash: profile.Data.cash,
+			playtime: profile.Data.playtime,
+			robux_spent: profile.Data.robux_spent,
+		})
+	}
+
+	// ─── Cash ─────────────────────────────────────────────────────────────────
 
 	public grantPlayerCash(
 		player: Player,
 		amount: number,
 		reason?: string,
-		skipQuestProgress?: boolean,
+		_skipQuestProgress?: boolean,
 		silent = false,
-	) {
-		const profile = this.getProfile(player);
+	): number | undefined {
+		const profile = this.getProfile(player)
 		if (!profile) {
-			this.logger.warn(
-				`Tried to grant cash to player ${player.Name} but their profile was not loaded`,
-			);
-			return;
+			this.logger.warn(`Tried to grant cash to ${player.Name} but profile not loaded`)
+			return undefined
 		}
-		const current = profile.Data.cash as number;
-		profile.Data.cash = (current + amount) as any;
-		this.logger.log(
-			`Granted ${amount} cash to player ${player.Name}. Reason: ${reason || "N/A"}`,
-		);
-
-		// Fire network event to update UI
-		ServerEvents.DataService.updatePlayerCash.fire(
-			player,
-			profile.Data.cash as number,
-		);
-
+		profile.Data.cash += amount
+		this.logger.log(`Granted ${amount} cash to ${player.Name}. Reason: ${reason ?? "N/A"}`)
+		ServerEvents.DataService.updatePlayerCash.fire(player, profile.Data.cash)
 		if (amount > 0 && !silent) {
 			ServerEvents.NotificationService.sendNotification(player, {
 				title: "<b>Cash Earned</b>",
 				description: `<font color='#00FF00'>+$${amount}</font>${reason ? ` - ${reason}` : ""}`,
 				duration: 10,
-			});
+			})
 		}
-		return profile.Data.cash as number;
-	}
-
-	public playerAdded(player: Player) {
-		const profile = PROFILE_STORE.LoadProfileAsync(`${player.UserId}`);
-		if (profile === undefined) {
-			player.Kick("Could not load your data!");
-			return;
-		}
-		profile.Reconcile();
-		profile.ListenToRelease(() => {
-			this.state.delete(player.UserId);
-			player.Kick("Your data was unloaded!");
-		});
-		if (RunService.IsStudio()) {
-			// this.logger.log(
-			// 	"[STUDIO] Profile loaded for player " + player.Name + ", total playtime: " + profile.Data.playtime,
-			// );
-		}
-		this.state.set(player.UserId, profile);
-		this.playtime_state.set(player.UserId, os.clock());
-		const listener = this.player_listeners.get(player.UserId);
-		if (listener) {
-			listener.Fire();
-		}
-		Dependency<HttpService>().syncPlayer({
-			user_id: player.UserId,
-			cash: profile.Data.cash as number,
-			playtime: profile.Data.playtime as number,
-			robux_spent: profile.Data.robux_spent as number,
-		});
-
-		// Send initial cash to client
-		task.delay(0.5, () => {
-			ServerEvents.DataService.updatePlayerCash.fire(
-				player,
-				profile.Data.cash as number,
-			);
-		});
-	}
-	// cash, kills, playtime, bounties
-
-	public changeOrderedStat(
-		player: Player,
-		stat: keyof typeof PROFILE_TEMPLATE,
-		amount: number,
-	) {
-		const profile = this.state.get(player.UserId);
-		if (!profile) {
-			return;
-		}
-		const current = profile.Data[stat] as number;
-		if (current === undefined || typeOf(current) !== "number") {
-			return;
-		}
-		(profile.Data[stat] as number) = (current + amount) as any;
-		this.logger.log(
-			`Changed stat ${stat} for player ${player.Name} by ${amount}. New value: ${profile.Data[stat]}`,
-		);
-	}
-	public playerRemoving(player: Player) {
-		const profile = this.state.get(player.UserId);
-		if (!profile) return;
-		const join_time = this.playtime_state.get(player.UserId) ?? os.clock();
-		const session_playtime = math.floor(os.clock() - join_time);
-		profile.Data.playtime =
-			(profile.Data.playtime as number) + session_playtime;
-		Dependency<HttpService>().syncPlayer({
-			user_id: player.UserId,
-			cash: profile.Data.cash as number,
-			playtime: profile.Data.playtime as number,
-			robux_spent: profile.Data.robux_spent as number,
-		});
-		this.playtime_state.delete(player.UserId);
-		// Update ordered stats
-		profile.Release();
-		this.state.delete(player.UserId);
-		this.playtime_state.delete(player.UserId);
-		this.logger.log(`Saved data for player ${player.Name} (${player.UserId})`);
-	}
-	public getProfile(player: Player) {
-		return this.state.get(player.UserId);
+		return profile.Data.cash
 	}
 }

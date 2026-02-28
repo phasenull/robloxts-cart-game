@@ -9,6 +9,7 @@ async function main() {
 	Flamework.addPaths("src/server/services");
 	Flamework.addPaths("src/server/components");
 	Flamework.addPaths("src/shared/components");
+	Flamework.addPaths("src/common/server");
 	Flamework.ignite();
 	logger.log("Flamework Ignited!");
 
