@@ -10,8 +10,8 @@ const PROFILE_TEMPLATE = {
 	cash: 0,
 	playtime: 0,
 	robux_spent: 0,
-	revives: 0,
-	flips: 1,
+	revives: 1,
+	flips: 5,
 	collected_checkpoints: [0] as number[],
 	inventory: {
 		vehicles: ["Cart"],
