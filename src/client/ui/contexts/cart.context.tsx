@@ -25,6 +25,8 @@ interface CartContextValue {
 	changeState: (state: CartState) => void
 	confirmHardReset: () => void
 	products: Map<string, number>
+	deathsAtCheckpoint: number
+	resetDeathsAtCheckpoint: () => void
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
@@ -37,6 +39,7 @@ export function CartProvider(props: {
 	const [state, setState] = useState<CartState>("none")
 	const [products,setProducts] = useState<Map<string, number>>(new Map())
 	const [spawnPoint, setSpawnPoint] = useState<CFrame | undefined>(undefined)
+	const [deathsAtCheckpoint, setDeathsAtCheckpoint] = useState(0)
 	useEffect(() => {
 		if (props.__story?.mock_state === undefined) { return }
 		if (props.__story.mock_state === "death_screen") {
@@ -109,6 +112,11 @@ export function CartProvider(props: {
 			case "none" :{
 				setSpawnPoint(undefined)
 				setCart(undefined)
+				break
+			}
+			case "death_screen": {
+				setDeathsAtCheckpoint((prev) => prev + 1)
+				break
 			}
 		}
 		setState(new_state)
@@ -126,7 +134,9 @@ export function CartProvider(props: {
 		spawnPoint,
 		changeState,
 		confirmHardReset,
-		products
+		products,
+		deathsAtCheckpoint,
+		resetDeathsAtCheckpoint: () => setDeathsAtCheckpoint(0),
 	}
 	useEffect(() => {
 		if (__IS_EDIT__) {

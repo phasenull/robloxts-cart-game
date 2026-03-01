@@ -1,6 +1,6 @@
 import { Dependency } from "@flamework/core"
-import React, { useEffect } from "@rbxts/react"
-import { useMutation } from "@rbxts/react-query"
+import React, { useEffect, useState } from "@rbxts/react"
+import { useMutation, useQuery } from "@rbxts/react-query"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { promptGroupJoin } from "client/group-prompt"
 import { CartController } from "client/controllers/cart.controller"
@@ -16,6 +16,8 @@ import { __IS_EDIT__ } from "@common/shared/config.builder";
 import { RadialProgress } from "@common/client/ui/components/radial-progress";
 import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
 import { GoofyText } from "@common/client/ui/components/goofy-text";
+import { ConfirmationPopup } from "@common/client/ui/components/confirmation-popup";
+import { useNavigator } from "@common/client/ui/hooks/useNavigator";
 
 
 interface DeathButtonsProps {
@@ -28,10 +30,30 @@ export function DeathButtons({
 	transparency,
 	isPreviewLoading = false
 }: DeathButtonsProps) {
-	const { cart, changeState, confirmHardReset, spawnPoint, state, products } =
+	const { cart, changeState, confirmHardReset, spawnPoint, state, products, deathsAtCheckpoint, resetDeathsAtCheckpoint } =
 		useCart()
 	const shouldShow = (state === "death_screen" || state === "reviving") && !cart
 	const checkpoint = useCheckpoint().currentCheckpoint
+	const navigator = useNavigator()
+	const [showCartPopup, setShowCartPopup] = useState(false)
+
+	// Show "try a new cart" popup after 5 deaths at the same checkpoint, only if on default "Cart"
+	const equippedCartName = useQuery({
+		queryKey: ["player-preference", "cart"],
+		queryFn: async () => {
+			const [prefs] = await ClientFunctions.CustomizationService.getPlayerPreference.invoke("cart")
+			if (!prefs) return "Cart"
+			return prefs[0] ?? "Cart"
+		},
+	}).data ?? "Cart"
+
+	useEffect(() => {
+		if (deathsAtCheckpoint >= 4 && equippedCartName === "Cart") {
+			setShowCartPopup(true)
+		}
+	}, [deathsAtCheckpoint])
+
+	// Show popup when player first reaches checkpoint 1
 	const { mutate: mutateRevive,isLoading } = useMutation({
 		queryKey: [
 			`death-revive-${Object.keys(products)
@@ -144,6 +166,24 @@ export function DeathButtons({
 		return
 	}
 	return (
+		<>
+		<ConfirmationPopup
+			visible={showCartPopup}
+			title="Hey!"
+			message="You've died here a lot. Want to try a better cart?"
+			confirmText="Sure!"
+			cancelText="No"
+			onConfirm={() => {
+				setShowCartPopup(false)
+				resetDeathsAtCheckpoint()
+				confirmHardReset()
+				navigator.setOpenGui("carts")
+			}}
+			onCancel={() => {
+				setShowCartPopup(false)
+				resetDeathsAtCheckpoint()
+			}}
+		/>
 		<imagelabel
 			Size={UDim2.fromScale(0.2, 0.2)}
 			AnchorPoint={UIDIM.A_BOTTOM}
@@ -194,5 +234,6 @@ export function DeathButtons({
 				/>
 			</RottenButton>
 		</imagelabel>
+		</>
 	)
 }
