@@ -24,6 +24,20 @@ export function CartButtons(props: {
 	const device = props.__story?.override_device ?? useInputType()
 	const isMobile = device === "Mobile"
 
+	const [missing_wheels, setMissingWheels] = useState(0)
+	useEffect(() => {
+		setMissingWheels(0)
+		if (!cart) return
+		const wheels_folder = cart.instance.FindFirstChild("Wheels")
+		if (!wheels_folder) return
+		const conn = wheels_folder.DescendantRemoving.Connect((desc) => {
+			if (desc.Name === "BALL") {
+				setMissingWheels(cart.getMissingWheelCount())
+			}
+		})
+		return () => conn.Disconnect()
+	}, [cart])
+
 	const { mutate: mutateBrake, data: is_braking_data } = useMutation({
 		queryKey: ["brake", cartId],
 		mutationFn: async (is_braking: boolean, force_value?: boolean) => {
@@ -106,7 +120,7 @@ export function CartButtons(props: {
 	})
 
 	// Check if cart should shake respawn button (2+ wheels missing)
-	const should_shake_respawn = (cart?.getMissingWheelCount() ?? 0) >= 2
+	const should_shake_respawn = missing_wheels >= 2
 
 	// Check if cart should shake flip button (not when respawn is already shaking)
 	const stuck_at = cart?.getStuckAt()
@@ -276,18 +290,26 @@ export function CartButtons(props: {
 						AnchorPoint={UIDIM.A_CENTER}
 					/>
 				</frame>
-				<RottenButton
-					onClick={() => mutateSwitchToResetScreen()}
+				<frame
+					BackgroundTransparency={1}
 					Size={UIDIM.ONE}
-					Ratio={2}
-					Text="RESPAWN"
-					Color={new Color3(0.69, 0.02, 1)}
-					action="RESET"
-					overrideDevice={props.__story?.override_device}
-					Rotation={should_shake_respawn ? (respawn_shake - 0.5) * 10 : 0}
-					Position={UIDIM.CENTER.add(new UDim2(0, 0, should_shake_respawn ? -0.1 : 0, 0))}
+					Position={UIDIM.CENTER}
 					AnchorPoint={UIDIM.A_CENTER}
-				/>
+				>
+					<uiaspectratioconstraint AspectRatio={2} />
+					<RottenButton
+						onClick={() => mutateSwitchToResetScreen()}
+						Size={UIDIM.ONE}
+						Ratio={2}
+						Text="RESPAWN"
+						Color={new Color3(0.69, 0.02, 1)}
+						action="RESET"
+						overrideDevice={props.__story?.override_device}
+						Rotation={should_shake_respawn ? (respawn_shake - 0.5) * 10 : 0}
+						Position={UIDIM.CENTER.add(new UDim2(0, 0, should_shake_respawn ? -0.1 : 0, 0))}
+						AnchorPoint={UIDIM.A_CENTER}
+					/>
+				</frame>
 			</frame>
 		</frame>
 	)
