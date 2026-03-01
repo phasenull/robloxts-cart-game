@@ -285,6 +285,7 @@ export class CartClientComponent
 		if (!this.rider) {
 			return
 		}
+		this.rider.JumpHeight = 0
 		this.AnimationController.stopAll()
 		this.AnimationController.play({
 			key: "cart_spawn",
@@ -477,6 +478,7 @@ export class CartClientComponent
 			if (this.rider.Seated) {
 				this.rider.Sit = false
 			}
+			this.rider.JumpHeight = 7.2
 		}
 		this.logger.warn(`Cleaning up ride due to: ${reason}`)
 		const cart_controller = Dependency<CartController>()

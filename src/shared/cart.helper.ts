@@ -80,6 +80,7 @@ export function RigCartModel(cart_model: ICart) {
 		ball.CFrame = model.GetPivot()
 		ball.CanCollide = true
 		ball.Transparency = 1
+		ball.CollisionGroup = "Wheels"
 		const wheel = model.FindFirstChild("WHEEL")
 		if (!wheel) return
 		ball.Destroying.Once(() => {
@@ -111,6 +112,7 @@ export function RigCartModel(cart_model: ICart) {
 		if (!wheel) return
 		const connection = model.CONNECTION
 		connection.Size = new Vector3(0.7, 0.5, 0.875)
+		connection.CollisionGroup = "Wheels"
 		const ball = model.BALL
 		const attachment_ball = new Instance("Attachment", ball)
 		const attachment_connection = new Instance("Attachment", root_part)

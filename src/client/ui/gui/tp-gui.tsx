@@ -268,6 +268,7 @@ function CheckpointEntry(props: {
 }) {
 	const config = getCheckpointDataFromIndex(props.checkpoint_index);
 	const navigator = useNavigator();
+	const { confirmHardReset, state } = useCart();
 
 	// Calculate highest unlocked checkpoint
 	const highestUnlocked =
@@ -312,6 +313,9 @@ function CheckpointEntry(props: {
 						return;
 					}
 					print(`Successfully tp to checkpoint ${checkpoint_index}`);
+					if (state === "death_screen" || state === "reviving") {
+						confirmHardReset()
+					}
 					navigator.closeAll();
 				})
 				.catch((err) => {

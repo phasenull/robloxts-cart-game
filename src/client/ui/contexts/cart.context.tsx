@@ -59,11 +59,6 @@ export function CartProvider(props: {
 			return
 		}
 		const player = Players.LocalPlayer
-		const character = player.Character
-		const humanoid = character?.FindFirstChildOfClass("Humanoid")
-		if (humanoid) {
-			humanoid.JumpHeight = 0
-		}
 		const components = Dependency<Components>()
 		const cart_controller = Dependency<CartController>()
 
