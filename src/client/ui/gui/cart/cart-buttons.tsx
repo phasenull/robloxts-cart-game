@@ -105,11 +105,14 @@ export function CartButtons(props: {
 		enabled: IS_BRAKING
 	})
 
-	// Check if cart should shake flip button
+	// Check if cart should shake respawn button (2+ wheels missing)
+	const should_shake_respawn = (cart?.getMissingWheelCount() ?? 0) >= 2
+
+	// Check if cart should shake flip button (not when respawn is already shaking)
 	const stuck_at = cart?.getStuckAt()
 	const speed = cart?.getSpeed() ?? 0
 	const should_shake_flip =
-		stuck_at !== undefined && tick() - stuck_at > 3 && speed < 2
+		!should_shake_respawn && stuck_at !== undefined && tick() - stuck_at > 3 && speed < 2
 
 	const flip_shake = useAnimateValue({
 		target_value: should_shake_flip ? 1 : 0,
@@ -122,6 +125,19 @@ export function CartButtons(props: {
 			true
 		),
 		enabled: should_shake_flip
+	})
+
+	const respawn_shake = useAnimateValue({
+		target_value: should_shake_respawn ? 1 : 0,
+		initial_value: 0,
+		tween_info: new TweenInfo(
+			0.15,
+			Enum.EasingStyle.Sine,
+			Enum.EasingDirection.InOut,
+			-1,
+			true
+		),
+		enabled: should_shake_respawn
 	})
 
 	useEffect(() => {
@@ -268,6 +284,9 @@ export function CartButtons(props: {
 					Color={new Color3(0.69, 0.02, 1)}
 					action="RESET"
 					overrideDevice={props.__story?.override_device}
+					Rotation={should_shake_respawn ? (respawn_shake - 0.5) * 10 : 0}
+					Position={UIDIM.CENTER.add(new UDim2(0, 0, should_shake_respawn ? -0.1 : 0, 0))}
+					AnchorPoint={UIDIM.A_CENTER}
 				/>
 			</frame>
 		</frame>

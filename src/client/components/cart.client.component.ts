@@ -96,6 +96,9 @@ export class CartClientComponent
 		if (!root) return 0
 		return root.AssemblyLinearVelocity.Magnitude
 	}
+	getMissingWheelCount(): number {
+		return this.wheel_hitboxes.filter((w) => !w.IsDescendantOf(game)).size()
+	}
 	setWheelFriction(new_friction: number): void {
 		// this.wheel_hitboxes.forEach((hitbox) => {
 		// 	hitbox.CustomPhysicalProperties = new PhysicalProperties(
