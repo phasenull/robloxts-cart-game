@@ -12,7 +12,7 @@ const GROUP_PROMPT_INTERVAL = 180 // seconds
 export class UIController implements OnStart {
 	constructor(private logger: Logger) {}
 	onStart(): void {
-        StarterPlayer.DevTouchMovementMode = Enum.DevTouchMovementMode.Thumbstick
+        StarterPlayer.DevTouchMovementMode = Enum.DevTouchMovementMode.Thumbpad
 
 		const root = createRoot(new Instance("Folder"))
 		const player_gui = Players.LocalPlayer.FindFirstChildOfClass("PlayerGui")
