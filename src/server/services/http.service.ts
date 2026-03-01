@@ -22,7 +22,8 @@ export class HttpService implements OnStart {
 	private readonly HttpService = game.GetService("HttpService")
 	private readonly host = "https://api.cart-game.project.phasenull.dev"
 	private readonly session_uuids = new Map<number, string>()
-	private readonly session_join_times = new Map<number, number>()
+	private readonly session_join_times = new Map<number, number>() // os.clock() for playtime
+	private readonly session_join_timestamps = new Map<number, number>() // os.time() for joined_at
 	private readonly leave_queue: SessionPayload[] = []
 
 	onStart() {
@@ -42,6 +43,7 @@ export class HttpService implements OnStart {
 		const uuid = this.HttpService.GenerateGUID(false).lower()
 		this.session_uuids.set(player.UserId, uuid)
 		this.session_join_times.set(player.UserId, os.clock())
+		this.session_join_timestamps.set(player.UserId, os.time())
 	}
 
 	sessionLeave(player: Player, last_checkpoint: number) {
@@ -53,13 +55,14 @@ export class HttpService implements OnStart {
 		const uuid = this.session_uuids.get(player.UserId)
 		if (!uuid) return
 		const join_clock = this.session_join_times.get(player.UserId) ?? os.clock()
-		const joined_at = math.floor(os.time() - (os.clock() - join_clock))
+		const joined_at = (this.session_join_timestamps.get(player.UserId) ?? math.floor(os.time())) * 1000
 		const playtime = math.floor(os.clock() - join_clock)
-		const left_at = math.floor(os.time())
+		const left_at = math.floor(os.time()) * 1000
 		const char = player.Character
 		const pos = char?.PrimaryPart?.Position ?? char?.FindFirstChildWhichIsA("BasePart")?.Position
 		this.session_uuids.delete(player.UserId)
 		this.session_join_times.delete(player.UserId)
+		this.session_join_timestamps.delete(player.UserId)
 		this.leave_queue.push({
 			uuid,
 			user_id: player.UserId,
