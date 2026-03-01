@@ -81,7 +81,7 @@ export class CashComponent extends CartTouch<
 		if (remaining > 0) {
 			return;
 		}
-		this.logger.log(`[CashComponent] Granting $${this.CASH_AMOUNT} to ${player.Name} from ${this.instance.Name}`);
+		// this.logger.log(`[CashComponent] Granting $${this.CASH_AMOUNT} to ${player.Name} from ${this.instance.Name}`);
 		this.debounce.set(player.UserId, now);
 		Dependency<DataService>().grantPlayerCash(
 			player,
