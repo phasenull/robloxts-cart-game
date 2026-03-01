@@ -24,6 +24,7 @@ import { RottenShopGui } from "./gui/rotten-shop/rotten-shop-gui";
 import { TPGui } from "./gui/tp-gui";
 import { SettingsGui } from "./gui/settings-gui";
 import { FeedbackGui } from "./gui/feedback-gui";
+import { BigCheckpointCartPopup } from "./components/BigCheckpointCartPopup";
 import { FadeGui } from "@common/client/ui/gui/fade-gui";
 import { CashHUD } from "./components/cash-hud";
 import { ProductPurchasing } from "./gui/suspense/product-purchasing";
@@ -50,7 +51,8 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 									initial_gui={__IS_EDIT__ ? props.initial_gui : undefined}
 								>
 									<SettingsProvider>
-										<GlobalHUDGui />
+										<BigCheckpointCartPopup />
+					<GlobalHUDGui />
 										<FadeGui />
 										<ProductPurchasing/>
 										<CashHUD/>

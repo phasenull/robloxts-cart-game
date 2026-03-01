@@ -1,5 +1,5 @@
 import { Dependency } from "@flamework/core"
-import React, { useEffect, useState } from "@rbxts/react"
+import React, { useEffect, useRef, useState } from "@rbxts/react"
 import { useMutation, useQuery } from "@rbxts/react-query"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { promptGroupJoin } from "client/group-prompt"
@@ -36,6 +36,14 @@ export function DeathButtons({
 	const checkpoint = useCheckpoint().currentCheckpoint
 	const navigator = useNavigator()
 	const [showCartPopup, setShowCartPopup] = useState(false)
+	const lastPopupShownAt = useRef(-math.huge)
+
+	const tryShowCartPopup = () => {
+		const now = os.clock()
+		if (now - lastPopupShownAt.current < 30) return
+		lastPopupShownAt.current = now
+		setShowCartPopup(true)
+	}
 
 	// Show "try a new cart" popup after 5 deaths at the same checkpoint, only if on default "Cart"
 	const equippedCartName = useQuery({
@@ -48,12 +56,11 @@ export function DeathButtons({
 	}).data ?? "Cart"
 
 	useEffect(() => {
-		if (deathsAtCheckpoint >= 4 && equippedCartName === "Cart") {
-			setShowCartPopup(true)
+		if (deathsAtCheckpoint >= 3 && equippedCartName === "Cart") {
+			tryShowCartPopup()
 		}
 	}, [deathsAtCheckpoint])
 
-	// Show popup when player first reaches checkpoint 1
 	const { mutate: mutateRevive,isLoading } = useMutation({
 		queryKey: [
 			`death-revive-${Object.keys(products)
