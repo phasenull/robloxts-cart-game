@@ -264,7 +264,7 @@ export function CartButtons(props: {
 					onClick={() => mutateSwitchToResetScreen()}
 					Size={UIDIM.ONE}
 					Ratio={2}
-					Text="RESET"
+					Text="RESPAWN"
 					Color={new Color3(0.69, 0.02, 1)}
 					action="RESET"
 					overrideDevice={props.__story?.override_device}
