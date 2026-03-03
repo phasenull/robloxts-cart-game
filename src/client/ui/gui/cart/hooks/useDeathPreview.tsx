@@ -83,10 +83,7 @@ export function useDeathPreview() {
 			}
 			return cart
 		},
-		enabled: should_show && spawnPoint !== undefined,
-		onError: (err) => {
-			warn(`Failed to create death preview cart: ${err}`)
-		}
+		enabled: should_show && spawnPoint !== undefined
 	})
 	
 	return { data, isLoading }

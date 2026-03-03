@@ -48,7 +48,7 @@ export function CurrencyEntry({
 		? `rbxassetid://${productInfo.IconImageAssetId}`
 		: undefined;
 
-	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
+	const { isPending: isPromptLoading, mutate: promptPurchase } = useMutation({
 		mutationFn: async () => {
 			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId);
 			let result = false;

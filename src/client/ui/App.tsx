@@ -1,23 +1,26 @@
-import React, { useState } from "@rbxts/react"
-import { A } from "@common/shared/assets"
-import { ErrorPopup } from "@common/client/ui/components/error-popup"
-import { GUI_KEYS, PRIMARY, UIDIM } from "@common/client/ui/constants"
-import { ErrorProvider, useErrorPage } from "@common/client/ui/contexts/error.context"
-import { GuiProvider } from "@common/client/ui/contexts/gui-manager.context"
-import { SettingsProvider } from "@common/client/ui/contexts/settings.context"
-import { CartProvider } from "./contexts/cart.context"
-import { NotificationProvider } from "./contexts/notification.context"
-import { NotificationListener } from "./components/notification-listener"
-import BlurGui from "@common/client/ui/gui/blur-gui"
-import { QueryClient, QueryClientProvider } from "@rbxts/react-query"
-import { CartHud } from "./gui/cart/cart-hud"
-import { DeathGui } from "./gui/cart/death-gui"
-import { CheckpointProvider } from "./gui/cart/hooks/useCheckpoint"
-import { RightSidebar } from "./components/right-sidebar"
+import React, { useState } from "@rbxts/react";
+import { A } from "@common/shared/assets";
+import { ErrorPopup } from "@common/client/ui/components/error-popup";
+import { GUI_KEYS, PRIMARY, UIDIM } from "@common/client/ui/constants";
+import {
+	ErrorProvider,
+	useErrorPage,
+} from "@common/client/ui/contexts/error.context";
+import { GuiProvider } from "@common/client/ui/contexts/gui-manager.context";
+import { SettingsProvider } from "@common/client/ui/contexts/settings.context";
+import { CartProvider } from "./contexts/cart.context";
+import { NotificationProvider } from "./contexts/notification.context";
+import { NotificationListener } from "./components/notification-listener";
+import BlurGui from "@common/client/ui/gui/blur-gui";
+import { QueryClient, QueryClientProvider } from "@rbxts/react-query";
+import { CartHud } from "./gui/cart/cart-hud";
+import { DeathGui } from "./gui/cart/death-gui";
+import { CheckpointProvider } from "./gui/cart/hooks/useCheckpoint";
+import { RightSidebar } from "./components/right-sidebar";
 
-import Sidebar from "./gui/sidebar"
-import { CartCustomizationGui } from "./gui/cart/shop-gui"
-import { GlobalHUDGui } from "./gui/global-hud-gui"
+import Sidebar from "./gui/sidebar";
+import { CartCustomizationGui } from "./gui/cart/shop-gui";
+import { GlobalHUDGui } from "./gui/global-hud-gui";
 import { NotificationsGui } from "./gui/notifications/notifications-gui";
 import { CartGui } from "./gui/cart-gui";
 import { RottenShopGui } from "./gui/rotten-shop/rotten-shop-gui";
@@ -31,14 +34,19 @@ import { ProductPurchasing } from "./gui/suspense/product-purchasing";
 import { __IS_EDIT__ } from "@common/shared/config.builder";
 import PopGui from "@common/client/ui/components/pop-gui";
 const query_client = new QueryClient({
-	mutations: {
-		onError: (err) => {}
+	defaultOptions: {
+		queries: {
+			onSettled: (_, __, key) => {
+				print(`Query ${tostring(key)} has been settled`);
+			},
+		},
+		mutations: {
+			onSettled: (_, __, key) => {
+				print(`Mutation ${tostring(key)} has been settled`);
+			},
+		},
 	},
-	queries: {
-		retry: false,
-		onError: (err) => {}
-	}
-})
+});
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 	return (
 		<ErrorProvider>
@@ -52,10 +60,10 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 								>
 									<SettingsProvider>
 										<BigCheckpointCartPopup />
-					<GlobalHUDGui />
+										<GlobalHUDGui />
 										<FadeGui />
-										<ProductPurchasing/>
-										<CashHUD/>
+										<ProductPurchasing />
+										<CashHUD />
 										<DeathGui />
 										<RightSidebar />
 										<CartHud />
@@ -90,7 +98,12 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										{/* <PopGui Size={new UDim2(1.2, 0, 0.8, 0)} id={"shop"}>
 											<PassShopGui />
 										</PopGui> */}
-										<PopGui Size={UDim2.fromScale(1,1)} disable_default_close hide_title id={"rotten-shop"}>
+										<PopGui
+											Size={UDim2.fromScale(1, 1)}
+											disable_default_close
+											hide_title
+											id={"rotten-shop"}
+										>
 											<RottenShopGui />
 										</PopGui>
 										<PopGui id={"cart"}>
@@ -115,5 +128,5 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 				</CartProvider>
 			</QueryClientProvider>
 		</ErrorProvider>
-	)
+	);
 }

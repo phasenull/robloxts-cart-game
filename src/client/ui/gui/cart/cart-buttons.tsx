@@ -39,7 +39,6 @@ export function CartButtons(props: {
 	}, [cart])
 
 	const { mutate: mutateBrake, data: is_braking_data } = useMutation({
-		queryKey: ["brake", cartId],
 		mutationFn: async (is_braking: boolean, force_value?: boolean) => {
 			if (force_value !== undefined) {
 				return force_value
@@ -81,11 +80,9 @@ export function CartButtons(props: {
 			UIHelper.toggleFade(false)
 			return true
 		},
-		queryKey: ["reset-character", cartId]
 	})
 
 	const { mutate: mutateHonk } = useMutation({
-		queryKey: ["honk", cartId],
 		mutationFn: async () => {
 			if (!cart) return true
 			cart.honk()
@@ -94,7 +91,6 @@ export function CartButtons(props: {
 	})
 
 	const { mutate: mutateFlip } = useMutation({
-		queryKey: ["flip", cartId],
 		mutationFn: async () => {
 			if (!cart) return false
 			return await cart.promptFlip()
@@ -159,7 +155,7 @@ export function CartButtons(props: {
 			return
 		}
 		const brakeConnection = cart.brakeListener.Connect((status) => {
-			mutateBrake(status, status)
+			mutateBrake(status)
 		})
 		return () => {
 			brakeConnection.Disconnect()

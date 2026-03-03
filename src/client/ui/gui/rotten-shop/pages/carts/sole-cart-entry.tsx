@@ -61,7 +61,7 @@ export function SoleCartEntry({
 			? `${priceInRobux} R$`
 			: "N/A";
 
-	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
+	const { isPending: isPromptLoading, mutate: promptPurchase } = useMutation({
 		mutationFn: async (args: { productId: number }) => {
 			MarketplaceService.PromptProductPurchase(
 				Players.LocalPlayer,

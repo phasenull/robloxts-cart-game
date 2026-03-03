@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "basement",
@@ -18,7 +17,7 @@
         "@rbxts/react": "^17.3.7-ts.1",
         "@rbxts/react-devtools-core": "^17.3.7-ts.1",
         "@rbxts/react-globals": "^17.3.7-ts.1",
-        "@rbxts/react-query": "1.0.2-beta.1",
+        "@rbxts/react-query": "1.0.2-beta.2",
         "@rbxts/react-roblox": "^17.3.7-ts.1",
         "@rbxts/services": "^1.6.0",
         "@rbxts/signal": "1.1.1",
@@ -118,7 +117,7 @@
 
     "@rbxts/react-globals": ["@rbxts/react-globals@17.3.7-ts.1", "", { "dependencies": { "@rbxts-js/react-globals": "^17.3.7-ts.1" } }, "sha512-N7ggc2yXwFZxw+q4uk36ypc+WNLve4RULTP7FVSbMN00aIIX934g/a1htvmW/LIJ55hR0brn69OsaMhLlT+yAg=="],
 
-    "@rbxts/react-query": ["@rbxts/react-query@1.0.2-beta.1", "", { "peerDependencies": { "@rbxts/react": "^17.3.7-ts.1" } }, "sha512-ez26R2wk+p+NoBO6QDJ/jmy4Ex1s+JfWwfEHcNNAxMoAXu1KJ49GRoCu5mUTDjDH8XaX/47UiLMoUX8K9zWc2g=="],
+    "@rbxts/react-query": ["@rbxts/react-query@1.0.2-beta.2", "", { "peerDependencies": { "@rbxts/react": "^17.3.7-ts.1" } }, "sha512-OlNk4Apu5ARTu61A6A10Vgl21y2o+q2wO9ryN8qRAQO37cdQ7WfnKsPskSHeDhDljj6FBAS4+mHBZUfpmfqv8A=="],
 
     "@rbxts/react-roblox": ["@rbxts/react-roblox@17.3.7-ts.1", "", { "dependencies": { "@rbxts-js/react-roblox": "^17.3.7-ts.1" }, "peerDependencies": { "@rbxts/react": "^17.3.7-ts.1" } }, "sha512-lsH3lP+X0JUS/6Fg5MJfP8OjMn7bjxapbg3r1ajrpvwZGPGU1WOFcFDS/xMMk/2RK/GNYRmkduNM8pQ9vHw54Q=="],
 

@@ -55,7 +55,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 			? `${priceInRobux} R$`
 			: "N/A";
 
-	const { isLoading: isPromptLoading, mutate: promptPurchase } = useMutation({
+	const { isPending: isPromptLoading, mutate: promptPurchase } = useMutation({
 		mutationFn: async () => {
 			MarketplaceService.PromptProductPurchase(Players.LocalPlayer, productId);
 			let result = false;

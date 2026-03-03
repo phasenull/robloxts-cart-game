@@ -233,8 +233,7 @@ export function FeedbackGui() {
 		},
 	})
 
-	const { mutate: submitFeedback, isLoading: isSubmitting } = useMutation({
-		queryKey: "submitFeedback",
+	const { mutate: submitFeedback, isPending: isSubmitting } = useMutation({
 		mutationFn: async (description: string) => {
 			if (__IS_EDIT__) return undefined as unknown as IFeedbackItem
 			const result = await ClientFunctions.FeedbackService.submitFeedback(description)

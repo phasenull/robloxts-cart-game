@@ -6,15 +6,7 @@ import { ErrorProvider } from "@common/client/ui/contexts/error.context"
 import { GuiProvider } from "@common/client/ui/contexts/gui-manager.context"
 import { RottenShopGui } from "client/ui/gui/rotten-shop/rotten-shop-gui";
 
-const query_client = new QueryClient({
-	mutations: {
-		onError: (err) => {}
-	},
-	queries: {
-		retry: false,
-		onError: (err) => {}
-	}
-})
+const query_client = new QueryClient()
 
 const controls = {}
 

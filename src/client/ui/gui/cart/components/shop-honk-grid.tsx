@@ -30,8 +30,7 @@ function ShopHonkEntry({
 		enabled: !isOwned,
 	});
 
-	const { mutate, isLoading } = useMutation({
-		queryKey: ["honk-action", item.name],
+	const { mutate, isPending } = useMutation({
 		mutationFn: async () => {
 			if (__IS_EDIT__) return true;
 
@@ -76,7 +75,7 @@ function ShopHonkEntry({
 					? `\u{E002} ${priceInRobux}`
 					: "\u{E002} ???";
 
-	const canAct = !isLoading && !isEquipped && (isOwned || !!item.product_id);
+	const canAct = !isPending && !isEquipped && (isOwned || !!item.product_id);
 	const previewSoundRef = useRef<Sound | undefined>(undefined);
 	const [isHovered, setIsHovered] = useState(false);
 

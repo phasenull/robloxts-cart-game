@@ -61,12 +61,7 @@ export function DeathButtons({
 		}
 	}, [deathsAtCheckpoint])
 
-	const { mutate: mutateRevive,isLoading } = useMutation({
-		queryKey: [
-			`death-revive-${Object.keys(products)
-				.map((e) => `${e}-${products.get(e)}`)
-				.join("-")}`
-		],
+	const { mutate: mutateRevive, isPending } = useMutation({
 		mutationFn: async () => {
 			const controller = Dependency<CartController>()
 			let startedPurchaseFlow = false
@@ -133,7 +128,6 @@ export function DeathButtons({
 	})
 
 	const { mutate: mutateHardReset } = useMutation({
-		queryKey: ["death-reset"],
 
 		mutationFn: async () => {
 			if (!spawnPoint) {
@@ -220,7 +214,7 @@ export function DeathButtons({
 				></GoofyText>
 			</RottenButton>
 			<RottenButton
-				onClick={()=> !isLoading && mutateRevive()}
+				onClick={()=> !isPending && mutateRevive()}
 				Color={new Color3(0.09, 0.86, 0.09)}
 				Size={UIDIM.ONE.add(UDim2.fromScale(0.5, 0.5))}
 				// Text={`REVIVE (${products.get("revives") || 0}x)`}

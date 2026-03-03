@@ -280,8 +280,7 @@ function CheckpointEntry(props: {
 		props.checkpoint_index,
 	);
 
-	const { mutate, isLoading } = useMutation({
-		queryKey: [`tpToCheckpoint-${props.checkpoint_index}`],
+	const { mutate, isPending } = useMutation({
 		mutationFn: async (checkpoint_index: number) => {
 			if (props.is_locked) {
 				// Prompt purchase based on skip count
@@ -392,7 +391,7 @@ function CheckpointEntry(props: {
 						: new Color3(0.01, 1, 0.34)
 				}
 				onClick={() => {
-					if (isLoading) return;
+					if (isPending) return;
 					mutate(props.checkpoint_index);
 				}}
 				Text={props.is_locked ? "UNLOCK" : "TP"}

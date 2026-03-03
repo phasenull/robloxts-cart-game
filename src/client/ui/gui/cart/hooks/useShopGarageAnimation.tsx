@@ -53,6 +53,5 @@ export function useShopGarageAnimation(cartName: string = "Cart") {
 			AnimateGarageMovement(cartModel, direction)
 			return cartModel
 		},
-		queryKey: ["shop-garage-animation", cartName]
 	})
 }

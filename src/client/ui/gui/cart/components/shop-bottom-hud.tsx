@@ -53,8 +53,7 @@ export function ShopBottomHud({
 		}
 	}, [])
 
-	const { mutate: mutatePurchase, isLoading: isPurchasing } = useMutation({
-		queryKey: ["purchase-item", selectedItem?.name || "none"],
+	const { mutate: mutatePurchase, isPending: isPurchasing } = useMutation({
 		mutationFn: async () => {
 			if (!selectedItem) return false
 
@@ -97,8 +96,7 @@ export function ShopBottomHud({
 		}
 	})
 
-	const { mutate: mutateEquip, isLoading: isEquipping } = useMutation({
-		queryKey: ["equip-item", selectedItem?.name || "none"],
+	const { mutate: mutateEquip, isPending: isEquipping } = useMutation({
 		mutationFn: async () => {
 			if (!selectedItem) return false
 

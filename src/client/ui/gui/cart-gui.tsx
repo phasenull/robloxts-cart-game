@@ -25,7 +25,6 @@ export function CartGui() {
 		}
 	}, [cart, state])
 	const {mutate} = useMutation({
-		queryKey: "updateCartStats",
 		mutationFn: async (params: { power?: number; friction?: number }) => {
 			if (!cart) return true
 			cart.overrideConfig({
