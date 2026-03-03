@@ -211,11 +211,6 @@ export class CartClientComponent
 		// 		align_orientation.LookAtPosition = lookat_pos
 		// 	})
 		// }
-		if (this.brake) {
-			this.toggleBrake(true)
-		} else {
-			this.toggleBrake(false)
-		}
 		const is_checkpoint_available = this.checkCheckpointAvailability()
 		if (is_checkpoint_available) {
 			this.CartController.saveCheckpoint(this.instance.GetPivot())
@@ -349,6 +344,7 @@ export class CartClientComponent
 		return math.huge
 	}
 	toggleBrake(enable: boolean): void {
+		if (this.brake === enable) return
 		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
 		if (!root) {
 			this.cleanupRide("Cart root not found (toggleBrake)")

@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from "@rbxts/react"
-import { useMutation } from "@rbxts/react-query"
-import { GoofyText } from "@common/client/ui/components/goofy-text"
-import { LoadingIndicator } from "@common/client/ui/components/loading-indicator"
-import { PRIMARY, UIDIM } from "@common/client/ui/constants"
-import { useCart } from "client/ui/contexts/cart.context"
-import { useErrorPage } from "@common/client/ui/contexts/error.context"
-import { useNavigator } from "@common/client/ui/hooks/useNavigator"
-import { A } from "@common/shared/assets"
+import React, { useEffect, useState } from "@rbxts/react";
+import { GoofyText } from "@common/client/ui/components/goofy-text";
+import { LoadingIndicator } from "@common/client/ui/components/loading-indicator";
+import { PRIMARY, UIDIM } from "@common/client/ui/constants";
+import { useCart } from "client/ui/contexts/cart.context";
+import { useErrorPage } from "@common/client/ui/contexts/error.context";
+import { useNavigator } from "@common/client/ui/hooks/useNavigator";
+import { A } from "@common/shared/assets";
 
 export function CartGui() {
-	const { showError } = useErrorPage()
-	const navigator = useNavigator()
-	const { cart, state } = useCart()
+	const { showError } = useErrorPage();
+	const navigator = useNavigator();
+	const { cart, state } = useCart();
 
 	useEffect(() => {
 		if (!cart && state === "none") {
@@ -19,29 +18,26 @@ export function CartGui() {
 				message: "You are not currently in a cart.",
 				title: "No Cart Found",
 				onClose: () => {
-					navigator.closeAll()
-				}
-			})
+					navigator.closeAll();
+				},
+			});
 		}
-	}, [cart, state])
-	const {mutate} = useMutation({
-		mutationFn: async (params: { power?: number; friction?: number }) => {
-			if (!cart) return true
-			cart.overrideConfig({
-				power: params.power ?? cart.getPower(),
-				friction: params.friction ?? cart.getWheelFriction(),
-				max_velocity: cart.getMaxVelocity()
-			})
-			return true
-		}
-	})
-	const [friction, set_friction] = useState<number | undefined>()
-	const [power, set_power] = useState<number | undefined>()
+	}, [cart, state]);
+
+	const [friction, set_friction] = useState<number | undefined>();
+	const [power, set_power] = useState<number | undefined>();
 	useEffect(() => {
-		mutate({ power, friction })
-	}, [friction, power])
-	
-	const isLoading = state === "none" && !cart
+		if (power === undefined && friction === undefined) return;
+		if (!cart) return;
+
+		cart.overrideConfig({
+			power: power ?? cart.getPower(),
+			friction: friction ?? cart.getWheelFriction(),
+			max_velocity: cart.getMaxVelocity(),
+		});
+	}, [friction, power]);
+
+	const isLoading = state === "none" && !cart;
 
 	return (
 		<imagelabel
@@ -71,8 +67,8 @@ export function CartGui() {
 					Text={`${cart?.getPower()}`}
 					Event={{
 						InputEnded: (txt) => {
-							set_power(tonumber(txt.Text || "0") || 0)
-						}
+							set_power(tonumber(txt.Text || "0") || 0);
+						},
 					}}
 					Size={new UDim2(1, 0, 0.3, 0)}
 				></textbox>
@@ -81,12 +77,12 @@ export function CartGui() {
 					Text={`${cart?.getWheelFriction()}`}
 					Event={{
 						InputEnded: (txt) => {
-							set_friction(tonumber(txt.Text || "0") || 0)
-						}
+							set_friction(tonumber(txt.Text || "0") || 0);
+						},
 					}}
 					Size={new UDim2(1, 0, 0.3, 0)}
 				></textbox>
 			</frame>
 		</imagelabel>
-	)
+	);
 }
