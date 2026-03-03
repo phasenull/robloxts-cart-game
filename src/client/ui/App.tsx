@@ -33,20 +33,7 @@ import { CashHUD } from "./components/cash-hud";
 import { ProductPurchasing } from "./gui/suspense/product-purchasing";
 import { __IS_EDIT__ } from "@common/shared/config.builder";
 import PopGui from "@common/client/ui/components/pop-gui";
-const query_client = new QueryClient({
-	defaultOptions: {
-		queries: {
-			onSettled: (_, __, key) => {
-				print(`Query ${tostring(key)} has been settled`);
-			},
-		},
-		mutations: {
-			onSettled: (_, __, key) => {
-				print(`Mutation ${tostring(key)} has been settled`);
-			},
-		},
-	},
-});
+const query_client = new QueryClient();
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 	return (
 		<ErrorProvider>
