@@ -27,7 +27,7 @@ export function ShopBottomHud({
 	const exitButtonRef = useRef<ImageButton>()
 
 	// Fetch Robux price if item has product_id
-	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
+	const { priceInRobux, isPending: isPriceLoading } = useProductPrice({
 		productId: selectedItem?.product_id,
 		enabled: !!selectedItem?.product_id
 	})
@@ -121,8 +121,8 @@ export function ShopBottomHud({
 
 	const canPurchase = selectedItem && !isOwned && !isPurchasing
 	const canEquip = selectedItem && isOwned && !isEquipped && !isEquipping
-	const isLoading = isPurchasing || isEquipping
-	const buttonText = isLoading
+	const isPending = isPurchasing || isEquipping
+	const buttonText = isPending
 		? isEquipping
 			? "Equipping..."
 			: "Purchasing..."

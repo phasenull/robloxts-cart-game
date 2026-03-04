@@ -20,7 +20,7 @@ export function ShopCartEntry({
 	onClick,
 }: ShopCartEntryProps) {
 	// Fetch Robux price if item has product_id
-	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
+	const { priceInRobux, isPending: isPriceLoading } = useProductPrice({
 		productId: item.product_id,
 		enabled: !!item.product_id && !isOwned,
 	});

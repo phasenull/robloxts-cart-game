@@ -30,7 +30,7 @@
     "@rbxts/react": "^17.3.7-ts.1",
     "@rbxts/react-devtools-core": "^17.3.7-ts.1",
     "@rbxts/react-globals": "^17.3.7-ts.1",
-    "@rbxts/react-query": "1.0.2-beta.2",
+    "@rbxts/react-query": "2.0.0-beta",
     "@rbxts/react-roblox": "^17.3.7-ts.1",
     "@rbxts/services": "^1.6.0",
     "@rbxts/signal": "1.1.1",

@@ -21,7 +21,7 @@ export interface GlitchBundleEntryProps {
 
 export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 	const { productId, cartName, discountPercentage } = props;
-	const { data: productInfo, isLoading } = useQuery({
+	const { data: productInfo, isPending } = useQuery({
 		queryKey: ["product-info", productId],
 		queryFn: async () => {
 			const info = MarketplaceService.GetProductInfoAsync(
@@ -49,7 +49,7 @@ export function GlitchBundleEntry(props: GlitchBundleEntryProps) {
 
 	const bundleTitle = productInfo?.Name ?? "...";
 	const priceInRobux = productInfo?.PriceInRobux;
-	const priceText = isLoading
+	const priceText = isPending
 		? "..."
 		: priceInRobux !== undefined
 			? `${priceInRobux} R$`

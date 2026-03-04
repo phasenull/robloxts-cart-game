@@ -69,7 +69,7 @@ export function useDeathPreview() {
 	// 	}
 
 	// }
-	const { data, isLoading } = useQuery({
+	const { data, isPending } = useQuery({
 		queryKey: [`death-preview-cart::${spawnPoint}`],
 		queryFn: async () => {
 			const cart = await buildPreviewCart(spawnPoint!)
@@ -86,7 +86,7 @@ export function useDeathPreview() {
 		enabled: should_show && spawnPoint !== undefined
 	})
 	
-	return { data, isLoading }
+	return { data, isPending }
 }
 async function buildPreviewCart(spawnPoint: CFrame) {
 	// Get player's cart preference from customization service

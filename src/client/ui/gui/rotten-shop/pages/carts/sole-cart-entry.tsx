@@ -49,13 +49,13 @@ export function SoleCartEntry({
 	});
 
 	// Fetch price from MarketplaceService
-	const { priceInRobux, isLoading } = useProductPrice({
+	const { priceInRobux, isPending } = useProductPrice({
 		productId,
 		enabled: !is_owned,
 	});
 
 	// Format price display
-	const priceText = isLoading
+	const priceText = isPending
 		? "..."
 		: priceInRobux !== undefined
 			? `${priceInRobux} R$`

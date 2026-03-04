@@ -21,7 +21,7 @@ export interface MiniBundleEntryProps {
 export function MiniBundleEntry(props: MiniBundleEntryProps) {
 	const { productId, cartName, side } = props;
 	const x_anchor = side === "left" ? 0 : 1;
-	const { data: productInfo, isLoading } = useQuery({
+	const { data: productInfo, isPending } = useQuery({
 		queryKey: ["product-info", productId],
 		queryFn: async () => {
 			const info = MarketplaceService.GetProductInfoAsync(
@@ -49,7 +49,7 @@ export function MiniBundleEntry(props: MiniBundleEntryProps) {
 
 	const bundleTitle = productInfo?.Name ?? "...";
 	const priceInRobux = productInfo?.PriceInRobux;
-	const priceText = isLoading
+	const priceText = isPending
 		? "..."
 		: priceInRobux !== undefined
 			? `${priceInRobux} R$`

@@ -221,7 +221,7 @@ export function FeedbackGui() {
 
 	const {
 		data: feedbacks,
-		isLoading,
+		isPending,
 		refetch,
 	} = useQuery({
 		queryKey: ["feedbacks"],
@@ -386,7 +386,7 @@ export function FeedbackGui() {
 				ZIndex={1}
 			>
 				{view === "list" ? (
-					isLoading ? (
+					isPending ? (
 						<LoadingIndicator />
 					) : (
 						<scrollingframe

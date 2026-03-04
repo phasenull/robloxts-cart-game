@@ -12,7 +12,7 @@ export function DeathGui() {
 	const { spawnPoint, state, cart } = useCart()
 	const shouldShow = state === "death_screen" || state === "reviving"
 
-	const  {data, isLoading}  = useDeathPreview()
+	const  {data, isPending}  = useDeathPreview()
 	useDeathCamera({ spawnPoint, shouldShow })
 
 	const transition_duration = 0.5
@@ -36,5 +36,5 @@ export function DeathGui() {
 		return undefined
 	}
 
-	return <DeathButtons transparency={post_transparency} isPreviewLoading={isLoading} />
+	return <DeathButtons transparency={post_transparency} isPreviewLoading={isPending} />
 }

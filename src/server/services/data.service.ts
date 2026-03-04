@@ -1,9 +1,9 @@
 import { Logger } from "@common/shared/logger"
-import { BaseDataService } from "@common/server/base-data.service"
 import { Dependency, OnStart, Service } from "@flamework/core"
 import { Profile } from "@rbxts/profileservice/globals"
 import { ServerEvents, ServerFunctions } from "shared/network.helper"
 import { HttpService } from "./http.service"
+import { BaseDataService } from "@common/server/services/base-data.service";
 
 const PROFILE_TEMPLATE = {
 	gamepasses: [] as number[],

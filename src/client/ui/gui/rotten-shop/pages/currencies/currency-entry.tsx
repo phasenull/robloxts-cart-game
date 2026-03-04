@@ -25,7 +25,7 @@ export function CurrencyEntry({
 	const entryButtonRef = useRef<ImageButton>();
 
 	// Fetch product info from MarketplaceService
-	const { data: productInfo, isLoading } = useQuery({
+	const { data: productInfo, isPending } = useQuery({
 		queryKey: ["product-info", productId],
 		queryFn: async () => {
 			const info = MarketplaceService.GetProductInfoAsync(
@@ -39,7 +39,7 @@ export function CurrencyEntry({
 	});
 
 	const title = productInfo?.Name ?? "...";
-	const price = isLoading
+	const price = isPending
 		? "..."
 		: productInfo?.PriceInRobux !== undefined
 			? `${productInfo.PriceInRobux} R$`

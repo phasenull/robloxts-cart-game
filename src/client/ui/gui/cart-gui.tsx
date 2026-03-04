@@ -37,7 +37,7 @@ export function CartGui() {
 		});
 	}, [friction, power]);
 
-	const isLoading = state === "none" && !cart;
+	const isPending = state === "none" && !cart;
 
 	return (
 		<imagelabel
@@ -49,7 +49,7 @@ export function CartGui() {
 			BackgroundColor3={PRIMARY}
 			ImageTransparency={0.6}
 		>
-			{isLoading ? <LoadingIndicator /> : undefined}
+			{isPending ? <LoadingIndicator /> : undefined}
 			<uicorner CornerRadius={new UDim(0.1, 0)} />
 			{cart ? (
 				<frame Size={new UDim2(0.3, 0, 1, 0)} BackgroundTransparency={0.5}>

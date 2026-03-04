@@ -25,7 +25,7 @@ function ShopHonkEntry({
 	onEquipSuccess,
 }: ShopHonkEntryProps) {
 	// All honks share a single product — show its price
-	const { priceInRobux, isLoading: isPriceLoading } = useProductPrice({
+	const { priceInRobux, isPending: isPriceLoading } = useProductPrice({
 		productId: PRODUCTS.honk,
 		enabled: !isOwned,
 	});

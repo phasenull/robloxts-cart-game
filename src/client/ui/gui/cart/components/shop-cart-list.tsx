@@ -24,7 +24,7 @@ export function ShopCartList({
 	onRefetchReady
 }: ShopCartListProps) {
 	// Fetch cart shop items
-	const { data: cartItems, isLoading: isLoadingItems } = useQuery({
+	const { data: cartItems, isPending: isPendingItems } = useQuery({
 		queryKey: ["shop-items", "cart"],
 		queryFn: async () => {
 			return getConfig().CartConfig.map((cart) => ({
@@ -213,7 +213,7 @@ export function ShopCartList({
 				<uipadding
 					PaddingRight={new UDim(0.05, 0)}
 				/>
-				{(isLoadingItems) ? (
+				{(isPendingItems) ? (
 					<frame Size={UIDIM.ONE} BackgroundTransparency={1}>
 						<LoadingIndicator Size={UIDIM.ONE} />
 					</frame>
