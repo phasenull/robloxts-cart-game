@@ -298,6 +298,14 @@ export const ISLAND_CONFIG = {
 	"6": {
 		name: "Void",
 		image: A.backgrounds.post_magma
+	},
+	"9": {
+		name: "Sands of Trial",
+		image: A.backgrounds.post_magma
+	},
+	"11": {
+		name: "Pastel Paradise",
+		image: A.backgrounds.post_magma
 	}
 }
 

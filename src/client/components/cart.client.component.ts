@@ -216,6 +216,7 @@ export class CartClientComponent
 			this.CartController.saveCheckpoint(this.instance.GetPivot())
 		}
 		const y_positon = this.instance.Root.Position.Y
+		
 		if (y_positon < -66) {
 			this.cleanupRide("Player fell off the map")
 		}
