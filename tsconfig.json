@@ -25,5 +25,5 @@
 		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo"
 	},
 	"include": ["src"],
-	"exclude": ["out", "node_modules", "src/common/domains/party"]
+	"exclude": ["out", "node_modules", "src/common/domains"]
 }
