@@ -11,10 +11,13 @@
         "@rbxts/camera-shaker": "1.0.8",
         "@rbxts/centurion": "1.0.1",
         "@rbxts/centurion-ui": "1.0.8",
+        "@rbxts/charm": "0.11.0-rc.4",
+        "@rbxts/charm-sync": "^0.3.0",
         "@rbxts/fetch-patched": "^1.1.4-a",
         "@rbxts/object-utils": "1.0.4",
         "@rbxts/profileservice": "^1.4.2",
         "@rbxts/react": "^17.3.7-ts.1",
+        "@rbxts/react-charm": "^0.3.0",
         "@rbxts/react-devtools-core": "^17.3.7-ts.1",
         "@rbxts/react-globals": "^17.3.7-ts.1",
         "@rbxts/react-query": "2.0.0-beta",
@@ -99,6 +102,10 @@
 
     "@rbxts/centurion-ui": ["@rbxts/centurion-ui@1.0.8", "", { "dependencies": { "@rbxts/services": "^1.5.5", "@rbxts/set-timeout": "^1.1.2", "@rbxts/vide": "^0.5.3" }, "peerDependencies": { "@rbxts/centurion": "^1.0.1" } }, "sha512-E8uLASVsKphrf4cgm3TTPB5NornlyUN4JC7x2/+P9ZcJxaoYH3fSEV1sC+bY0xN9bTCkXCIGuULr7mHh9Vh0Nw=="],
 
+    "@rbxts/charm": ["@rbxts/charm@0.11.0-rc.4", "", {}, "sha512-V2RTE+fKG2CGOTkZNMzhHOXf5fcbq+5xV5cgaj4s8gyVInXkAal17loAEkyEl4A7v1MGPvPt13FaCVg1/S2m0g=="],
+
+    "@rbxts/charm-sync": ["@rbxts/charm-sync@0.3.0", "", { "peerDependencies": { "@rbxts/charm": "0.10.0" } }, "sha512-+kvyn6pUXkLpvxFnZhMDE/v15LA1gnfKlmmiK85O0EX5GoY1Yqs4GJUGy1X04b7OdTeXxX9rKrFpmJNX+9054A=="],
+
     "@rbxts/compiler-types": ["@rbxts/compiler-types@3.0.0-types.0", "", {}, "sha512-VGOHJPoL7+56NTatMGqQj3K7xWuzEV+aP4QD5vZiHu+bcff3kiTmtoadaF6NkJrmwfFAvbsd4Dg764ZjWNceag=="],
 
     "@rbxts/fetch-patched": ["@rbxts/fetch-patched@1.1.4-a", "", {}, "sha512-1i23VsYkensZsdxWf+I59Uw3bLA6fUnuBqTXvVUUkJBQDeYmf/Kou/KArw4HsW7LZFCwl5PSZRWajqPwEct51g=="],
@@ -112,6 +119,8 @@
     "@rbxts/profileservice": ["@rbxts/profileservice@1.4.2", "", {}, "sha512-xpq0bTfU7ol+7bUF9S0HZnh4xyGBZRsvVIlmAkEWt81Fv0Dep4b2NXbtV0XrT05+vZBjMTGxKJk+jGx5reQmtQ=="],
 
     "@rbxts/react": ["@rbxts/react@17.3.7-ts.1", "", { "dependencies": { "@rbxts-js/react": "^17.3.7-ts.1" } }, "sha512-/jqZ2TvyLSAPwC30h95loUmy4XN2PwPhv6fBARJKtZfyozFx2RuxC9FiQSjpEZ2uOOPzr60It0MBUf94D+tsMg=="],
+
+    "@rbxts/react-charm": ["@rbxts/react-charm@0.3.0", "", { "peerDependencies": { "@rbxts/charm": "0.10.0", "@rbxts/react": "*" } }, "sha512-w64HoO6SxRSX86yNPiGazPQpR7cWBaWVATK9jkCphLQYmzdUV1BL9pRNN1Y1VMAk/PKiZ1mJdwX3PnwwvLXFvg=="],
 
     "@rbxts/react-devtools-core": ["@rbxts/react-devtools-core@17.3.7-ts.1", "", { "dependencies": { "@rbxts-js/react-devtools-core": "^17.3.7-ts.1" } }, "sha512-WJ7jdq0S1dMrgitA3HRisjonrxrXUVW+pcUPSfcaxOGRo0Jp9XHZIsCMghJxwdSnQDy41xIZ7h3egyRJYvGp+w=="],
 
