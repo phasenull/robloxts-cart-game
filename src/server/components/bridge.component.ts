@@ -1,7 +1,7 @@
 import { ProximityPrompt, TweenValue } from "@common/shared/util.helper";
 import { BaseComponent, Component } from "@flamework/components";
 
-@Component({ tag: "BridgeComopnent" })
+@Component({ tag: "BridgeComponent" })
 export class BridgeComponent extends BaseComponent<
 	{},
 	Model & {
@@ -20,8 +20,14 @@ export class BridgeComponent extends BaseComponent<
 	};
 	constructor() {
 		super();
-		this.proximity_prompt = ProximityPrompt(this.instance.Button);
-		this.proximity_prompt.Triggered.Connect(() => {});
+		this.proximity_prompt = ProximityPrompt(this.instance.Button.Color);
+        this.proximity_prompt.ActionText = "Toggle Bridge";
+        this.proximity_prompt.ObjectText = "Button";
+        this.proximity_prompt.RequiresLineOfSight = false;
+        this.proximity_prompt.MaxActivationDistance = 10
+		this.proximity_prompt.Triggered.Connect(() => {
+            this.openBridge()
+        });
 		this.initial_states = {
 			1: this.instance["1"].GetPivot(),
 			2: this.instance["2"].GetPivot(),
@@ -34,6 +40,7 @@ export class BridgeComponent extends BaseComponent<
 			return;
 		}
         this.proximity_prompt.Enabled = false;
+		this.instance.Button.Color.Color = new Color3(1, 0, 0);
 		this.state = "down";
 		TweenValue(
 			new TweenInfo(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
@@ -46,27 +53,31 @@ export class BridgeComponent extends BaseComponent<
 				);
 				this.instance[2].PivotTo(
 					this.initial_states[2].Lerp(
-						this.initial_states[2].mul(CFrame.Angles(math.rad(50), 0, 0)),
+						this.initial_states[2].mul(CFrame.Angles(math.rad(-50), 0, 0)),
 						alpha,
 					),
 				);
 			},
 		);
+        task.delay(20, () => {
+            this.closeBridge()
+        })
 	}
 	closeBridge() {
 		if (this.state === "up") {
 			return;
 		}
         this.proximity_prompt.Enabled = true;
+		this.instance.Button.Color.Color = this.initial_states.Button;
 		this.state = "up";
 		TweenValue(
 			new TweenInfo(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
 			(alpha) => {
 				this.instance["1"].PivotTo(
-					this.initial_states[1].Lerp(this.initial_states[1], 1 - alpha),
+					this.instance["1"].GetPivot().Lerp(this.initial_states[1], alpha),
 				);
 				this.instance[2].PivotTo(
-					this.initial_states[2].Lerp(this.initial_states[2], 1 - alpha),
+					this.instance["2"].GetPivot().Lerp(this.initial_states[2], alpha),
 				);
 			},
 		);

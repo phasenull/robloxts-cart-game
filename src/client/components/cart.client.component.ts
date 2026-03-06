@@ -217,7 +217,7 @@ export class CartClientComponent
 		}
 		const y_positon = this.instance.Root.Position.Y
 		
-		if (y_positon < -66) {
+		if (y_positon < -260) {
 			this.cleanupRide("Player fell off the map")
 		}
 	}

@@ -296,16 +296,16 @@ export const ISLAND_CONFIG = {
 		image: A.backgrounds.post_snowy
 	},
 	"6": {
-		name: "Void",
-		image: A.backgrounds.post_magma
-	},
-	"9": {
 		name: "Sands of Trial",
 		image: A.backgrounds.post_magma
 	},
-	"11": {
+	"9": {
 		name: "Pastel Paradise",
-		image: A.backgrounds.post_magma
+		image: A.backgrounds.desert
+	},
+	"11": {
+		name: "Void",
+		image: A.backgrounds.cloud
 	}
 }
 
