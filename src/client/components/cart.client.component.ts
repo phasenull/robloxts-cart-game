@@ -154,22 +154,6 @@ export class CartClientComponent
 		const max_velocity = this.max_velocity
 		const is_going_down = velocity.Y < -10
 		this.toggleSteepState(is_going_down && !is_in_air)
-		// speed limitting
-		// if (velocity.Magnitude > max_velocity && !is_in_air) {
-		// 	if (this.is_steep) {
-		// 		if (velocity.Magnitude > max_velocity * 2) {
-		// 			this.instance.Root.AssemblyLinearVelocity = normalizeVector3(
-		// 				velocity,
-		// 				max_velocity * 3
-		// 			)
-		// 		}
-		// 	} else {
-		// 		this.instance.Root.AssemblyLinearVelocity = normalizeVector3(
-		// 			velocity,
-		// 			math.lerp(velocity.Magnitude, max_velocity, dt * 10)
-		// 		)
-		// 	}
-		// }
 		const force = this.instance.Root.VectorForce
 		const mass = this.instance.FindFirstChild("Mass") as BasePart | undefined
 		if (!force || !mass) {
@@ -182,7 +166,23 @@ export class CartClientComponent
 			const brake_force = velocity_direction.mul(-this.wheel_friction * 5)
 			force.Force = brake_force
 		} else {
-			force.Force = humanoid.MoveDirection.mul(this.power).add(
+			// Limit force only along the current velocity direction (forward speed cap).
+			// Perpendicular/steering force is always applied at full power so A/D works at top speed.
+			const move = humanoid.MoveDirection
+			const horizontal_velocity = new Vector3(velocity.X, 0, velocity.Z)
+			const horizontal_speed = horizontal_velocity.Magnitude
+			const speed_ratio = math.clamp(horizontal_speed / max_velocity, 0, 1)
+
+			let drive_force = new Vector3(0, 0, 0)
+			if (move.Magnitude > 0) {
+				const velocity_dir = horizontal_speed > 0.1 ? horizontal_velocity.Unit : move
+				const forward_component = move.Dot(velocity_dir) // how much input aligns with velocity
+				const forward_multiplier = forward_component > 0 ? math.max(1 - speed_ratio, 0) : 1
+				const lateral_component = move.sub(velocity_dir.mul(forward_component)) // perpendicular part
+				drive_force = velocity_dir.mul(this.power * forward_multiplier * forward_component)
+					.add(lateral_component.mul(this.power))
+			}
+			force.Force = drive_force.add(
 				new Vector3(
 					0,
 					((root.AssemblyMass * Workspace.Gravity) / 2) *
@@ -568,9 +568,9 @@ export class CartClientComponent
 		}
 		if (cart_config) {
 			this.overrideConfig({
-				power: cart_config.power,
+				power: cart_config.power * 2.5,
 				friction: cart_config.friction,
-				max_velocity: 25
+				max_velocity: cart_config.power / 4
 			})
 		}
 		this.instance
