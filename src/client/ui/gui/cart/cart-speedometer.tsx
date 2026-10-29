@@ -15,6 +15,13 @@ const SPEEDLINES_OFFSET = 12; // studs in front of camera
 const SPEEDLINES_MAX_RATE = 1000;
 const SPEEDLINES_MAX_SPEED_MIN = 20;
 const SPEEDLINES_MAX_SPEED_MAX = 25;
+/** The cart's speed from its Root (PrimaryPart as a fallback), 0 once the cart is gone. */
+function getCartSpeed(cart: Model): number {
+	const root = (cart.FindFirstChild("Root") as BasePart | undefined) ?? cart.PrimaryPart;
+	if (!root || !root.IsDescendantOf(Workspace)) return 0;
+	return root.AssemblyLinearVelocity.Magnitude;
+}
+
 export function SpeedometerHud(props: {
 	__story?: {
 		cart_enabled: boolean;
@@ -54,11 +61,9 @@ export function SpeedometerHud(props: {
 		if (!cart) {
 			return;
 		}
-		const part = cart.instance.Root;
 		const connection = RunService.Heartbeat.Connect(() => {
-			const velocity = part.AssemblyLinearVelocity;
-			const current_speed = velocity.Magnitude;
-			set_speed(current_speed);
+			// the cart can be destroyed (or lose its Root) before the context drops it: read 0 then, no error
+			set_speed(getCartSpeed(cart.instance));
 		});
 		return () => {
 			connection?.Disconnect();
@@ -78,7 +83,7 @@ export function SpeedometerHud(props: {
 		const renderStepped = RunService.RenderStepped.Connect(() => {
 			const camera = Workspace.CurrentCamera;
 			if (!camera) return;
-			const currentSpeed = cart.instance.Root.AssemblyLinearVelocity.Magnitude;
+			const currentSpeed = getCartSpeed(cart.instance);
 			emitter.Enabled = currentSpeed >= 50;
 			if (!emitter.Enabled) return;
 			const aspectRatio = camera.ViewportSize.X / camera.ViewportSize.Y;

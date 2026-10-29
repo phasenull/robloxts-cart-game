@@ -1,6 +1,6 @@
 import { TweenService, Workspace } from "@rbxts/services"
 import { ICart, IWheel } from "./type.helper"
-import { CART_TUNING } from "./cart.tuning"
+import { CART_TUNING, getCartDescriptor } from "./cart.tuning"
 
 import StringUtils from "@rbxts/string-utils"
 import { BuildDeepWeldConstraints,
@@ -59,9 +59,10 @@ function resolveChassisForward(cart_model: ICart, bounding_box: CFrame): Vector3
 export function RigCartModel(cart_model: ICart, mode: CartRigMode = "simulated") {
 	const simulated = mode === "simulated"
 	const visuals = cart_model.FindFirstChild("Visuals") as Model
+	const descriptor = getCartDescriptor(cart_model)
 	const sv = new Instance("StringValue", cart_model)
 	sv.Name = "CartIdentifier"
-	sv.Value = cart_model.Name.split("_")[0]
+	sv.Value = descriptor
 	const wheels = cart_model.Wheels
 	const [bounding_box] = cart_model.GetBoundingBox()
 	const forward = resolveChassisForward(cart_model, bounding_box)

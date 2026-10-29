@@ -55,38 +55,27 @@ export class PurchaseComponent extends TaggedComponent<Model> {
 		this.prompt = root.FindFirstChild(PROMPT_NAME) as ProximityPrompt;
 		const product_id = findProductIdFromModel(this.instance);
 
-		// Check ownership before allowing purchase prompt
-		this.trove.add(task.spawn(async () => {
-			for (let i = 0; i < 5; i++) {
-				const result =
-					await network.client.ShopService.doesPlayerOwnItem.invoke(
-						"cart",
-						this.instance.Name,
-					);
-				// result[1] being set means an error occurred (e.g. profile not loaded yet), retry
-				if (result && result[1] !== undefined) {
-					task.wait(2);
-					continue;
-				}
-				if (result && result[0] === true) {
-					this.prompt.Enabled = false;
-				}
-				break;
-			}
+		// Hide the prompt for a cart the player already owns (one shared query for every display cart: one request each
+		// was a burst past the network rate limit, "Slow down!" at join)
+		this.trove.add(task.spawn(() => {
+			if (ownedCarts().expect().has(this.instance.Name)) this.prompt.Enabled = false;
 		}));
 
 		this.trove.connect(this.prompt.Triggered, async (player) => {
 			if (player !== Players.LocalPlayer) return;
 			if (!product_id) return;
 			// Re-check ownership right before prompting to prevent double-purchase
-			const result =
-				await network.client.ShopService.doesPlayerOwnItem.invoke(
+			try {
+				const [owned] = await network.client.ShopService.doesPlayerOwnItem.invoke(
 					"cart",
 					this.instance.Name,
 				);
-			if (result && result[0] === true) {
-				this.prompt.Enabled = false;
-				return;
+				if (owned === true) {
+					this.prompt.Enabled = false;
+					return;
+				}
+			} catch (err) {
+				this.logger.warn(`Ownership check failed, prompting anyway: ${err}`);
 			}
 			PromptPurchaseSignal.Fire(true);
 			MarketplaceService.PromptProductPurchase(player, product_id);
@@ -196,6 +185,26 @@ export class PurchaseComponent extends TaggedComponent<Model> {
 			}
 		});
 	}
+}
+/** The carts the local player owns, asked once per generation (retried while the profile loads). Never rejects. */
+let owned_carts: Promise<ReadonlySet<string>> | undefined;
+function ownedCarts(): Promise<ReadonlySet<string>> {
+	owned_carts ??= (async () => {
+		for (let attempt = 0; attempt < 5; attempt++) {
+			try {
+				const [inventory] = await network.client.ShopService.getPlayerInventory.invoke("cart");
+				// no inventory: the profile isn't loaded yet
+				if (inventory) {
+					return new Set((inventory.carts ?? []).map((entry) => entry.name)) as ReadonlySet<string>;
+				}
+			} catch {
+				// rate limited or timed out: try again below
+			}
+			task.wait(2);
+		}
+		return new Set<string>() as ReadonlySet<string>;
+	})();
+	return owned_carts;
 }
 function findProductIdFromModel(model: Model): number | undefined {
 	const config = getConfig();

@@ -7,7 +7,7 @@ import { Logger } from "shared/common/logger"
 import type { CartController } from "client/controllers/cart.controller"
 import { IHandBrake } from "shared/cart.helper"
 import { buildCartRaycastParams, getCartMass, getCartYawInertia, isSafeRestPose, probeWheels } from "shared/cart.physics"
-import { CART_TUNING, CartStats, resolveCartStats } from "shared/cart.tuning"
+import { CART_TUNING, CartStats, getCartDescriptor, resolveCartStats } from "shared/cart.tuning"
 import { TaggedComponent } from "shared/component"
 import { network } from "shared/net"
 import { ICart } from "shared/type.helper"
@@ -70,7 +70,7 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 
 	constructor(instance: ICart, trove: Trove) {
 		super(instance, trove)
-		this.descriptor = this.instance.Name.split("_")[0]
+		this.descriptor = getCartDescriptor(this.instance)
 		this.logger = new Logger(`CartClientComponent::${this.descriptor}`)
 		this.stats = resolveCartStats(this.descriptor)
 		this.trove.add(this.handbrakeChanged)
@@ -170,6 +170,9 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 			animationId: CART_TUNING.animations.lever
 		})
 		this.base_fov = Workspace.CurrentCamera?.FieldOfView ?? CART_TUNING.feel.baseFov
+		// the revive anchor starts where this cart spawned, like the server's safe pose (CartService.recordSafePivot):
+		// an anchor left from an earlier ride is hundreds of studs off and the server would overrule it
+		Dependency<CartController>().saveCheckpoint(this.instance.GetPivot())
 		Dependency<CartController>().onCartChange.Fire(this)
 	}
 
@@ -191,9 +194,7 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 		const camera = Workspace.CurrentCamera
 		if (camera) camera.FieldOfView = this.base_fov
 		Dependency<AnimationController>().stop("cart_idle", 0)
-		Dependency<CartController>().onCartChange.Fire(undefined)
-		await network.client.CheckpointService.tpMeToBigCheckpoint.invokeWithTimeout(5)
-		Dependency<CartController>().toggleDeathScreen(true)
+		await Dependency<CartController>().showDeathScreen()
 	}
 
 	private releaseControls() {
@@ -557,6 +558,16 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 			}
 			const camera = Workspace.CurrentCamera
 			if (camera) camera.FieldOfView = this.base_fov
+			// The cart left the world under the rider (the server destroyed it: wheels gone, a teleport, a respawn, a
+			// server swap). The component is torn down before Root.Destroying could end the ride, so the controller
+			// takes it from here: the UI drops this cart now, and the death screen opens unless a new cart or
+			// character turns up (CartController.onRideLost).
+			if (!this.ended && !this.instance.IsDescendantOf(Workspace)) {
+				this.ended = true
+				this.riding = false
+				Dependency<AnimationController>().stop("cart_idle", 0)
+				Dependency<CartController>().onRideLost(this.rider)
+			}
 		}
 	}
 }

@@ -1,4 +1,5 @@
 import {
+	CollectionService,
 	MarketplaceService,
 	PhysicsService,
 	Players,
@@ -27,7 +28,7 @@ import type { CheckpointService } from "./checkpoint.service"
 import type { ComponentsService } from "./components.service"
 import type { CustomizationService } from "./customization.service"
 import { OutlineHighlight } from "shared/common/util.helper"
-import { CART_TUNING, checkSuspensionStability } from "shared/cart.tuning"
+import { CART_TUNING, checkSuspensionStability, getCartDescriptor, getCartOwnerId } from "shared/cart.tuning"
 import { prepareRiderBody } from "shared/cart.physics"
 import { Tasks } from "shared/tasks"
 import type { ProperReturns } from "shared/common/util.helper"
@@ -42,6 +43,10 @@ interface RideState {
 
 /** How long the shield lasts on a cart given back after a swap (as a small checkpoint spawn). */
 const RESUME_SHIELD = 5
+/** Seconds the seat may take to appear (the cart component rigs it, deferred) before a spawn gives up seating. */
+const SEAT_WAIT = 3
+/** Seconds a revive waits for a just-bought revive to be granted (ProcessReceipt) before failing. */
+const REVIVE_GRANT_WAIT = 5
 
 @Service()
 export class CartService extends Module implements OnInit, OnStart, OnPlayerAdded {
@@ -55,6 +60,8 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 	/** Every cart this generation spawned and that still exists: destroyed when the generation stops. */
 	private readonly SPAWNED = new Set<Model>()
 	private readonly DEBOUNCE_TABLE = new Map<Player, number>()
+	/** Players whose revive is being handled right now. */
+	private readonly REVIVING = new Set<Player>()
 	private rides!: PlayerState<RideState>
 	private tasks!: Tasks
 
@@ -241,43 +248,16 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 
 		this.trove.add(network.server.CartService.revive.handle(
 			async (player, requested_target, stage) => {
-				// never trust the client's position: it must match a pose the server saw
-				const target = this.resolveReviveTarget(player, requested_target)
-				if (!target) {
-					return [false, "No safe position to revive at"]
+				// one revive at a time per player: a second click while the first is still spawning must not use another
+				if (this.REVIVING.has(player)) {
+					return [false, "Already reviving"]
 				}
-				// the same server-side product use the useProduct leaf runs (was useProduct.predict)
-				const [data, err] = this.useProduct(player, "revives")
-				if (!data || err) {
-					return [false, err || "Failed to use revive product"]
+				this.REVIVING.add(player)
+				try {
+					return this.revive(player, requested_target, stage)
+				} finally {
+					this.REVIVING.delete(player)
 				}
-				// this.logger.log(
-				// 	`Revive-spawning cart for player ${player.Name} at stage ${stage}`
-				// )
-				const cart_skin = this.getPlayerSkin(player)
-				const cart = this.spawnPlayerCartAtLocation(player, target, cart_skin)
-
-				if (!cart) {
-					return [false, "Failed to spawn cart"] as [false, string]
-				}
-
-				// Add shield immediately to prevent race condition with damage parts
-				this.addShield(cart, 10)
-
-				const vehicle_seat = cart.FindFirstChildWhichIsA("VehicleSeat")
-
-				const char = player.Character
-				const pp = char?.PrimaryPart
-
-				if (vehicle_seat && pp && char) {
-					pp.PivotTo(target)
-					task.wait(0.5) // Wait for the seat to be fully initialized
-					vehicle_seat.Sit(player.Character?.FindFirstChildOfClass("Humanoid")!)
-				}
-				const checkpoint_service = Dependency<CheckpointService>()
-				checkpoint_service.setCheckpointIndex(player, stage)
-
-				return [true] as [true]
 			}
 		))
 
@@ -293,6 +273,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		this.trove.connect(Players.PlayerRemoving, (player) => {
 			this.PLAYER_SKINS.delete(player)
 			this.DEBOUNCE_TABLE.delete(player)
+			this.REVIVING.delete(player)
 		})
 		assets.carts.GetChildren().forEach((cart) => {
 			if (!cart.IsA("Model")) return
@@ -328,6 +309,36 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		PhysicsService.CollisionGroupSetCollidable("BigSphere", "Invincible", false)
 		PhysicsService.CollisionGroupSetCollidable("BigSphere", "Default", false)
 		PhysicsService.CollisionGroupSetCollidable("BigSphere", "Players", false)
+	}
+	/** Revives the player's cart at their last safe pose (the revive leaf, one at a time per player). */
+	private revive(player: Player, requested_target: CFrame, stage: number): ProperReturns<true> {
+		// never trust the client's position: it must match a pose the server saw
+		const target = this.resolveReviveTarget(player, requested_target)
+		if (!target) {
+			return [false, "No safe position to revive at"]
+		}
+		// a revive bought from the death screen: the client asks as soon as the purchase prompt closes, which can be
+		// before ProcessReceipt granted it, so give the grant a moment
+		const deadline = os.clock() + REVIVE_GRANT_WAIT
+		while (this.getPlayerRevives(player) <= 0 && os.clock() < deadline && player.Parent === Players) {
+			task.wait(0.25)
+		}
+		// the same server-side product use the useProduct leaf runs (was useProduct.predict)
+		const [data, err] = this.useProduct(player, "revives")
+		if (!data || err) {
+			return [false, err || "Failed to use revive product"]
+		}
+		const cart = this.spawnPlayerCartAtLocation(player, target, this.getPlayerSkin(player), false)
+		// shield first, so no damage part takes a wheel before the rider is in
+		this.addShield(cart, 10)
+		if (!this.seatPlayer(player, cart)) {
+			// no seat or no character: give the revive back rather than leave an empty cart for it
+			this.incrementPlayerRevives(player, 1)
+			cart.Destroy()
+			return [false, "Could not seat you in the revived cart"]
+		}
+		Dependency<CheckpointService>().setCheckpointIndex(player, stage)
+		return [true]
 	}
 	/** The product use behind the useProduct leaf (server-side checks; the client only asks). */
 	private useProduct(player: Player, product_key: string): ProperReturns<true> {
@@ -382,8 +393,10 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		const safe = this.getSafePivot(player)
 		if (!resume || !safe || !player.Character) return
 		this.logger.log(`Giving ${player.Name} their cart back after the update`)
-		const cart = this.spawnPlayerCartAtLocation(player, safe, resume.skin)
+		const cart = this.spawnPlayerCartAtLocation(player, safe, resume.skin, false)
 		this.addShield(cart, RESUME_SHIELD)
+		// seating waits for the rig: don't hold up the rest of onPlayerAdded
+		this.tasks.spawn(() => this.seatPlayer(player, cart))
 	}
 	/** The client's target if it is close to a pose the server saw, otherwise the server's own. */
 	resolveReviveTarget(player: Player, requested: CFrame): CFrame | undefined {
@@ -443,21 +456,16 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 	destroyExistingCartsIfAny(player: Player) {
 		const existing = this.PLAYER_CARTS.get(player)
 		const all_carts = Dependency<ComponentsService>().all(CartServerComponent)
-		const my_cart = all_carts.filter((c) => c.resolvePlayer() === player || c.instance.Name.split("_")[1] === player.Name)
+		// by the owner attribute, never the "<skin>_<username>" name (usernames can contain "_")
+		const my_cart = all_carts.filter((c) => c.resolvePlayer() === player || getCartOwnerId(c.instance) === player.UserId)
 		if (existing) {
 			existing.Destroy()
 		}
-		Workspace.GetChildren().forEach((child) => {
-			if (
-				child.GetTags().find((e) => e === "CartComponent") &&
-				child.IsA("Model")
-			) {
-				const does_name_match = child.Name.split("_")[1] === player.Name
-				if (does_name_match) {
-					child.Destroy()
-				}
+		for (const child of CollectionService.GetTagged("CartComponent")) {
+			if (child.IsA("Model") && child.IsDescendantOf(Workspace) && getCartOwnerId(child) === player.UserId) {
+				child.Destroy()
 			}
-		})
+		}
 		my_cart.forEach((cart) => {
 			cart.cleanup()
 			cart.instance?.Destroy()
@@ -466,33 +474,50 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 	spawnPlayerCartAtLocation(
 		player: Player,
 		cframe: CFrame,
-		cart_skin?: string
+		cart_skin?: string,
+		seat = true
 	): Model {
 		this.refreshPlayerProducts(player)
 		this.destroyExistingCartsIfAny(player)
 		const target_skin = cart_skin ?? this.getPlayerSkin(player)
-		const orig_cart = assets.carts.FindFirstChild(target_skin) as Model
-		assert(orig_cart, `Cart model ${target_skin} not found in assets`)
-		const cart_model = orig_cart.Clone() as ICart
-
+		const cart_model = this.cloneCart(player, target_skin)
+		cart_model.PivotTo(cframe.mul(new CFrame(0, 2, 0)))
 		this.track(player, cart_model, target_skin)
 		cart_model.Parent = Workspace.FindFirstChild("Carts") || Workspace
-		cart_model.PivotTo(cframe.mul(new CFrame(0, 2, 0)))
 		this.recordSafePivot(player, cframe)
 		this.PLAYER_CARTS.set(player, cart_model)
-		cart_model.Name = `${cart_model.Name}_${player.Name}`
-		// The "CartComponent" tag (cloned with the model) makes ComponentsService build its CartServerComponent.
-		// Sit player after a short delay to ensure seat is ready
-		const vehicle_seat = cart_model.FindFirstChildWhichIsA("VehicleSeat")
-		if (vehicle_seat && player.Character) {
-			const humanoid = player.Character.FindFirstChildOfClass("Humanoid")
-			if (humanoid) {
-				task.wait(0.1)
-				vehicle_seat.Sit(humanoid)
-			}
-		}
+		if (seat) this.seatPlayer(player, cart_model)
 		network.server.CartService.clearDeathPreview.fire(player)
 		return cart_model
+	}
+	/** A fresh cart of `skin` for `player`, named and stamped with its skin and owner, not parented yet. */
+	private cloneCart(player: Player, skin: string): ICart {
+		const orig_cart = assets.carts.FindFirstChild(skin) as Model
+		assert(orig_cart, `Cart model ${skin} not found in assets`)
+		const cart_model = orig_cart.Clone() as ICart
+		cart_model.SetAttribute("CartSkin", skin)
+		cart_model.SetAttribute("OwnerUserId", player.UserId)
+		cart_model.Name = `${skin}_${player.Name}`
+		return cart_model
+	}
+	/**
+	 * Puts the player in their freshly parented cart. The VehicleSeat only exists once CartServerComponent has rigged
+	 * the model (its tag is handled deferred), so wait for it; the character is moved next to the seat first so the
+	 * seat weld doesn't drag the cart across the map (and the cart is streamed in around the player). Returns false
+	 * when there is no seat, character or the cart went away.
+	 */
+	seatPlayer(player: Player, cart: Model): boolean {
+		const seat = cart.WaitForChild("VehicleSeat", SEAT_WAIT) as VehicleSeat | undefined
+		const humanoid = player.Character?.FindFirstChildOfClass("Humanoid")
+		if (!seat || !seat.IsA("VehicleSeat") || !cart.IsDescendantOf(Workspace)) {
+			this.logger.warn(`Could not find vehicle seat for cart ${cart.GetFullName()}`)
+			return false
+		}
+		if (!humanoid || humanoid.Health <= 0) return false
+		humanoid.Sit = false
+		player.Character!.PivotTo(seat.CFrame.mul(new CFrame(0, 3, 0)))
+		seat.Sit(humanoid)
+		return true
 	}
 	/** A cart this generation spawned: owned by it until destroyed, and forgotten as the player's cart then. */
 	private track(player: Player, cart_model: Model, skin: string) {
@@ -628,8 +653,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		if (this.hasShield(cart)) {
 			return
 		}
-		const cartIdentifier = (cart.FindFirstChild("CartIdentifier") as StringValue | undefined)?.Value ?? cart.Name.split("_")[0]
-		if (cartIdentifier === "Armored Cart") {
+		if (getCartDescriptor(cart) === "Armored Cart") {
 			return
 		}
 		// Get or initialize rate tracker
@@ -748,9 +772,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		this.refreshPlayerProducts(player)
 		this.destroyExistingCartsIfAny(player)
 		const cart_skin = this.getPlayerSkin(player)
-		const orig_cart = assets.carts.FindFirstChild(cart_skin) as Model
-		assert(orig_cart, `Cart model ${cart_skin} not found in assets`)
-		const cart_model = orig_cart.Clone() as ICart
+		const cart_model = this.cloneCart(player, cart_skin)
 		const cframe_part = button.SpawnPlatform.GetChildren().find(
 			(child) => child.IsA("BasePart") && child.Size === new Vector3(8, 0.2, 6)
 		) as BasePart
@@ -766,20 +788,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		cart_model.Parent = Workspace.FindFirstChild("Carts") || Workspace
 		this.recordSafePivot(player, cart_model.GetPivot())
 		this.PLAYER_CARTS.set(player, cart_model)
-		cart_model.Name = `${cart_model.Name}_${player.Name}`
-		// Sit player after a short delay to ensure seat is ready
-		const vehicle_seat = cart_model.FindFirstChildWhichIsA("VehicleSeat")
-		if (vehicle_seat && player.Character) {
-			const humanoid = player.Character.FindFirstChildOfClass("Humanoid")
-			if (humanoid) {
-				task.wait(0.1)
-				vehicle_seat.Sit(humanoid)
-			}
-		} else if (!vehicle_seat) {
-			this.logger.warn(
-				`Could not find vehicle seat for cart ${cart_model.GetFullName()}`
-			)
-		}
+		this.seatPlayer(player, cart_model)
 		network.server.CartService.clearDeathPreview.fire(player)
 		return cart_model
 	}

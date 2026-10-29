@@ -215,8 +215,9 @@ export class CheckpointService extends Module implements OnInit, OnStart, OnPlay
 		// SMALL CHECKPOINT
 		cframe = (checkpoint.FindFirstChild("Trigger") as BasePart)?.CFrame
 		char.PivotTo(cframe)
-		const cart = cart_service.spawnPlayerCartAtLocation(player, cframe)
+		const cart = cart_service.spawnPlayerCartAtLocation(player, cframe, undefined, false)
 		cart_service.addShield(cart, 5)
+		cart_service.seatPlayer(player, cart)
 	}
 	getPlayerCheckpoints(player: Player): number[] {
 		const profile_service = Dependency<DataService>()

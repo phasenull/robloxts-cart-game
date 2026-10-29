@@ -24,6 +24,11 @@ interface DeathState {
 	deathScreen: boolean
 }
 
+/** Seconds to wait, after the cart vanished under the rider, for a replacement before calling it a death. */
+const RIDE_LOST_GRACE = 2.5
+/** The server may wait for a just-bought revive to be granted and for the new cart's seat (CartService.revive). */
+const REVIVE_TIMEOUT = 12
+
 @Controller({ loadOrder: 5 })
 export class CartController extends Module implements OnInit, OnStart {
 	private readonly logger = new Logger("cart.controller")
@@ -63,6 +68,31 @@ export class CartController extends Module implements OnInit, OnStart {
 			this.toggleOnDeathScreen.Fire(undefined)
 		}
 	}
+	/** A ride ended (the local player's cart is gone): back to the last big checkpoint and the death screen. */
+	async showDeathScreen() {
+		this.onCartChange.Fire(undefined)
+		try {
+			await network.client.CheckpointService.tpMeToBigCheckpoint.invokeWithTimeout(5)
+		} catch (err) {
+			this.logger.warn(`Teleport to the big checkpoint failed: ${err}`)
+		}
+		this.toggleDeathScreen(true)
+	}
+	/**
+	 * The local player's cart left the world while they rode it (the component could not end the ride itself). The
+	 * UI drops it at once; the death screen opens after a grace period unless the player is in another cart by then
+	 * (a respawn, a revive, a server swap giving the ride back) or got a new character (a teleport respawns them).
+	 */
+	onRideLost(rider: Humanoid | undefined) {
+		if (!this.getMyCart()) this.onCartChange.Fire(undefined)
+		this.tasks.delay(RIDE_LOST_GRACE, () => {
+			if (this.getMyCart() || this.death.deathScreen) return
+			const humanoid = Players.LocalPlayer.Character?.FindFirstChildOfClass("Humanoid")
+			if (!humanoid || humanoid !== rider || humanoid.Health <= 0) return
+			this.logger.warn("Cart lost while riding, opening the death screen")
+			this.showDeathScreen()
+		})
+	}
 	/** The death screen a swap interrupted (the UI reopens it at mount), else undefined. */
 	getOpenDeathScreen(): CFrame | undefined {
 		return this.death.deathScreen ? this.lastCheckpoint() : undefined
@@ -94,26 +124,27 @@ export class CartController extends Module implements OnInit, OnStart {
 		if (this.__is_reviving) {
 			return [false, "Already reviving"]
 		}
-		this.__is_reviving = true
-
-		const cache = this.lastCheckpoint()
+		const cache = this.lastCheckpoint()!
 		this.__cached_stage = current_stage || 0
 
 		this.__is_reviving = true
-		// this.logger.log("Reviving player...")
-		if (!cache) {
-			return [false, "No checkpoint to revive to"]
-		}
-		const [success, err] =
-			await network.client.CartService.revive.invokeWithTimeout(
-				5,
+		// a timeout or "Slow down!" rejects: report it like a refusal, and never leave __is_reviving stuck on
+		let success: boolean
+		let err: string | undefined
+		try {
+			;[success, err] = await network.client.CartService.revive.invokeWithTimeout(
+				REVIVE_TIMEOUT,
 				cache,
 				this.__cached_stage
 			)
-		this.__is_reviving = false
+		} catch (e) {
+			;[success, err] = [false, tostring(e)]
+		} finally {
+			this.__is_reviving = false
+		}
 		if (!success) {
 			this.logger.warn(`Failed to revive-spawn cart: ${err}`)
-			return [success, err]
+			return [false, err ?? "Revive failed"]
 		}
 
 		// Create and position arrow pointing to next small checkpoint (client-side)

@@ -75,13 +75,7 @@ class CommandClass {
             spawn_cframe = player_cframe
         }
 
-        const cart = cart_service.spawnPlayerCartAtLocation(player, spawn_cframe, cart_skin)
-        
-        // Teleport player to spawn location and seat them
-        const char = player.Character
-        const humanoid = char?.FindFirstChildOfClass("Humanoid")
-        if (char && humanoid) {
-            char.PivotTo(spawn_cframe.mul(new CFrame(0, 2, 0)))
-        }
+        // spawns the cart and seats the player in it (moving the character after seating would drag the cart down)
+        cart_service.spawnPlayerCartAtLocation(player, spawn_cframe, cart_skin)
 	}
 }

@@ -196,9 +196,21 @@ export function resolveCartStats(descriptor: string): CartStats {
 	}
 }
 
+/**
+ * The skin a cart was cloned from. CartService stamps it (and the owner) as attributes before parenting the cart, so
+ * nothing parses the "<skin>_<username>" name (usernames can contain "_"); the name is the fallback for old carts.
+ */
 export function getCartDescriptor(cart: Model): string {
+	const skin = cart.GetAttribute("CartSkin")
+	if (typeIs(skin, "string")) return skin
 	const identifier = cart.FindFirstChild("CartIdentifier") as StringValue | undefined
 	return identifier?.Value ?? cart.Name.split("_")[0]
+}
+
+/** The UserId of the player a cart was spawned for (attribute set by CartService), undefined for other models. */
+export function getCartOwnerId(cart: Instance): number | undefined {
+	const owner = cart.GetAttribute("OwnerUserId")
+	return typeIs(owner, "number") ? owner : undefined
 }
 
 /** Horizontal speed above which the server corrects a cart. */

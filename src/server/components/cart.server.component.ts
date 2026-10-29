@@ -4,7 +4,7 @@ import { Dependency } from "@typetorch/framework"
 import type { CartService } from "server/services/cart.service"
 import { RigCartModel } from "shared/cart.helper"
 import { buildCartRaycastParams, isSafeRestPose, prepareRiderBody } from "shared/cart.physics"
-import { CART_TUNING, CartStats, getServerSpeedLimit, resolveCartStats } from "shared/cart.tuning"
+import { CART_TUNING, CartStats, getCartDescriptor, getServerSpeedLimit, resolveCartStats } from "shared/cart.tuning"
 import { Logger } from "shared/common/logger"
 import { TaggedComponent } from "shared/component"
 import { ICart } from "shared/type.helper"
@@ -38,7 +38,7 @@ export class CartServerComponent extends TaggedComponent<ICart> {
 	constructor(instance: ICart, trove: Trove) {
 		super(instance, trove)
 		RigCartModel(this.instance, "simulated")
-		this.stats = resolveCartStats(this.instance.Name.split("_")[0])
+		this.stats = resolveCartStats(getCartDescriptor(this.instance))
 		this.speed_limit = getServerSpeedLimit(this.stats)
 		this.trove.add(
 			this.instance.Destroying.Once(() => {
