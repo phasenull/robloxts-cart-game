@@ -73,6 +73,7 @@
 						"node_modules": {
 							"$className": "Folder",
 							"@rbxts": { "$path": "node_modules/@rbxts" },
+							"@rbxts-js": { "$path": "node_modules/@rbxts-js" },
 							"@typetorch": {
 								"$className": "Folder",
 								"framework": { "$path": "node_modules/@typetorch/framework" }
