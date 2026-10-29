@@ -1,3 +1,4 @@
+import { Workspace } from "@rbxts/services"
 import { Module, Service, t, type OnStart, type OnTick } from "@typetorch/framework"
 import { BigSphereComponent } from "server/components/big-sphere.component"
 import { BoxingGlovesComponent } from "server/components/boxing-gloves.component"
@@ -7,7 +8,7 @@ import { DamageComponent } from "server/components/damage.component"
 import { RobotArmComponent } from "server/components/robot-arm.component"
 import { ComponentRegistry, guardOf, type TaggedComponent } from "shared/component"
 import { CartTouch } from "shared/components/cart-touch.component"
-import { CashComponent } from "shared/components/cash.component"
+import { CashComponent, selfTestCashPickups } from "shared/components/cash.component"
 import { ElevatorPlatformComponent } from "shared/components/elevator-platform.component"
 import { PlatformComponent } from "shared/components/platform.component"
 
@@ -35,6 +36,7 @@ export class ComponentsService extends Module implements OnStart, OnTick {
 		// Flamework's guard here was t.instanceOf("BasePart"), a ClassName no instance has: it never attached. Kept as is.
 		registry.register(this.trove, "PlatformComponent", PlatformComponent, t.instanceOf("BasePart"))
 		registry.register(this.trove, "ElevatorPlatformComponent", ElevatorPlatformComponent, t.instanceIsA("BasePart"))
+		if (Workspace.GetAttribute("TypeTorchTest") === true) selfTestCashPickups(registry.all(CashComponent))
 	}
 
 	onTick(dt: number) {
