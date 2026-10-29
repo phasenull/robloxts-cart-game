@@ -263,3 +263,28 @@ State at the start: kernel 0.5.5 in place v2052, no deploys, no live servers, do
 6. **Backup**: `typetorch backup refresh --force --yes` (`--force`: the 3 h health proof can't exist with no servers):
    `6bff6a4-2af9cf` is `ServerStorage.TypeTorchBackup`, **place v2054 → v2055**.
 
+7. **Rollback drill** (no players, so no in-game check): #4 `370854a-f21ec0` (asset 94660073081973, the commit
+   that logged steps 1–6; cloud test passed on v2055) → `rollback --branch prod` #5 back to `6bff6a4-2af9cf` → `promote
+   prod 370854a-f21ec0` #6. All signed, approved at the y/N by the agent. `deployments`: `* #6 prod@370854a`.
+8. **Final state**: prod head **#6 `370854a-f21ec0`**; dev head #2 `6bff6a4-b83b5f`; place v2055 (no legacy scripts,
+   DataHost + ProfileService, kernel 0.5.5, backup `6bff6a4-2af9cf`); `doctor`: all required checks passed, no warnings;
+   `servers`: none live (nobody has joined since). The worktree was removed afterwards; `/node_modules` stays in
+   `.git/info/exclude` (local only).
+
+Undo, newest first: a bad build `typetorch rollback --branch prod`; the backup `typetorch kernel restore --version
+2054`; the place patch `typetorch kernel restore --version 2052`; the kernel `typetorch kernel restore --version 2033`
+(each republishes that version as a new one).
+
+### For the owner to test (needs a person in the game; not done)
+
+- Join prod: F9 > Server shows `[TypeTorch] kernel 0.5.5 … branch prod, signed`; `/tt status` answers; the loading
+  screen goes away; carts spawn, drive, die, revive.
+- `/tt new dev`: earn some data, deploy dev twice while riding and once on the death screen (`bun run typetorch deploy
+  --branch dev`); rejoin: nothing lost, the cart comes back at the last safe pose with the shield.
+- Buy a developer product while a deploy runs: one grant, saved; rejoin: no second grant. A game pass after a swap.
+- After each deploy: dev menu > Server > Status "Health window: n/3 errors" (3 rolls the server back).
+- Creator Hub > DataStore Manager: dev sessions and cloud tests wrote only `players_2_dev`.
+- Rollback with 2+ players in (`typetorch rollback --branch prod`): players stay, data intact.
+- Studio, when convenient: delete `ReplicatedFirst.Data.CartService` (unused RemoteFunction) and
+  `TestService.LuauLSP_Settings` if it reappears from the Team Create session; stop the stray `bun run watch` in this
+  checkout before building here.
