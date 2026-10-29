@@ -78,3 +78,45 @@ export function getWheelBalls(cart: Model): BasePart[] {
 		.GetDescendants()
 		.filter((d): d is BasePart => d.IsA("BasePart") && d.Name === "BALL")
 }
+
+/**
+ * Mass the cart's actuators push: the chassis assembly (the "Mass" part) plus the wheel balls still attached. The
+ * balls hang on prismatic sliders, so they are separate assemblies that the chassis drags along.
+ */
+export function getCartMass(root: BasePart, wheels: BasePart[]): number {
+	let mass = root.AssemblyMass
+	for (const ball of wheels) {
+		if (ball.Parent && ball.AssemblyRootPart !== root.AssemblyRootPart) mass += ball.AssemblyMass
+	}
+	return mass
+}
+
+/**
+ * Yaw inertia of the cart about `axis` through the chassis centre of mass: the chassis box plus each attached wheel
+ * ball as a point mass (the sliders lock the balls' rotation to the chassis, so they turn with it).
+ */
+export function getCartYawInertia(root: BasePart, wheels: BasePart[], chassis_inertia_per_mass: number, axis: Vector3): number {
+	const centre = root.AssemblyCenterOfMass
+	let inertia = root.AssemblyMass * chassis_inertia_per_mass
+	for (const ball of wheels) {
+		if (!ball.Parent || ball.AssemblyRootPart === root.AssemblyRootPart) continue
+		const offset = ball.Position.sub(centre)
+		const perpendicular = offset.sub(axis.mul(offset.Dot(axis)))
+		inertia += ball.AssemblyMass * perpendicular.Dot(perpendicular)
+	}
+	return inertia
+}
+
+/**
+ * Makes a character's parts massless and puts them in the "Players" collision group (no collisions with wheel balls,
+ * hitboxes or other players). Called on spawn and again when the character sits in a cart, for parts added since.
+ */
+export function prepareRiderBody(char: Model) {
+	char.GetDescendants().forEach((descendant) => {
+		if (descendant.IsA("BasePart")) {
+			descendant.Massless = true
+			descendant.CollisionGroup = "Players"
+		}
+	})
+	char.SetAttribute("CartRiderBody", true)
+}

@@ -13,6 +13,7 @@ import { Logger } from "shared/common/logger"
 import { network } from "shared/net"
 import { assets } from "shared/common/assets"
 import { getNextSmallCheckpoint } from "shared/cart.helper"
+import { getCartMass, getWheelBalls } from "shared/cart.physics"
 import { ProperReturns } from "shared/common/util.helper";
 import { Scopes, Tasks } from "shared/tasks"
 
@@ -228,7 +229,7 @@ export class CartController extends Module implements OnInit, OnStart {
 
 				// punch: +150 studs/s along the hit direction plus a random spin, as impulses
 				const punch_speed = 150
-				root.ApplyImpulse(punch_direction.mul(punch_speed * root.AssemblyMass))
+				root.ApplyImpulse(punch_direction.mul(punch_speed * getCartMass(root, getWheelBalls(cart_instance))))
 				const spin = new Vector3(
 					math.random() * 2 - 1,
 					math.random() * 4 - 2,

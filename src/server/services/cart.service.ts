@@ -27,7 +27,8 @@ import type { CheckpointService } from "./checkpoint.service"
 import type { ComponentsService } from "./components.service"
 import type { CustomizationService } from "./customization.service"
 import { OutlineHighlight } from "shared/common/util.helper"
-import { CART_TUNING } from "shared/cart.tuning"
+import { CART_TUNING, checkSuspensionStability } from "shared/cart.tuning"
+import { prepareRiderBody } from "shared/cart.physics"
 import { Tasks } from "shared/tasks"
 import type { ProperReturns } from "shared/common/util.helper"
 
@@ -133,20 +134,19 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 			}
 		}))
 
-		playerTrove.connect(player.CharacterAdded, (char) => {
+		const setupCharacter = (char: Model) => {
 			this.logger.log(`Player ${player.Name} spawned in the world`)
 			OutlineHighlight(char)
 			const humanoid = char.WaitForChild("Humanoid") as Humanoid
 			if (humanoid) {
 				humanoid.WalkSpeed = 32
 			}
-			char.GetDescendants().forEach((descendant) => {
-				if (descendant.IsA("BasePart")) {
-					descendant.Massless = true
-					descendant.CollisionGroup = "Players"
-				}
-			})
-		})
+			prepareRiderBody(char)
+		}
+		playerTrove.connect(player.CharacterAdded, setupCharacter)
+		// a character that spawned before this generation's onPlayerAdded (the first one on a fresh server, while the
+		// payload boots) never saw CharacterAdded; set it up now (a swap replays this for everyone: it is idempotent)
+		if (player.Character && !player.Character.GetAttribute("CartRiderBody")) setupCharacter(player.Character)
 	}
 	validateConfigs(): void {
 		const config = getConfig()
@@ -181,6 +181,10 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 				errors++
 			}
 		})
+
+		for (const problem of checkSuspensionStability()) {
+			this.logger.warn(`CART_TUNING suspension is numerically unstable (carts will fling): ${problem}`)
+		}
 
 		if (errors === 0) {
 			this.logger.log(`CartConfig validation passed — ${cartConfig.size()} cart entries all OK`)
@@ -755,7 +759,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		cart_model.PivotTo(
 			cframe_part
 				.GetPivot()
-				.mul(new CFrame(0, cart_model.GetExtentsSize().Y / 2, 0))
+				.mul(new CFrame(0, cart_model.GetExtentsSize().Y / 2 + CART_TUNING.spawn.clearance, 0))
 				.mul(CFrame.Angles(0, math.rad(-90), 0))
 		)
 		this.track(player, cart_model, cart_skin)

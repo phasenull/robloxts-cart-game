@@ -67,7 +67,7 @@ export function RigCartModel(cart_model: ICart, mode: CartRigMode = "simulated")
 	const forward = resolveChassisForward(cart_model, bounding_box)
 	const chassis = CFrame.lookAt(bounding_box.Position, bounding_box.Position.add(forward), bounding_box.UpVector)
 
-	// chassis mass, the only massive part in the assembly
+	// chassis mass, the only massive part in the chassis assembly (the wheel balls are their own assemblies)
 	const mass_part = MasslessPart(cart_model, "Mass")
 	mass_part.Size = new Vector3(2.712, 1, 2.475)
 	mass_part.CFrame = bounding_box.mul(new CFrame(0, -0.5, 0))
@@ -201,7 +201,14 @@ export function RigCartModel(cart_model: ICart, mode: CartRigMode = "simulated")
 		ball.CollisionGroup = "Wheels"
 		ball.Anchored = false
 		// frictionless contact: grip, drive and braking are handled by the controller
-		ball.CustomPhysicalProperties = new PhysicalProperties(CART_TUNING.wheel.density, 0, 0, 100, 100)
+		const ball_volume = (4 / 3) * math.pi * math.pow(CART_TUNING.wheel.radius, 3)
+		ball.CustomPhysicalProperties = new PhysicalProperties(
+			math.clamp(CART_TUNING.wheel.mass / ball_volume, 0.01, 100),
+			0,
+			0,
+			100,
+			100
+		)
 		ball.Massless = !simulated
 		ball.Parent = model
 		ball.Destroying.Once(() => wheel.Destroy())

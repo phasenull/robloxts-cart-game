@@ -3,12 +3,16 @@ import { ICartEntry } from "./type.helper"
 
 /**
  * Every cart tunable lives here. Units are studs, seconds and studs/s unless noted.
- * Accelerations are mass-independent (studs/s²); forces are derived from AssemblyMass at runtime.
+ * Accelerations are mass-independent (studs/s²); forces are derived from the cart's mass at runtime
+ * (getCartMass: the chassis assembly plus the wheel balls it drags along).
  */
 export const CART_TUNING = {
 	chassis: {
-		/** mass of the hidden "Mass" part; every other cart part (and the rider) is massless */
-		mass: 40,
+		/**
+		 * mass of the hidden "Mass" part; every other chassis part (and the rider) is massless. With the four
+		 * wheel balls the whole cart weighs 40.
+		 */
+		mass: 26,
 		/** < 1 makes the cart a bit floatier in the air than the world; 1 = real gravity */
 		gravityScale: 0.85,
 		/** riding below this Y counts as falling off the map */
@@ -92,7 +96,11 @@ export const CART_TUNING = {
 		radius: 0.5,
 		/** wheel centre relative to the authored CONNECTION part, along chassis up */
 		mountOffsetY: -0.4,
-		density: 0.5
+		/**
+		 * mass of each BALL. It hangs off the chassis on a stiff spring-damper: a ball much lighter than about a tenth
+		 * of the chassis makes that spring numerically unstable (0.26 here flung the cart at spawn / on entering)
+		 */
+		mass: 3.5
 	},
 	air: {
 		/** soft self-righting torque while airborne or tipping, multiplied by assembly mass */
@@ -126,6 +134,10 @@ export const CART_TUNING = {
 	},
 	seat: {
 		weldC0: new CFrame(0.1, 0.3, 0.15)
+	},
+	spawn: {
+		/** the wheel balls reach below the unrigged model's extents; spawn this much higher so they start above the floor */
+		clearance: 0.6
 	},
 	server: {
 		sampleInterval: 0.25,
@@ -191,4 +203,27 @@ export function getCartDescriptor(cart: Model): string {
 export function getServerSpeedLimit(stats: CartStats): number {
 	const s = CART_TUNING.server
 	return math.max(s.hardSpeedFloor, stats.topSpeed * s.hardSpeedFactor)
+}
+
+/**
+ * Numerical-stability check of the wheel suspension (the cause of the "flung on entering a cart" bug): each BALL hangs
+ * off the chassis on a spring-damper, and a force-based step goes unstable once damping * dt / reduced mass passes 2
+ * (or the spring's natural frequency * dt does). Checked at 60 Hz, the slowest step Roblox's adaptive timestepping
+ * uses. Returns the problems, empty when the tuning is safe.
+ */
+export function checkSuspensionStability(wheel_count = 4): string[] {
+	const susp = CART_TUNING.suspension
+	const sprung = CART_TUNING.chassis.mass / wheel_count
+	const ball = CART_TUNING.wheel.mass
+	const stiffness = (sprung * 196.2 * CART_TUNING.chassis.gravityScale) / susp.sag
+	const damping = 2 * susp.dampingRatio * math.sqrt(stiffness * sprung)
+	const reduced = (sprung * ball) / (sprung + ball)
+	const dt = 1 / 60
+	const problems: string[] = []
+	const damping_number = (damping * dt) / reduced
+	const spring_number = math.sqrt(stiffness / reduced) * dt
+	if (damping_number >= 1.5) problems.push(`damping*dt/mass = ${string.format("%.2f", damping_number)} (must stay well under 2)`)
+	if (spring_number >= 1.5) problems.push(`omega*dt = ${string.format("%.2f", spring_number)} (must stay well under 2)`)
+	if (ball < sprung * 0.05) problems.push(`wheel ball mass ${ball} is under 5% of the sprung mass ${sprung}`)
+	return problems
 }

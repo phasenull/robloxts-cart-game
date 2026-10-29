@@ -3,7 +3,7 @@ import type { Trove } from "@rbxts/trove"
 import { Dependency } from "@typetorch/framework"
 import type { CartService } from "server/services/cart.service"
 import { RigCartModel } from "shared/cart.helper"
-import { buildCartRaycastParams, isSafeRestPose } from "shared/cart.physics"
+import { buildCartRaycastParams, isSafeRestPose, prepareRiderBody } from "shared/cart.physics"
 import { CART_TUNING, CartStats, getServerSpeedLimit, resolveCartStats } from "shared/cart.tuning"
 import { Logger } from "shared/common/logger"
 import { TaggedComponent } from "shared/component"
@@ -72,11 +72,7 @@ export class CartServerComponent extends TaggedComponent<ICart> {
 				seat_weld.C1 = new CFrame()
 			}
 			const char = player.Character
-			char?.GetDescendants().forEach((descendant) => {
-				if (descendant.IsA("BasePart")) {
-					descendant.Massless = true
-				}
-			})
+			if (char) prepareRiderBody(char)
 			this.rider = player
 			this.raycast_params = buildCartRaycastParams([this.instance, char].filterUndefined())
 			this.setOwnership(player)

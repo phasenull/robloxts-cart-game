@@ -6,7 +6,7 @@ import type { AnimationController } from "client/controllers/animation.controlle
 import { Logger } from "shared/common/logger"
 import type { CartController } from "client/controllers/cart.controller"
 import { IHandBrake } from "shared/cart.helper"
-import { buildCartRaycastParams, isSafeRestPose, probeWheels } from "shared/cart.physics"
+import { buildCartRaycastParams, getCartMass, getCartYawInertia, isSafeRestPose, probeWheels } from "shared/cart.physics"
 import { CART_TUNING, CartStats, resolveCartStats } from "shared/cart.tuning"
 import { TaggedComponent } from "shared/component"
 import { network } from "shared/net"
@@ -60,8 +60,8 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 	private raycast_params = buildCartRaycastParams([])
 	private lever_track: AnimationTrack | undefined
 	private base_fov = CART_TUNING.feel.baseFov
-	/** yaw inertia per unit mass, from the "Mass" box (the only massive part) */
-	private yaw_inertia_per_mass = 1
+	/** yaw inertia per unit mass of the "Mass" box (the chassis' only massive part); the wheel balls are added per step */
+	private chassis_inertia_per_mass = 1
 	private saved_jump = { height: 7.2, power: 50 }
 
 	constructor(instance: ICart, trove: Trove) {
@@ -109,7 +109,7 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 		const mass_part = this.instance.WaitForChild("Mass", 5) as BasePart | undefined
 		if (mass_part) {
 			const size = mass_part.Size
-			this.yaw_inertia_per_mass = (size.X * size.X + size.Z * size.Z) / 12
+			this.chassis_inertia_per_mass = (size.X * size.X + size.Z * size.Z) / 12
 		}
 
 		Dependency<AnimationController>().preload({ key: "cart_spawn", animationId: CART_TUNING.animations.spawn })
@@ -232,7 +232,7 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 		const right = forward.Cross(normal)
 
 		const velocity = root.AssemblyLinearVelocity
-		const mass = root.AssemblyMass
+		const mass = getCartMass(root, this.wheels)
 		const v_fwd = velocity.Dot(forward)
 		const v_lat = velocity.Dot(right)
 		const gravity = Workspace.Gravity * T.chassis.gravityScale
@@ -320,7 +320,8 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 			// first-order yaw-rate controller about the ground normal only
 			const yaw_error = yaw - root.AssemblyAngularVelocity.Dot(normal)
 			const max_torque = mass * T.steering.torquePerMass * math.max(traction, 0.25)
-			const torque = (mass * this.yaw_inertia_per_mass * yaw_error) / T.steering.yawResponseTime
+			const inertia = getCartYawInertia(root, this.wheels, this.chassis_inertia_per_mass, normal)
+			const torque = (inertia * yaw_error) / T.steering.yawResponseTime
 			steer_ctl.Torque = normal.mul(math.clamp(torque, -max_torque, max_torque))
 		} else {
 			steer_ctl.Torque = Vector3.zero
