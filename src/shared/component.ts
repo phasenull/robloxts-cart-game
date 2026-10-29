@@ -1,4 +1,4 @@
-import { RunService } from "@rbxts/services"
+import { ReplicatedStorage, RunService, ServerStorage, StarterGui, StarterPack, StarterPlayer } from "@rbxts/services"
 import type { Trove } from "@rbxts/trove"
 import { Modding, observeElement } from "@typetorch/framework"
 import { Tasks } from "./tasks"
@@ -76,6 +76,12 @@ type ComponentClass<C extends TaggedComponent> = new (instance: never, trove: Tr
 const ATOMIC_MODES = new Set<Enum.ModelStreamingMode>([Enum.ModelStreamingMode.Atomic, Enum.ModelStreamingMode.Persistent])
 
 /**
+ * Flamework's default ancestorBlacklist: tagged templates and archived models in storage never get a component (no
+ * component here set its own list). Checked once when the tag arrives, as Flamework did.
+ */
+const ANCESTOR_BLACKLIST: Instance[] = [ServerStorage, ReplicatedStorage, StarterPack, StarterGui, StarterPlayer]
+
+/**
  * The live components of one generation, by class. Owned by a module (`ComponentsService` / `ComponentsController`),
  * which registers each tag in its trove and forwards its own onTick/onPhysics/onRender.
  */
@@ -100,6 +106,7 @@ export class ComponentRegistry {
 		const instances = new Map<Instance, TaggedComponent>()
 		this.byClass.set(component, instances)
 		observeElement<Instance>(trove, tag, (instance, elementTrove) => {
+			if (ANCESTOR_BLACKLIST.some((ancestor) => instance.IsDescendantOf(ancestor))) return
 			let current: Trove | undefined
 			const build = () => {
 				const componentTrove = elementTrove.extend()
