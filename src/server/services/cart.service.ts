@@ -133,6 +133,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 				this.logger.log(`Adopted ${player.Name}'s cart ${cart.GetAttribute("CartId")} from the previous generation`)
 			} else {
 				// the cloud test's dummy rider (selfTestCartHandoff)
+				this.logger.log(`Adopted the probe cart ${cart.GetAttribute("CartId")} from the previous generation`)
 				this.SPAWNED.add(cart)
 				cart.Destroying.Once(() => this.SPAWNED.delete(cart))
 			}
@@ -426,21 +427,23 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 			const deadline = os.clock() + 0.6
 			while (!Dependency<ComponentsService>().getCart(cart) && os.clock() < deadline) task.wait()
 			const component = Dependency<ComponentsService>().getCart(cart)
-			const occupant = (cart.FindFirstChild("VehicleSeat") as VehicleSeat | undefined)?.Occupant
+			const seats = cart.GetDescendants().filter((d): d is VehicleSeat => d.IsA("VehicleSeat"))
+			const occupant = seats[0]?.Occupant
+			const rider = cart.FindFirstChild("HandoffProbeRider")
+			const humanoid = rider?.FindFirstChildOfClass("Humanoid")
 			const after = census(cart)
 			const owned = this.SPAWNED.has(cart)
+			const detail =
+				`rig ${before.join(",")} -> ${after.join(",")} (descendants, constraints, joints, welds, seats, balls), ` +
+				`rigged ${cart.GetAttribute("TypeTorchRig_cart.v1")}, occupant ${occupant?.GetFullName()}, ` +
+				`seat weld ${seats[0]?.FindFirstChild("SeatWeld") !== undefined}, rider health ${humanoid?.Health} ` +
+				`state ${humanoid?.GetState().Name} sit ${humanoid?.Sit}, component ${component !== undefined}, owned ${owned}`
 			cart.Destroy()
-			assert(component, "cart handoff: no CartServerComponent on the adopted cart")
-			assert(occupant?.Parent?.Name === "HandoffProbeRider", "cart handoff: the rider isn't seated after the swap")
-			assert(owned, "cart handoff: the adopted cart isn't owned by this generation")
-			assert(
-				before.join(",") === after.join(","),
-				`cart handoff: the rig changed (descendants, constraints, joints, welds, seats, balls) ${before.join(",")} -> ${after.join(",")}`
-			)
-			print(
-				`cart handoff self-test: same cart ${id} adopted by generation ${TypeTorch.generation}, rider seated, ` +
-					`rig unchanged (descendants, constraints, joints, welds, seats, balls) ${before.join(",")} -> ${after.join(",")}`
-			)
+			assert(component, `cart handoff: no CartServerComponent on the adopted cart; ${detail}`)
+			assert(occupant?.Parent === rider && rider !== undefined, `cart handoff: the rider isn't seated after the swap; ${detail}`)
+			assert(owned, `cart handoff: the adopted cart isn't owned by this generation; ${detail}`)
+			assert(before.join(",") === after.join(","), `cart handoff: the rig changed; ${detail}`)
+			print(`cart handoff self-test: same cart ${id} adopted by generation ${TypeTorch.generation}; ${detail}`)
 			return
 		}
 		const template = assets.carts.FindFirstChild("Cart") as Model | undefined
@@ -476,6 +479,9 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		}
 		state.cartId = cart.GetAttribute("CartId") as string
 		state.counts = census(cart)
+		this.trove.add(TypeTorch.onSwapOut(() => {
+			print(`cart handoff self-test: at swap-out occupant ${seat.Occupant?.GetFullName()}, rider health ${humanoid.Health} state ${humanoid.GetState().Name}`)
+		}))
 		print(`cart handoff self-test: probe cart ${state.cartId} rigged and ridden, ${state.counts.join(",")}`)
 	}
 	/** The product use behind the useProduct leaf (server-side checks; the client only asks). */
