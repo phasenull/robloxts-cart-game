@@ -1,12 +1,12 @@
-import { Players } from "@rbxts/services"
+import { Players, Workspace } from "@rbxts/services"
 import type { Trove } from "@rbxts/trove"
 import { Dependency } from "@typetorch/framework"
 import type { CartService } from "server/services/cart.service"
 import { RigCartModel } from "shared/cart.helper"
 import { buildCartRaycastParams, isSafeRestPose, prepareRiderBody } from "shared/cart.physics"
-import { CART_TUNING, CartStats, getCartDescriptor, getServerSpeedLimit, resolveCartStats } from "shared/cart.tuning"
+import { CART_TEST_OWNER, CART_TUNING, CartStats, getCartDescriptor, getCartOwnerId, getServerSpeedLimit, resolveCartStats } from "shared/cart.tuning"
 import { Logger } from "shared/common/logger"
-import { TaggedComponent } from "shared/component"
+import { rigOnce, TaggedComponent } from "shared/component"
 import { ICart } from "shared/type.helper"
 
 function flat(v: Vector3): Vector3 {
@@ -37,7 +37,9 @@ export class CartServerComponent extends TaggedComponent<ICart> {
 
 	constructor(instance: ICart, trove: Trove) {
 		super(instance, trove)
-		RigCartModel(this.instance, "simulated")
+		// once per cart: a cart handed over by the previous generation keeps its rig (rigging it again would duplicate
+		// every part and constraint); the key versions the rig
+		rigOnce(this.instance, "cart.v1", () => RigCartModel(this.instance, "simulated"))
 		this.stats = resolveCartStats(getCartDescriptor(this.instance))
 		this.speed_limit = getServerSpeedLimit(this.stats)
 		this.trove.add(
@@ -60,23 +62,33 @@ export class CartServerComponent extends TaggedComponent<ICart> {
 
 	onStart(): void {
 		const seat = this.instance.VehicleSeat
-		this.trove.connect(seat.GetPropertyChangedSignal("Occupant"), () => {
-			const player = Players.GetPlayerFromCharacter(seat.Occupant?.Parent)
-			if (!player) {
-				this.cleanup()
-				return
-			}
-			const seat_weld = seat.FindFirstChildOfClass("Weld")
-			if (seat_weld) {
-				seat_weld.C0 = CART_TUNING.seat.weldC0
-				seat_weld.C1 = new CFrame()
-			}
-			const char = player.Character
-			if (char) prepareRiderBody(char)
-			this.rider = player
-			this.raycast_params = buildCartRaycastParams([this.instance, char].filterUndefined())
-			this.setOwnership(player)
-		})
+		this.trove.connect(seat.GetPropertyChangedSignal("Occupant"), () => this.onOccupantChanged(seat))
+		// a cart handed over by the previous generation already has its rider: take the ride over
+		if (seat.Occupant) this.onOccupantChanged(seat)
+	}
+
+	private onOccupantChanged(seat: VehicleSeat) {
+		const player = Players.GetPlayerFromCharacter(seat.Occupant?.Parent)
+		if (!player) {
+			// the cloud test's dummy rider (CartService.selfTestCartHandoff) isn't a player
+			if (seat.Occupant && this.isTestRide()) return
+			this.cleanup()
+			return
+		}
+		const seat_weld = seat.FindFirstChildOfClass("Weld")
+		if (seat_weld) {
+			seat_weld.C0 = CART_TUNING.seat.weldC0
+			seat_weld.C1 = new CFrame()
+		}
+		const char = player.Character
+		if (char) prepareRiderBody(char)
+		this.rider = player
+		this.raycast_params = buildCartRaycastParams([this.instance, char].filterUndefined())
+		this.setOwnership(player)
+	}
+
+	private isTestRide(): boolean {
+		return getCartOwnerId(this.instance) === CART_TEST_OWNER && Workspace.GetAttribute("TypeTorchTest") === true
 	}
 
 	onTick(): void {

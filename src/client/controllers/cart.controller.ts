@@ -22,6 +22,8 @@ interface DeathState {
 	/** CFrame components of the last safe rest pose the cart reported. */
 	lastCheckpoint?: number[]
 	deathScreen: boolean
+	/** CartId of the cart the local player last started riding (a swap that hands it over continues that ride). */
+	rideCartId?: string
 }
 
 /** Seconds to wait, after the cart vanished under the rider, for a replacement before calling it a death. */
@@ -51,6 +53,18 @@ export class CartController extends Module implements OnInit, OnStart {
 	}
 	saveCheckpoint(cframe: CFrame) {
 		this.death.lastCheckpoint = [...cframe.GetComponents()]
+	}
+	/**
+	 * A ride begins in `cart` (CartId attribute). Returns true when it is the ride the previous client generation already
+	 * had: the server handed the cart over on a swap, so it goes on (no spawn animation, the revive anchor stays the last
+	 * safe pose instead of wherever the cart is, possibly mid-air).
+	 */
+	beginRide(cart: Model): boolean {
+		const id = cart.GetAttribute("CartId")
+		if (!typeIs(id, "string")) return false
+		const resumed = this.death.rideCartId === id
+		this.death.rideCartId = id
+		return resumed
 	}
 	public readonly onCartChange = new Signal<
 		(cart: CartClientComponent | undefined) => void

@@ -1,5 +1,7 @@
 import {
 	CollectionService,
+	Debris,
+	HttpService,
 	MarketplaceService,
 	PhysicsService,
 	Players,
@@ -28,7 +30,7 @@ import type { CheckpointService } from "./checkpoint.service"
 import type { ComponentsService } from "./components.service"
 import type { CustomizationService } from "./customization.service"
 import { OutlineHighlight } from "shared/common/util.helper"
-import { CART_TUNING, checkSuspensionStability, getCartDescriptor, getCartOwnerId } from "shared/cart.tuning"
+import { CART_TEST_OWNER, CART_TUNING, checkSuspensionStability, getCartDescriptor, getCartOwnerId } from "shared/cart.tuning"
 import { prepareRiderBody } from "shared/cart.physics"
 import { Tasks } from "shared/tasks"
 import type { ProperReturns } from "shared/common/util.helper"
@@ -43,6 +45,8 @@ interface RideState {
 
 /** How long the shield lasts on a cart given back after a swap (as a small checkpoint spawn). */
 const RESUME_SHIELD = 5
+/** Attribute on a shielded cart: its expiry (GetServerTimeNow), so the next generation can take a handed-over shield on. */
+const SHIELD_ATTRIBUTE = "ShieldUntil"
 /** Seconds the seat may take to appear (the cart component rigs it, deferred) before a spawn gives up seating. */
 const SEAT_WAIT = 3
 /** Seconds a revive waits for a just-bought revive to be granted (ProcessReceipt) before failing. */
@@ -68,20 +72,72 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 	onInit() {
 		this.tasks = new Tasks(this.trove)
 		this.rides = this.ctx.playerState<RideState>("cart.rides.v1", () => ({}))
-		// Carts belong to the generation that spawned them; riders get theirs back from the next one (onPlayerAdded).
+		// World handoff (the template's handoff.ts): a cart is owned by this generation's trove, but a cart someone is
+		// riding is handed over to the next generation on a swap that stays on the branch, so the rider keeps going
+		// (between two generations there is no code; the cart's constraints and the seat weld keep it whole). Every other
+		// cart is destroyed with the generation. On a branch switch nothing is handed over and the next generation gives
+		// riders a new cart at their last safe pose instead (`resume`, onPlayerAdded).
+		let handOver = false
 		this.trove.add(() => {
-			for (const cart of this.SPAWNED) cart.Destroy()
+			for (const cart of this.SPAWNED) {
+				if (!(handOver && this.isRidden(cart))) cart.Destroy()
+			}
 			this.SPAWNED.clear()
 		})
 		this.trove.add(
-			TypeTorch.onSwapOut(() => {
+			TypeTorch.onSwapOut((info) => {
+				handOver = info.branch === undefined || info.branch === TypeTorch.branch
 				for (const [player, cart] of this.PLAYER_CARTS) {
-					const seat = cart.FindFirstChildOfClass("VehicleSeat")
-					const riding = seat?.Occupant !== undefined && seat.Occupant.Parent === player.Character
-					if (riding) this.rides.get(player).resume = { skin: this.PLAYER_SKINS.get(player) ?? this.getPlayerSkin(player) }
+					if (!this.isRidden(cart)) continue
+					// kept even when the cart is handed over: if the next generation can't adopt it, it rebuilds the ride
+					this.rides.get(player).resume = { skin: this.PLAYER_SKINS.get(player) ?? this.getPlayerSkin(player) }
 				}
 			})
 		)
+		this.adoptCarts()
+	}
+	/** True when the cart's owner (or the cloud test's dummy rider) sits in it. */
+	private isRidden(cart: Model): boolean {
+		const occupant = (cart.FindFirstChild("VehicleSeat") as VehicleSeat | undefined)?.Occupant
+		if (!occupant || !cart.IsDescendantOf(Workspace)) return false
+		const owner_id = getCartOwnerId(cart)
+		if (owner_id === CART_TEST_OWNER) return Workspace.GetAttribute("TypeTorchTest") === true
+		const owner = owner_id !== undefined ? Players.GetPlayerByUserId(owner_id) : undefined
+		return owner !== undefined && occupant.Parent === owner.Character
+	}
+	/**
+	 * Takes over the carts the previous generation handed over (onInit, before onPlayerAdded replays the players): the
+	 * same instances, rider still seated, rig and constraints as they were (CartServerComponent rigs a cart only once).
+	 * A cart nobody rides any more is destroyed.
+	 */
+	private adoptCarts() {
+		for (const cart of CollectionService.GetTagged("CartComponent")) {
+			if (!cart.IsA("Model") || !cart.IsDescendantOf(Workspace)) continue
+			const owner_id = getCartOwnerId(cart)
+			if (owner_id === undefined) continue
+			if (!this.isRidden(cart)) {
+				this.logger.log(`Destroying ${cart.GetFullName()}: handed over without its rider`)
+				cart.Destroy()
+				continue
+			}
+			const player = Players.GetPlayerByUserId(owner_id)
+			if (player) {
+				if (this.PLAYER_CARTS.has(player)) {
+					cart.Destroy()
+					continue
+				}
+				this.track(player, cart, getCartDescriptor(cart))
+				this.PLAYER_CARTS.set(player, cart as ICart)
+				// the ride goes on: nothing to give back
+				if (this.rides.has(player)) this.rides.get(player).resume = undefined
+				this.logger.log(`Adopted ${player.Name}'s cart ${cart.GetAttribute("CartId")} from the previous generation`)
+			} else {
+				// the cloud test's dummy rider (selfTestCartHandoff)
+				this.SPAWNED.add(cart)
+				cart.Destroying.Once(() => this.SPAWNED.delete(cart))
+			}
+			this.restoreShield(cart)
+		}
 	}
 	getPlayerCarts(player: Player) {
 		const profile = this.DataService.getProfile(player)
@@ -199,6 +255,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 	}
 	onStart(): void {
 		this.validateConfigs()
+		if (Workspace.GetAttribute("TypeTorchTest") === true) this.tasks.spawn(() => this.selfTestCartHandoff())
 		this.trove.add(
 			network.server.CartService.spawnCart.on((player, button) => {
 				this.spawnPlayerCart(player, button)
@@ -226,9 +283,8 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 				const cloned = sound.Clone()
 				cloned.Parent = cart.FindFirstChild("Root")
 				cloned.Play()
-				cloned.Ended.Once(() => {
-					cloned.Destroy()
-				})
+				// Debris, not an Ended connection: a swap mid-honk hands the cart over and ends this generation's connections
+				Debris.AddItem(cloned, soundDuration + 1)
 				// Broadcast cart model directly so clients don't need to look it up
 				network.server.CartService.honkVfx.fireAll(cart, soundDuration)
 			}
@@ -340,6 +396,88 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		Dependency<CheckpointService>().setCheckpointIndex(player, stage)
 		return [true]
 	}
+	/**
+	 * The cloud test (`typetorch test`) boots a generation, stops it as a swap would and boots a second one with the same
+	 * persist store. The first spawns a probe cart (owner CART_TEST_OWNER) with a dummy rider; the second checks that the
+	 * swap handed over the same cart, rider still seated, its rig neither rebuilt nor duplicated, then removes it.
+	 * Errors fail the test. Physics doesn't step in a Luau Execution task, so motion is the owner's play test.
+	 */
+	private selfTestCartHandoff() {
+		const state = this.ctx.persist<{ cartId?: string; counts?: number[] }>("cart.handofftest.v1", () => ({}))
+		const census = (cart: Model) => {
+			const all = cart.GetDescendants()
+			const count = (check: (d: Instance) => boolean) => all.filter(check).size()
+			// descendants, constraints, joints (welds, Motor6Ds, the seat weld), weld constraints, VehicleSeats, BALLs
+			return [
+				all.size(),
+				count((d) => d.IsA("Constraint")),
+				count((d) => d.IsA("JointInstance")),
+				count((d) => d.IsA("WeldConstraint")),
+				count((d) => d.IsA("VehicleSeat")),
+				count((d) => d.Name === "BALL")
+			]
+		}
+		if (TypeTorch.startInfo.kind === "swap" && state.cartId !== undefined) {
+			const id = state.cartId
+			const before = state.counts ?? []
+			state.cartId = undefined
+			const cart = CollectionService.GetTagged("CartComponent").find((c) => c.GetAttribute("CartId") === id)
+			assert(cart && cart.IsA("Model") && cart.IsDescendantOf(Workspace), `cart handoff: probe cart ${id} wasn't handed over`)
+			const deadline = os.clock() + 0.6
+			while (!Dependency<ComponentsService>().getCart(cart) && os.clock() < deadline) task.wait()
+			const component = Dependency<ComponentsService>().getCart(cart)
+			const occupant = (cart.FindFirstChild("VehicleSeat") as VehicleSeat | undefined)?.Occupant
+			const after = census(cart)
+			const owned = this.SPAWNED.has(cart)
+			cart.Destroy()
+			assert(component, "cart handoff: no CartServerComponent on the adopted cart")
+			assert(occupant?.Parent?.Name === "HandoffProbeRider", "cart handoff: the rider isn't seated after the swap")
+			assert(owned, "cart handoff: the adopted cart isn't owned by this generation")
+			assert(
+				before.join(",") === after.join(","),
+				`cart handoff: the rig changed (descendants, constraints, joints, welds, seats, balls) ${before.join(",")} -> ${after.join(",")}`
+			)
+			print(
+				`cart handoff self-test: same cart ${id} adopted by generation ${TypeTorch.generation}, rider seated, ` +
+					`rig unchanged (descendants, constraints, joints, welds, seats, balls) ${before.join(",")} -> ${after.join(",")}`
+			)
+			return
+		}
+		const template = assets.carts.FindFirstChild("Cart") as Model | undefined
+		assert(template, "cart handoff: no Cart template")
+		const cart = template.Clone()
+		cart.Name = "Cart_handoff-probe"
+		cart.SetAttribute("CartSkin", "Cart")
+		cart.SetAttribute("OwnerUserId", CART_TEST_OWNER)
+		cart.SetAttribute("CartId", HttpService.GenerateGUID(false))
+		cart.PivotTo(new CFrame(0, 5000, 0))
+		// dummy rider inside the cart: handed over and destroyed with it
+		const rider = new Instance("Model")
+		rider.Name = "HandoffProbeRider"
+		const hrp = new Instance("Part")
+		hrp.Name = "HumanoidRootPart"
+		hrp.Size = new Vector3(2, 2, 1)
+		hrp.CFrame = new CFrame(0, 5005, 0)
+		hrp.Parent = rider
+		rider.PrimaryPart = hrp
+		const humanoid = new Instance("Humanoid")
+		humanoid.Parent = rider
+		this.SPAWNED.add(cart)
+		cart.Destroying.Once(() => this.SPAWNED.delete(cart))
+		cart.Parent = Workspace
+		const seat = cart.WaitForChild("VehicleSeat", 3) as VehicleSeat | undefined
+		assert(seat, "cart handoff: the probe cart wasn't rigged")
+		rider.Parent = cart
+		seat.Sit(humanoid)
+		if (seat.Occupant !== humanoid) {
+			warn("cart handoff self-test skipped: VehicleSeat.Sit doesn't seat a humanoid in this task")
+			cart.Destroy()
+			return
+		}
+		state.cartId = cart.GetAttribute("CartId") as string
+		state.counts = census(cart)
+		print(`cart handoff self-test: probe cart ${state.cartId} rigged and ridden, ${state.counts.join(",")}`)
+	}
 	/** The product use behind the useProduct leaf (server-side checks; the client only asks). */
 	private useProduct(player: Player, product_key: string): ProperReturns<true> {
 		const profile = this.DataService.getProfile(player)
@@ -390,6 +528,8 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		const ride = this.rides.get(player)
 		const resume = ride.resume
 		ride.resume = undefined
+		// the previous generation handed the cart over and this one adopted it (adoptCarts)
+		if (this.PLAYER_CARTS.has(player)) return
 		const safe = this.getSafePivot(player)
 		if (!resume || !safe || !player.Character) return
 		this.logger.log(`Giving ${player.Name} their cart back after the update`)
@@ -497,6 +637,8 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		const cart_model = orig_cart.Clone() as ICart
 		cart_model.SetAttribute("CartSkin", skin)
 		cart_model.SetAttribute("OwnerUserId", player.UserId)
+		// one id per cart instance: the client tells a ride it already had (a swap handed the cart over) from a new one
+		cart_model.SetAttribute("CartId", HttpService.GenerateGUID(false))
 		cart_model.Name = `${skin}_${player.Name}`
 		return cart_model
 	}
@@ -580,6 +722,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		if (wasShielded) {
 			// Extend existing shield
 			this.SHIELDS.set(cart, existing + duration)
+			cart.SetAttribute(SHIELD_ATTRIBUTE, Workspace.GetServerTimeNow() + (existing + duration - tick()))
 
 			// Schedule new removal for the extended time
 			const totalDuration = existing + duration - tick()
@@ -605,6 +748,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 			}
 		}
 		this.SHIELDS.set(cart, tick() + duration)
+		cart.SetAttribute(SHIELD_ATTRIBUTE, Workspace.GetServerTimeNow() + duration)
 		this.setCartCollisionGroup(cart, "Invincible")
 
 		// Schedule automatic removal
@@ -613,6 +757,25 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 			this.removeShield(cart)
 		})
 		this.SHIELD_TASKS.set(cart, removalTask)
+	}
+
+	/**
+	 * A shield on a cart handed over by the previous generation: its expiry lives on the cart (the shield maps and the
+	 * removal task ended with that generation), so take over the rest of it, or end it if it ran out in between.
+	 */
+	private restoreShield(cart: Model) {
+		const expires = cart.GetAttribute(SHIELD_ATTRIBUTE)
+		if (!typeIs(expires, "number")) return
+		const remaining = expires - Workspace.GetServerTimeNow()
+		if (remaining <= 0) {
+			this.removeShield(cart)
+			return
+		}
+		this.SHIELDS.set(cart, tick() + remaining)
+		this.SHIELD_TASKS.set(cart, this.tasks.delay(remaining, () => {
+			this.SHIELD_TASKS.delete(cart)
+			this.removeShield(cart)
+		}))
 	}
 
 	/**
@@ -628,6 +791,7 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 		}
 
 		this.SHIELDS.delete(cart)
+		cart.SetAttribute(SHIELD_ATTRIBUTE, undefined)
 		this.setCartCollisionGroup(cart, "Hitbox")
 		const root = cart?.FindFirstChild("Root") as BasePart
 		root?.FindFirstChild("ShieldVFX")?.Destroy()

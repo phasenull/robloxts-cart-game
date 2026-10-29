@@ -151,13 +151,17 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 		humanoid.JumpPower = 0
 		humanoid.SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
 
+		// the same cart the previous client generation rode (a swap handed it over): the ride goes on
+		const resumed = Dependency<CartController>().beginRide(this.instance)
 		Dependency<AnimationController>().stopAll()
-		Dependency<AnimationController>().play({
-			key: "cart_spawn",
-			priority: Enum.AnimationPriority.Action2,
-			speed: 0.7,
-			animationId: CART_TUNING.animations.spawn
-		})
+		if (!resumed) {
+			Dependency<AnimationController>().play({
+				key: "cart_spawn",
+				priority: Enum.AnimationPriority.Action2,
+				speed: 0.7,
+				animationId: CART_TUNING.animations.spawn
+			})
+		}
 		Dependency<AnimationController>().play({
 			key: "cart_idle",
 			priority: Enum.AnimationPriority.Action2,
@@ -171,8 +175,9 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 		})
 		this.base_fov = Workspace.CurrentCamera?.FieldOfView ?? CART_TUNING.feel.baseFov
 		// the revive anchor starts where this cart spawned, like the server's safe pose (CartService.recordSafePivot):
-		// an anchor left from an earlier ride is hundreds of studs off and the server would overrule it
-		Dependency<CartController>().saveCheckpoint(this.instance.GetPivot())
+		// an anchor left from an earlier ride is hundreds of studs off and the server would overrule it. A resumed ride
+		// keeps its anchor (the cart may be mid-air now).
+		if (!resumed) Dependency<CartController>().saveCheckpoint(this.instance.GetPivot())
 		Dependency<CartController>().onCartChange.Fire(this)
 	}
 

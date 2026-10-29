@@ -207,6 +207,9 @@ export function getCartDescriptor(cart: Model): string {
 	return identifier?.Value ?? cart.Name.split("_")[0]
 }
 
+/** OwnerUserId of the cloud test's handoff probe cart (no player; selfTestCartHandoff): no real UserId is negative. */
+export const CART_TEST_OWNER = -1
+
 /** The UserId of the player a cart was spawned for (attribute set by CartService), undefined for other models. */
 export function getCartOwnerId(cart: Instance): number | undefined {
 	const owner = cart.GetAttribute("OwnerUserId")
