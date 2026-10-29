@@ -36,7 +36,7 @@
 			{ "transform": "@typetorch/transformer" }
 		]
 	},
-	// Only the three payload realms (.ts and .tsx): never scripts/, and never the src/common submodule, which is
-	// vendored into src/{client,shared}/common and no longer compiled.
+	// Only the three payload realms (.ts and .tsx): never scripts/. The old src/common submodule was removed; the files
+	// the game used are vendored into src/{client,shared}/common.
 	"include": ["./src/server", "./src/shared", "./src/client"]
 }
