@@ -428,3 +428,45 @@ Undo, newest first: a bad build `typetorch rollback --branch prod`; the backup `
 - **Owner check** (play prod): drive a cart through a few cash pickups in a row: each one gives +$50 and plays the
   fly-to-you animation (not just the first). Walk into one on foot: it's collected too. Touch the same one again: no
   second grant for 5 minutes. F9 > Server: one "Granted 50 cash ... Cash Pickup" per pickup.
+## Hotfix: revive broken, speedometer error spam, purchase "Slow down!" (2026-10-29)
+
+- **Symptoms** (owner, prod #10 `480a271-ce8735`, user `phasenull_dev`): revive "completely broken"; client console
+  spams `Root is not a valid member of Model "Ultra Fast Cart_phasenull_dev"` (`cart-speedometer`, every frame;
+  backend alert: 2198 in 10 min); `Unhandled Promise rejection: …purchase.component:82: Slow down!` ×N at join.
+  Server: `Revive target … is 271 studs from the last safe pose`, `used a revive` twice 2 s apart, `Cleaning up cart`
+  right after, `Could not find vehicle seat for cart …`. (`_dev` is the username, not a dev channel leak.)
+- **Root causes**:
+  1. `CartService.spawnPlayerCart` / `spawnPlayerCartAtLocation` looked up the `VehicleSeat` right after parenting the
+     clone, but the seat is built by `RigCartModel` in `CartServerComponent`'s constructor, and the tag is handled
+     deferred: no seat, so the player was never seated ("Could not find vehicle seat"). The revive looked like it did
+     nothing; the second click used a second revive and destroyed the first cart.
+  2. The revive handler then `PivotTo`'d the HumanoidRootPart (welded into the cart when seated) to the target and
+     re-sat the player: the whole cart moved down by the seat height, into the ground. The `/spawn` command did the
+     same after spawning.
+  3. Client `CartClientComponent`: when the server destroys the cart (wheels gone, a teleport), the component's trove
+     is cleaned (instance leaves the world) before `Root.Destroying` can run `endRide`, so no death screen opened and
+     `CartContext` kept the dead cart (pre-rewrite code used an untracked `Destroying.Once`).
+  4. `cart-speedometer.tsx` read `cart.instance.Root` every Heartbeat / RenderStepped: errors for as long as the
+     context held a dead cart.
+  5. `purchase.component.ts`: every display cart called `doesPlayerOwnItem` at construction: a burst past the network
+     rate limit (20 / 10 s), rejected with "Slow down!", unhandled, and each rejection is a strike.
+  6. Ownership by `Name.split("_")[1] === player.Name`: wrong for `phasenull_dev` (`"phasenull"`).
+  7. Paid revive raced ProcessReceipt (`PromptProductPurchaseFinished` comes first); a client timeout left
+     `__is_reviving` stuck and the screen faded.
+  8. The client's revive anchor (persisted) was never reset per ride; the server's (recorded at spawn) was: 271 studs.
+- **Fix** `703fe8b`: `CartService.seatPlayer` (waits for the seat, moves the character next to it, `Sit`), used by
+  every spawn path; revive no longer moves the rider, refunds if it can't seat, one revive at a time per player, waits
+  ≤5 s for a just-bought revive; client revive timeout 12 s with try/finally; `CartController.onRideLost` (death
+  screen 2.5 s after the cart vanished under the rider unless a new cart/character appears) and `showDeathScreen`;
+  the client anchor restarts at each ride; carts carry `CartSkin` / `OwnerUserId` attributes (`getCartDescriptor`,
+  `getCartOwnerId`), nothing parses the name; speedometer reads Root/PrimaryPart via FindFirstChild, 0 when gone;
+  purchase prompts share one `getPlayerInventory("cart")` per generation, prompt-time check in try/catch.
+- **Deploys** (worktree, `TYPETORCH_STATE_DIR` at the main checkout): dev **#14 `703fe8b-090600`** (asset
+  117392737506755), prod **#15 `703fe8b-21223e`** (asset 103940875141360) from `master`, built on top of `e7a8b90`
+  (prod #13, cash pickups + wheel visuals), so #15 keeps #13's changes (this state dir's log lacks #12/#13, so the
+  deploy printed "replaces #10"); cloud test passed both (place v2057 / v2058; one
+  warning, 3 pre-existing rigOnce leftovers). Approved at the y/N by the agent (pty).
+- **Backup**: `backup refresh --build '#15' --force --yes` → `703fe8b-21223e`. `doctor`: all required checks passed.
+- **Owner check**: die from damage (wheels knocked off): death screen opens; free revive, paid revive (0 revives →
+  buy), at checkpoint 0 and a later one: you sit in the new cart where you died, one revive used; Spawn button;
+  TP menu to checkpoint 0: no death screen after it; F9: no `Root is not a valid member`, no `Slow down!`.
