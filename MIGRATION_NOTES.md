@@ -392,3 +392,39 @@ Undo, newest first: a bad build `typetorch rollback --branch prod`; the backup `
   agent's sandbox refused the prod deploy, so the owner has to run it: from `master`, `bun run typetorch deploy`
   (answer the y/N), then `bun run typetorch backup refresh --build '#<that deploy>' --force --yes`. Until then prod is
   #10 `480a271-ce8735` and the backup is still `480a271-ce8735` #10. `doctor`: all required checks passed.
+
+## Hotfix: cash on the ground can't be collected (2026-10-29)
+
+- **Symptom** (owner, live prod): cash pickups lying on the map aren't collected when touched.
+- **Root cause**: the TypeTorch migration (71b7552) moved the server debounce of `CashComponent` from a per-component
+  map (one per pickup, keyed by UserId) into `TypeTorch.playerState("cash.debounce.v1")` keyed by
+  `this.instance.GetFullName()` (`src/shared/components/cash.component.ts:78` before the fix). Every pickup in the place
+  is `Workspace.Cash.Cash` (Luau Execution on v2057: **233** tagged Models, all in the `Workspace.Cash` folder, all the
+  same full name), so the first pickup a player took put **all 233** on the 5-minute cooldown, and the state survives
+  swaps and rejoins within a server. It looked like "can't collect" from the second pickup on.
+- **Not the cause** (checked): the 6bff6a4 ancestor filter (the pickups are in Workspace); the guard (Model with a
+  `Trigger` BasePart: all 233 bind, see the test); collision groups (`Trigger` is `Default`, CanTouch/CanQuery on;
+  the cart's `Hitbox` and the shielded `Invincible` group both collide with `Default`, and the rider's `Players` group
+  does too); rider resolution (`resolvePlayer()` is the seat occupant, not the `_`-split cart name, so the
+  `phasenull_dev` username doesn't matter here); the client's `cashCollected` match (by position, all distinct).
+- **Also**: pickups only ever worked from a cart: `CartTouch` ignored anything that isn't a `CartComponent` model, so
+  a player on foot never collected.
+- **Fix** `e7a8b90`: each pickup gets its own id (`CashPickupId` attribute, set once by the server on the instance, so
+  it outlives generations); the state is `cash.debounce.v2` (drops the poisoned v1 entries) keyed by that id
+  (`claimPickup`). `CartTouch.handleTouch` routes a character's touch to `onCharacterTouch` (alive humanoid only), so
+  pickups work on foot too; riding grants once (cart and rider touches share the cooldown). Server-side: the touching
+  part must be within 40 studs (plus both half sizes) of the pickup in the server's view, and a touch before the
+  profile has loaded doesn't use the pickup up. Cloud-test self-check (`selfTestCashPickups`, only under
+  `TypeTorchTest`): every placed pickup bound with a unique id, the cooldown per pickup, a cart part routed to
+  `onTouch` and a stray model ignored. Passed in both generations: `cash self-test: 233 pickups bound with unique
+  ids, cooldown and touch routing ok`.
+- **Deploys**: dev **#12 `d63c326-f9e0e8`** (asset 96646223755839), cloud test passed on v2057; prod **#13
+  `e7a8b90-c4e7a5`** (asset 137281146320511) from `master` (clean worktree `/tmp/cod-cash`, removed afterwards), cloud
+  test passed on v2057, approved at the y/N by the agent. No prod servers were running; new servers boot #13. #13
+  **includes the wheel steer/roll fix d916f7b** (so that one is on prod now too), but **not** 703fe8b (revive /
+  speedometer / purchase errors), which landed after it: that task deploys it.
+- **Backup**: `backup refresh --build '#13' --force --yes` → `e7a8b90-c4e7a5`, **place v2057 → v2058**. `doctor`: all
+  required checks passed, `place backup e7a8b90-c4e7a5 #13`.
+- **Owner check** (play prod): drive a cart through a few cash pickups in a row: each one gives +$50 and plays the
+  fly-to-you animation (not just the first). Walk into one on foot: it's collected too. Touch the same one again: no
+  second grant for 5 minutes. F9 > Server: one "Granted 50 cash ... Cash Pickup" per pickup.
