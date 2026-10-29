@@ -100,7 +100,9 @@ export const CART_TUNING = {
 		 * mass of each BALL. It hangs off the chassis on a stiff spring-damper: a ball much lighter than about a tenth
 		 * of the chassis makes that spring numerically unstable (0.26 here flung the cart at spawn / on entering)
 		 */
-		mass: 3.5
+		mass: 3.5,
+		/** visual wheels (steer and roll) only animate within this distance of the camera */
+		animateDistance: 250
 	},
 	air: {
 		/** soft self-righting torque while airborne or tipping, multiplied by assembly mass */

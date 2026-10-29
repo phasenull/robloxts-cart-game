@@ -174,19 +174,31 @@ export function RigCartModel(cart_model: ICart, mode: CartRigMode = "simulated")
 		connection.Size = new Vector3(0.7, 0.5, 0.875)
 		connection.CollisionGroup = "Wheels"
 
-		// caster fork: Motor6D so the client can swivel it visually with steering
+		// wheel centre, below the fork along CONNECTION's +Z (every skin authors CONNECTION with +Z = chassis down)
+		const hub_offset = new CFrame(0, 0, connection.Size.Z / 2)
+
+		// caster fork: Motor6D so the client can swivel it visually with steering. C0 is the wheel centre in the
+		// chassis frame (Drive: Y = chassis up), so Transform = CFrame.Angles(0, steer, 0) yaws the fork and wheel about
+		// chassis up through the wheel centre. C1 keeps the authored fork pose at Transform = identity. (C0 used to
+		// carry CONNECTION's own rotation, whose Y is the chassis' fore/aft axis: steering rolled the wheels sideways.)
+		const root_to_connection = root_part.CFrame.ToObjectSpace(connection.CFrame)
+		const caster_frame = drive_attachment.CFrame.Rotation.add(root_to_connection.mul(hub_offset).Position)
 		const caster = new Instance("Motor6D")
 		caster.Name = "Caster"
 		caster.Part0 = root_part
 		caster.Part1 = connection
-		caster.C0 = root_part.CFrame.ToObjectSpace(connection.CFrame)
-		caster.C1 = new CFrame()
+		caster.C0 = caster_frame
+		caster.C1 = root_to_connection.Inverse().mul(caster_frame)
 		caster.Parent = connection
 
-		const weld_wheel = new Instance("Weld", wheel)
-		weld_wheel.Part0 = connection
-		weld_wheel.Part1 = wheel
-		weld_wheel.C0 = new CFrame(0, 0, connection.Size.Z / 2)
+		// wheel on its axle: Motor6D so the client can roll it (Transform about X, the Cylinder's axle, at the centre)
+		const spin = new Instance("Motor6D")
+		spin.Name = "Spin"
+		spin.Part0 = connection
+		spin.Part1 = wheel
+		spin.C0 = hub_offset
+		spin.C1 = new CFrame()
+		spin.Parent = wheel
 
 		// contact sphere at the wheel centre
 		const rest_position = connection.Position.add(root_part.CFrame.UpVector.mul(CART_TUNING.wheel.mountOffsetY))

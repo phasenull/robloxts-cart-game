@@ -67,7 +67,9 @@ export type ICart = Model & {
 }
 
 export type IWheel = Model & {
-	WHEEL: BasePart
+	WHEEL: BasePart & {
+		Spin: Motor6D
+	}
 	CONNECTION: BasePart & {
 		Caster: Motor6D
 	}

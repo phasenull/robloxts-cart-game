@@ -57,6 +57,10 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 	private initial_wheel_count = 0
 	private brake_emitters: ParticleEmitter[] = []
 	private casters: { motor: Motor6D; front: boolean }[] = []
+	/** visual wheels rolled every frame: axle-angle, radius from the WHEEL cylinder */
+	private spinners: { motor: Motor6D; wheel: BasePart; radius: number; angle: number }[] = []
+	/** visual steer of other players' carts, smoothed from the replicated seat input */
+	private visual_steer = 0
 	private raycast_params = buildCartRaycastParams([])
 	private lever_track: AnimationTrack | undefined
 	private base_fov = CART_TUNING.feel.baseFov
@@ -103,6 +107,13 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 			const caster = model.FindFirstChild("CONNECTION")?.FindFirstChild("Caster") as Motor6D | undefined
 			if (caster) {
 				this.casters.push({ motor: caster, front: model.Name.sub(1, 1) === "F" })
+			}
+			const wheel = model.FindFirstChild("WHEEL") as BasePart | undefined
+			const spin = wheel?.FindFirstChild("Spin") as Motor6D | undefined
+			// an invisible WHEEL is a stand-in (Hover Cart's pads): steer it, don't roll it
+			if (wheel && spin && wheel.Transparency < 1) {
+				const radius = math.min(wheel.Size.Y, wheel.Size.Z) / 2
+				this.spinners.push({ motor: spin, wheel, radius: math.max(radius, 0.1), angle: 0 })
 			}
 		})
 		this.initial_wheel_count = this.wheels.size()
@@ -356,6 +367,7 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 	}
 
 	onRender(dt: number): void {
+		this.animateWheels(dt)
 		if (!this.riding) return
 		const F = CART_TUNING.feel
 		const speed = this.getSpeed()
@@ -370,10 +382,49 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 		for (const emitter of this.brake_emitters) {
 			emitter.Enabled = smoking && emitter.Parent !== undefined
 		}
-		const caster_angle = -this.steer * math.rad(CART_TUNING.steering.visualCasterAngleDeg)
-		for (const caster of this.casters) {
-			if (caster.front) caster.motor.Transform = CFrame.Angles(0, caster_angle, 0)
+	}
+
+	/**
+	 * Visual wheels, every cart on every client (Motor6D.Transform is local, so nothing replicates):
+	 * - front casters yaw about chassis up through the wheel centre (the Caster C0 is in the chassis frame);
+	 * - every wheel rolls about its axle at (velocity at the wheel . rolling direction) / radius, so it follows
+	 *   forward/reverse, turns and slides. Rolling sits under the caster, so it's yaw first, then roll.
+	 */
+	private animateWheels(dt: number) {
+		if (this.casters.isEmpty() && this.spinners.isEmpty()) return
+		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
+		const camera = Workspace.CurrentCamera
+		if (!root || !camera || root.Position.sub(camera.CFrame.Position).Magnitude > CART_TUNING.wheel.animateDistance) {
+			return
 		}
+		let steer = this.steer
+		if (!this.riding) {
+			const seat = this.instance.FindFirstChild("VehicleSeat") as VehicleSeat | undefined
+			const target = seat?.Occupant ? math.clamp(seat.SteerFloat, -1, 1) : 0
+			this.visual_steer = approach(this.visual_steer, target, CART_TUNING.steering.steerRate * dt)
+			steer = this.visual_steer
+		}
+		const caster_yaw = CFrame.Angles(0, -steer * math.rad(CART_TUNING.steering.visualCasterAngleDeg), 0)
+		for (const caster of this.casters) {
+			if (caster.front) caster.motor.Transform = caster_yaw
+		}
+
+		const up = root.CFrame.UpVector
+		for (const spinner of this.spinners) {
+			const wheel = spinner.wheel
+			if (wheel.Parent === undefined) continue
+			// rolling without slip: omega = (up x v) / r, its component along the axle (the Cylinder's X)
+			const axle = wheel.CFrame.RightVector
+			const velocity = root.GetVelocityAtPosition(wheel.Position)
+			const rate = velocity.Dot(axle.Cross(up)) / spinner.radius
+			spinner.angle = (spinner.angle + rate * dt) % (2 * math.pi)
+			spinner.motor.Transform = CFrame.Angles(spinner.angle, 0, 0)
+		}
+	}
+
+	private resetWheels() {
+		for (const caster of this.casters) caster.motor.Transform = new CFrame()
+		for (const spinner of this.spinners) spinner.motor.Transform = new CFrame()
 	}
 
 	setHandbrake(engaged: boolean): void {
@@ -493,6 +544,7 @@ export class CartClientComponent extends TaggedComponent<ICart> {
 	}
 
 	destroy(): void {
+		this.resetWheels()
 		// A swap (or the cart going away) while riding: give the humanoid its jump back and reset the camera. The
 		// next generation sets the ride up again if the player is still seated.
 		if (this.riding) {
