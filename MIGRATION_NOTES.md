@@ -205,7 +205,7 @@ in `async main()`); 119 flags (3 Flamework API, 5 networking, 1 Dependency-in-co
    `node_modules/@rbxts/profileservice/src/init.lua`) and `ServerScriptService.DataHost` (option B: just requires it
    and sets `Warm`); publish.
 7. Remove the old Flamework scripts from the place in Studio just before the first deploy.
-8. Test in Studio: Studio plugin + `bun run typetorch serve`, Play, dev menu Reload to test a swap.
+8. Test: CLI 0.9.1 has no `serve` command; test on a dev branch (step 9) after the kernel is in the place.
 9. Dev branch: deploy, `/tt new dev`, play and deploy twice mid-ride and on the death screen; data across deploys;
    buy a product during a deploy; `bun run typetorch test --cloud`; watch "Health window" errors.
 10. Live game: go-live checklist, first prod deploy from `master`, rollback drill.

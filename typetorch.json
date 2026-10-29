@@ -18,5 +18,6 @@
 	"kernel": "node_modules/@typetorch/kernel",
 	"signingPublicKeys": ["G0VSQ7tD4MzL8Wlta/ZnvLI5ad1rw1pQyNbIoBN+6DQ="],
 	"keyAssetId": 74489130089983,
-	"fallbackPublicKey": "Qk7/bc68ImwXr6qilNrYFdiL8+k1V86tvAl+GRaR/Sc="
+	"fallbackPublicKey": "Qk7/bc68ImwXr6qilNrYFdiL8+k1V86tvAl+GRaR/Sc=",
+	"backend": {"url":"https://cart.phasenull.dev"}
 }
