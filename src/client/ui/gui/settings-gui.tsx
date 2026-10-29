@@ -1,8 +1,8 @@
 import React from "@rbxts/react";
 
-import { A } from "@common/shared/assets";
+import { A } from "shared/common/assets";
 import { PRIMARY,
-UIDIM } from "@common/client/ui/constants";
+UIDIM } from "client/common/ui/constants";
 export function SettingsGui() {
 	return (
 		<imagelabel

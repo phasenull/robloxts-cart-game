@@ -40,15 +40,8 @@ export function getIslandSkipProduct(skipCount: number): number | undefined {
 	return ISLAND_SKIP_PRODUCTS.get(skipCount)
 }
 
-// Cache for big checkpoint indices
-let cachedCheckpoints: number[] | undefined
-
-// Helper function to get all big checkpoint indices dynamically
+// Helper function to get all big checkpoint indices dynamically (from the static ISLAND_CONFIG)
 export function getAllBigCheckpoints(): number[] {
-	if (cachedCheckpoints) {
-		return cachedCheckpoints
-	}
-	
 	const checkpoints: number[] = []
 	
 	for (const [key] of pairs(ISLAND_CONFIG)) {
@@ -58,8 +51,6 @@ export function getAllBigCheckpoints(): number[] {
 		}
 	}
 	checkpoints.sort((a: number, b: number) => a < b)
-	
-	cachedCheckpoints = checkpoints
 	return checkpoints
 }
 

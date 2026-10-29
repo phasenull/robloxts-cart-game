@@ -1,5 +1,4 @@
-import { Components } from "@flamework/components"
-import { Dependency } from "@flamework/core"
+import { Dependency } from "@typetorch/framework"
 import React, {
 	createContext,
 	useContext,
@@ -7,12 +6,11 @@ import React, {
 	useState
 } from "@rbxts/react"
 import { Players } from "@rbxts/services"
-import { CartClientComponent } from "client/components/cart.client.component"
-import { AnimationController } from "@common/client/controllers/animation.controller"
-import { CartController } from "client/controllers/cart.controller"
-import { __IS_EDIT__ } from "@common/shared/config.builder"
-import { Logger } from "@common/shared/logger"
-import { ClientEvents } from "shared/network.helper"
+import type { CartClientComponent } from "client/components/cart.client.component"
+import type { CartController } from "client/controllers/cart.controller"
+import { __IS_EDIT__ } from "shared/common/config.builder"
+import { Logger } from "shared/common/logger"
+import { network } from "shared/net"
 
 const logger = new Logger("CartContext")
 
@@ -59,7 +57,6 @@ export function CartProvider(props: {
 			return
 		}
 		const player = Players.LocalPlayer
-		const components = Dependency<Components>()
 		const cart_controller = Dependency<CartController>()
 
 		// Check for existing cart
@@ -117,7 +114,8 @@ export function CartProvider(props: {
 		setState(new_state)
 	}
 	const confirmHardReset = () => {
-		ClientEvents.CheckpointService.processPlayerDeath.fire()
+		if (!__IS_EDIT__) Dependency<CartController>().closeDeathScreen()
+		network.client.CheckpointService.processPlayerDeath.fire()
 		// logger.log("STATE-> RESETING")
 		setSpawnPoint(undefined)
 		changeState("none")
@@ -137,17 +135,23 @@ export function CartProvider(props: {
 		if (__IS_EDIT__) {
 			return
 		}
-		const productsConnection = ClientEvents.CartService.playerProductsUpdated.connect((data) => {
+		const productsConnection = network.client.CartService.playerProductsUpdated.on((data) => {
 			setProducts(data)
 		})
 		// Listen for force close death screen from server
-		const forceCloseConnection = ClientEvents.CartService.forceCloseDeathScreen.connect(() => {
+		const forceCloseConnection = network.client.CartService.forceCloseDeathScreen.on(() => {
 			logger.log("Force closing death screen from server")
 			setSpawnPoint(undefined)
 			setCart(undefined)
 			setState("none")
 		})
 		const cart_controller = Dependency<CartController>()
+		// A death screen a swap interrupted (the controller keeps it): open it again, without counting another death.
+		const open_death_screen = cart_controller.getOpenDeathScreen()
+		if (open_death_screen && !cart_controller.getMyCart()) {
+			setSpawnPoint(open_death_screen)
+			setState("death_screen")
+		}
 		const cartChangeConnection = cart_controller.onCartChange.Connect((new_cart) => {
 			// const my_card = cart_controller.getMyCart()
 			// if (my_card) {
@@ -164,8 +168,8 @@ export function CartProvider(props: {
 		})
 		
 		return () => {
-			productsConnection.Disconnect()
-			forceCloseConnection.Disconnect()
+			productsConnection()
+			forceCloseConnection()
 			cartChangeConnection.Disconnect()
 		}
 	}, [])

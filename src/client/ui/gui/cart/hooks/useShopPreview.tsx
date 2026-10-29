@@ -1,20 +1,22 @@
 import { Workspace } from "@rbxts/services"
+import { useAppTasks } from "client/common/ui/contexts/app-tasks.context"
 import { useCartModel } from "./useCartModel"
 import { useEffect, useRef, useState } from "@rbxts/react"
-import { useMouseDelta } from "@common/client/ui/hooks/useMouseDelta"
+import { useMouseDelta } from "client/common/ui/hooks/useMouseDelta"
 import {
 	AnimateGarageMovement,
 	BrickifyModel,
 	RigCartModel
 } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
-import { SHOP_CAMERA_OFFSET } from "@common/client/ui/constants"
+import { SHOP_CAMERA_OFFSET } from "client/common/ui/constants"
 const GaragePivot = Workspace.FindFirstChild("GaragePreview")?.FindFirstChild(
 	"CartPreviewAttachment"
 ) as Attachment
 const GARAGE_CART_NAME = "GaragePreviewCart"
 
 export function useShopPreview(cart_name?: string) {
+	const tasks = useAppTasks()
 	const model = useCartModel(cart_name, false)
 	const camera = Workspace.CurrentCamera
 	const { delta, viewportSize } = useMouseDelta()
@@ -67,7 +69,7 @@ export function useShopPreview(cart_name?: string) {
 					state.tween.Completed.Wait()
 				}
 			})
-			task.delay(1, () => {
+			tasks.delay(1, () => {
 				animator_model.Destroy()
 			})
 		}
@@ -84,7 +86,8 @@ export function useShopPreview(cart_name?: string) {
 		setCurrentCartName(cart_name)
 		
 		return () => {
-			task.spawn(() => {
+			// runs after the effect's cleanup (the component may be unmounting): the App owns it
+			tasks.spawn(() => {
 				const states = BrickifyModel(model, "out", 0.5, Enum.EasingStyle.Quad)
 				states.filterUndefined().map((state) => {
 					if (state.tween.PlaybackState === Enum.PlaybackState.Playing) {

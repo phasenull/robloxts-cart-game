@@ -1,13 +1,11 @@
-import { BaseComponent, Component } from "@flamework/components"
+import type { Trove } from "@rbxts/trove"
+import { TaggedComponent } from "shared/component"
 
-@Component({ tag: "CartTouchComponent" })
-export class CartTouch<T extends Instance = BasePart> extends BaseComponent<
-	{},
-	T
-> {
+/** Tag "CartTouchComponent": calls onTouch when a part of a cart model touches the instance's touch part. */
+export class CartTouch<T extends Instance = BasePart> extends TaggedComponent<T> {
 	public touch_part: BasePart
-	constructor() {
-		super()
+	constructor(instance: T, trove: Trove) {
+		super(instance, trove)
 		function recurseUntilModel(instance: Instance): Model | undefined {
 			const model = instance.FindFirstAncestorOfClass("Model")
 			if (!model) return
@@ -21,7 +19,7 @@ export class CartTouch<T extends Instance = BasePart> extends BaseComponent<
 			error(`CartTouchComponent must be attached to a Model with a BasePart child or a BasePart. Failed to find touch part for ${this.instance.GetFullName()}`)
 		}
 		this.touch_part = touch_part
-		touch_part.Touched.Connect((other_part) => {
+		this.trove.connect(touch_part.Touched, (other_part) => {
 			const model = recurseUntilModel(other_part)
 			if (!model) return
 			const cart_tag = model.GetTags().find((tag) => tag === "CartComponent")

@@ -1,8 +1,8 @@
-import { Logger } from "@common/shared/logger"
-import { OnStart, Service } from "@flamework/core"
+import { Logger } from "shared/common/logger"
+import { Module, Service, type OnStart } from "@typetorch/framework"
 import { t } from "@rbxts/t"
 import { TextService } from "@rbxts/services"
-import { ServerFunctions } from "shared/network.helper"
+import { network } from "shared/net"
 import { GetFeedbackResponse, IFeedbackItem, HttpService } from "./http.service"
 
 const descriptionValidator = t.intersection(
@@ -17,11 +17,11 @@ interface CacheEntry {
 }
 
 @Service()
-export class FeedbackService implements OnStart {
-	constructor(
-		private logger: Logger,
-		private httpService: HttpService
-	) {}
+export class FeedbackService extends Module implements OnStart {
+	private readonly logger = new Logger("feedback.service")
+	constructor(private httpService: HttpService) {
+		super()
+	}
 
 	private readonly MAX_PENDING = 10
 	private readonly CACHE_TTL = 60
@@ -51,7 +51,7 @@ export class FeedbackService implements OnStart {
 	}
 
 	onStart() {
-		ServerFunctions.FeedbackService.submitFeedback.setCallback(
+		this.trove.add(network.server.FeedbackService.submitFeedback.handle(
 			async (player, description) => {
 				if (!descriptionValidator(description)) {
 					return [false, "Feedback must be between 10 and 1000 characters"]
@@ -84,9 +84,9 @@ export class FeedbackService implements OnStart {
 				this.invalidateCache(player.UserId)
 				return [result.feedback]
 			}
-		)
+		))
 
-		ServerFunctions.FeedbackService.getMyFeedbacks.setCallback(async (player) => {
+		this.trove.add(network.server.FeedbackService.getMyFeedbacks.handle(async (player) => {
 			const result = await this.getCachedFeedbacks(player.UserId).catch((err) => {
 				this.logger.warn(
 					`Failed to fetch feedbacks for player ${player.UserId}: ${err}`
@@ -103,6 +103,6 @@ export class FeedbackService implements OnStart {
 				response: f.response !== undefined ? this.filterText(f.response, 0) : undefined,
 			}))
 			return [filtered]
-		})
+		}))
 	}
 }

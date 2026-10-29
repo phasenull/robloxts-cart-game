@@ -1,65 +1,87 @@
-import { Dependency, OnStart, Service } from "@flamework/core"
-import { AnalyticsService, Players, Workspace } from "@rbxts/services"
-import { ServerEvents, ServerFunctions } from "shared/network.helper"
-import { CartService } from "./cart.service"
-import { DataService } from "./data.service"
-import { Logger } from "@common/shared/logger"
+import { AnalyticsService, Workspace } from "@rbxts/services"
+import type { Trove } from "@rbxts/trove"
+import {
+	Dependency,
+	Module,
+	Service,
+	type OnInit,
+	type OnPlayerAdded,
+	type OnStart,
+	type PlayerState
+} from "@typetorch/framework"
+import { network } from "shared/net"
+import type { CartService } from "./cart.service"
+import type { DataService } from "./data.service"
+import { Logger } from "shared/common/logger"
 import {
 	getCheckpointDataFromIndex,
 	getCheckpointModelByIndex,
 	getPreviousBigCheckpoint
 } from "shared/cart.helper"
-import { sphere } from "@rbxts/better-gizmos"
+import { Tasks } from "shared/tasks"
 
 @Service({ loadOrder: 5 })
-export class CheckpointService implements OnStart {
-	private checkpoint_states = new Map<number, number>()
-	constructor(private logger: Logger) {}
-	private checkpoints = Workspace.FindFirstChild("Checkpoints")
-		?.GetChildren()
-		.filter((child) => child.IsA("Model")) as Model[]
-	onStart(): void {
-		Players.PlayerAdded.Connect((player) => {
-			const data_service = Dependency<DataService>()
-			let profile_loaded = false
+export class CheckpointService extends Module implements OnInit, OnStart, OnPlayerAdded {
+	private readonly logger = new Logger("checkpoint.service")
+	/** Each player's current checkpoint, kept across swaps (a swap must not send everyone back to 0). */
+	private checkpoint_states!: PlayerState<number>
+	private tasks!: Tasks
+	private checkpoints!: Model[]
 
-			const applyCheckpoint = () => {
-				profile_loaded = true
-				const loaded_profile = data_service.getProfile(player)
-				if (!loaded_profile) return
-				const saved = loaded_profile.Data.collected_checkpoints
-				const last_big = saved.size() > 0 ? math.max(...saved) : 0
-				this.setCheckpointIndex(player, last_big)
-				// Respawn character at the correct checkpoint now that we know it
-				if (player.Character) {
-					this.spawnPlayerAtTheirBigCheckpoint(player)
-				}
+	onInit() {
+		this.tasks = new Tasks(this.trove)
+		this.checkpoint_states = this.ctx.playerState<number>("checkpoint.index.v1", () => 0)
+		this.checkpoints = Workspace.FindFirstChild("Checkpoints")
+			?.GetChildren()
+			.filter((child) => child.IsA("Model")) as Model[]
+	}
+
+	onPlayerAdded(player: Player, playerTrove: Trove) {
+		const data_service = Dependency<DataService>()
+		// A swap replays every player: one already placed in this server keeps their checkpoint and position.
+		let profile_loaded = this.checkpoint_states.has(player)
+
+		const applyCheckpoint = () => {
+			profile_loaded = true
+			const loaded_profile = data_service.getProfile(player)
+			if (!loaded_profile) return
+			const saved = loaded_profile.Data.collected_checkpoints
+			const last_big = saved.size() > 0 ? math.max(...saved) : 0
+			this.setCheckpointIndex(player, last_big)
+			// Respawn character at the correct checkpoint now that we know it
+			if (player.Character) {
+				this.spawnPlayerAtTheirBigCheckpoint(player)
 			}
+		}
 
+		if (!profile_loaded) {
 			const existing_profile = data_service.getProfile(player)
 			if (existing_profile) {
 				applyCheckpoint()
 			} else {
-				data_service.subscribePlayerDataLoaded(player).Connect(applyCheckpoint)
+				playerTrove.add(data_service.subscribePlayerDataLoaded(player).Connect(applyCheckpoint))
 			}
+		}
 
-			player.CharacterAdded.Connect(() => {
-				// Only spawn at checkpoint after profile is loaded; first spawn before
-				// profile loads is handled by applyCheckpoint above once it fires
-				if (profile_loaded) {
-					this.processPlayerDeath(player)
-				}
-			})
+		playerTrove.connect(player.CharacterAdded, () => {
+			// Only spawn at checkpoint after profile is loaded; first spawn before
+			// profile loads is handled by applyCheckpoint above once it fires
+			if (profile_loaded) {
+				this.processPlayerDeath(player)
+			}
 		})
-		ServerFunctions.CheckpointService.tpMeToBigCheckpoint.setCallback(
-			(player) => {
+	}
+
+	onStart(): void {
+		this.trove.add(
+			network.server.CheckpointService.tpMeToBigCheckpoint.handle((player) => {
 				const result = this.spawnPlayerAtTheirBigCheckpoint(player)
-				ServerEvents.CartService.forceCloseDeathScreen.fire(player)
+				network.server.CartService.forceCloseDeathScreen.fire(player)
 				this.logger.log(`CHOSEN_SPAWN: ${result?.GetFullName()}`)
 				return [true]
-			}
+			})
 		)
-		ServerFunctions.CheckpointService.getCheckpointState.setCallback(
+		this.trove.add(network.server.CheckpointService.getCheckpointState.handle(
 			(player) => {
 				const checkpoint_index = this.getCheckpointIndex(player)
 				const collected_checkpoints = this.getPlayerCheckpoints(player)
@@ -71,8 +93,8 @@ export class CheckpointService implements OnStart {
 					}
 				]
 			}
-		)
-		ServerFunctions.CheckpointService.tpMeToCheckpoint.setCallback(
+		))
+		this.trove.add(network.server.CheckpointService.tpMeToCheckpoint.handle(
 			(player, checkpoint_index) => {
 				const cart_service = Dependency<CartService>()
 				const player_cart = cart_service.getPlayerCartComponent(player)
@@ -90,14 +112,14 @@ export class CheckpointService implements OnStart {
 				}
 				this.setCheckpointIndex(player, checkpoint_index)
 				this.spawnPlayerAtTheirCheckpoint(player)
-				task.delay(0.1, () => {
-					ServerEvents.CartService.forceCloseDeathScreen.fire(player)
+				this.tasks.delay(0.1, () => {
+					network.server.CartService.forceCloseDeathScreen.fire(player)
 					player.LoadCharacterAsync()
 				})
 				return [true]
 			}
-		)
-		ServerEvents.CheckpointService.setCheckpoint.connect((player, index) => {
+		))
+		this.trove.add(network.server.CheckpointService.setCheckpoint.on((player, index) => {
 			if (typeOf(index) !== "number") {
 				return
 			}
@@ -108,14 +130,16 @@ export class CheckpointService implements OnStart {
 				return
 			}
 			this.setCheckpointIndex(player, index)
-		})
-		ServerEvents.CheckpointService.processPlayerDeath.connect((player) => {
-			this.processPlayerDeath(player)
-		})
+		}))
+		this.trove.add(
+			network.server.CheckpointService.processPlayerDeath.on((player) => {
+				this.processPlayerDeath(player)
+			})
+		)
 	}
 	setCheckpointIndex(player: Player, index: number) {
-		this.checkpoint_states.set(player.UserId, index)
-		ServerEvents.CheckpointService.updateCheckpointState.fire(
+		this.checkpoint_states.set(player, index)
+		network.server.CheckpointService.updateCheckpointState.fire(
 			player,
 			index,
 			this.getPlayerCheckpoints(player)
@@ -123,7 +147,7 @@ export class CheckpointService implements OnStart {
 		this.attemptToSaveCheckpoint(player, index)
 	}
 	getCheckpointIndex(player: Player): number {
-		return this.checkpoint_states.get(player.UserId) || 0
+		return (this.checkpoint_states.has(player) ? this.checkpoint_states.get(player) : 0) || 0
 	}
 	spawnPlayerAtTheirBigCheckpoint(player: Player) {
 		const cart_service = Dependency<CartService>()
@@ -226,7 +250,7 @@ export class CheckpointService implements OnStart {
 		const collected_checkpoints = profile.Data.collected_checkpoints
 		if (!collected_checkpoints.includes(checkpoint_index)) {
 			collected_checkpoints.push(checkpoint_index)
-			profile.Save()
+			profile_service.save(player)
 		}
 	}
 	isBigCheckpoint(checkpoint_index: number) {
@@ -254,9 +278,9 @@ export class CheckpointService implements OnStart {
 		const collected_checkpoints = profile.Data.collected_checkpoints
 		if (!collected_checkpoints.includes(checkpoint_index)) {
 			collected_checkpoints.push(checkpoint_index)
-			profile.Save()
+			profile_service.save(player)
 			// Notify client of the update
-			ServerEvents.CheckpointService.updateCheckpointState.fire(
+			network.server.CheckpointService.updateCheckpointState.fire(
 				player,
 				this.getCheckpointIndex(player),
 				collected_checkpoints

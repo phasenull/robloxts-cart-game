@@ -1,4 +1,4 @@
-import { buildConfigGetter } from "@common/shared/config.builder";
+import { buildConfigGetter } from "shared/common/config.builder";
 import { IConfig } from "./type.helper";
 
 export function getConfig() {

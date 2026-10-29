@@ -1,6 +1,6 @@
 import React from "@rbxts/react"
-import { PurchasableContainer } from "@common/client/ui/components/purchasable-container"
-import { UIDIM } from "@common/client/ui/constants"
+import { PurchasableContainer } from "client/common/ui/components/purchasable-container"
+import { UIDIM } from "client/common/ui/constants"
 import { purchasables } from "shared/purchasables"
 
 export function Products() {

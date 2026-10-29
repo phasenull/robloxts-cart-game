@@ -1,14 +1,14 @@
 import React, { useEffect } from "@rbxts/react";
-import { UIDIM } from "@common/client/ui/constants";
-import { A } from "@common/shared/assets";
+import { UIDIM } from "client/common/ui/constants";
+import { A } from "shared/common/assets";
 import Object from "@rbxts/object-utils";
 import { useMutation, useQuery } from "@rbxts/react-query";
-import { ClientFunctions } from "shared/network.helper";
-import { GoofyButton } from "@common/client/ui/components/buttons/goofy-button";
-import { useNavigator } from "@common/client/ui/hooks/useNavigator";
-import { UIHelper } from "@common/client/ui.helper";
-import { Dependency } from "@flamework/core";
-import { CartController } from "client/controllers/cart.controller";
+import { network } from "shared/net"
+import { GoofyButton } from "client/common/ui/components/buttons/goofy-button";
+import { useNavigator } from "client/common/ui/hooks/useNavigator";
+import { UIHelper } from "client/common/ui.helper";
+import { Dependency } from "@typetorch/framework"
+import type { CartController } from "client/controllers/cart.controller"
 import { useCart } from "client/ui/contexts/cart.context";
 import { getCheckpointDataFromIndex, ISLAND_CONFIG } from "shared/cart.helper";
 import {
@@ -17,8 +17,8 @@ import {
 } from "shared/purchasables";
 import { MarketplaceService } from "@rbxts/services";
 import { useCheckpoint } from "./cart/hooks/useCheckpoint";
-import { __IS_EDIT__ } from "@common/shared/config.builder";
-import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
+import { __IS_EDIT__ } from "shared/common/config.builder";
+import { RottenButton } from "client/common/ui/components/buttons/rotten-button";
 
 export function TPGui() {
 	const { collectedCheckpoints, refresh } = useCheckpoint();
@@ -299,8 +299,8 @@ function CheckpointEntry(props: {
 			if (__IS_EDIT__) {
 				return true;
 			}
-			await ClientFunctions.CheckpointService.tpMeToCheckpoint
-				.invokeWithTimeout(5000, checkpoint_index)
+			await network.client.CheckpointService.tpMeToCheckpoint
+				.invokeWithTimeout(5, checkpoint_index)
 				.then((result) => {
 					if (!result) {
 						print("Failed to tp to checkpoint");

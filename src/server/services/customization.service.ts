@@ -1,31 +1,34 @@
-import { Dependency, OnStart, Service } from "@flamework/core"
-import { Players } from "@rbxts/services"
-import { Logger } from "@common/shared/logger"
+import { Dependency, Module, Service, type OnStart } from "@typetorch/framework"
+import { Logger } from "shared/common/logger"
 import { DataService } from "./data.service"
-import { ServerFunctions } from "shared/network.helper"
-import { ShopService } from "./shop.service"
-import { ProperReturns } from "@common/shared/util.helper";
+import { network } from "shared/net"
+import type { ShopService } from "./shop.service"
+import { ProperReturns } from "shared/common/util.helper";
 
 export type ICustomizable = "cart" | "honk" | (string & {})
 
 @Service()
-export class CustomizationService implements OnStart {
-	constructor(
-		private logger: Logger,
-		private dataService: DataService
-	) {}
+export class CustomizationService extends Module implements OnStart {
+	private readonly logger = new Logger("customization.service")
+	constructor(private dataService: DataService) {
+		super()
+	}
 
 	public onStart(): void {
 		this.logger.log("CustomizationService started")
 
 		// Register network functions
-		ServerFunctions.CustomizationService.getPlayerPreference.setCallback((player, item_type) => {
-			return this.getPlayerPreference(player, item_type)
-		})
+		this.trove.add(
+			network.server.CustomizationService.getPlayerPreference.handle((player, item_type) => {
+				return this.getPlayerPreference(player, item_type)
+			})
+		)
 
-		ServerFunctions.CustomizationService.setPreference.setCallback((player, key, value) => {
-			return this.setPreference(player, key, value)
-		})
+		this.trove.add(
+			network.server.CustomizationService.setPreference.handle((player, key, value) => {
+				return this.setPreference(player, key, value)
+			})
+		)
 	}
 
 	/**

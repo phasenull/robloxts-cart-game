@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "@rbxts/react";
 import { Players, RunService, Workspace } from "@rbxts/services";
 import { CartClientComponent } from "client/components/cart.client.component";
-import { GoofyText } from "@common/client/ui/components/goofy-text";
-import { UIDIM } from "@common/client/ui/constants";
+import { GoofyText } from "client/common/ui/components/goofy-text";
+import { UIDIM } from "client/common/ui/constants";
 import { useCart } from "client/ui/contexts/cart.context";
-import useAnimateValue from "@common/client/ui/hooks/useAnimateValue";
-import { A, assets } from "@common/shared/assets";
-import { Logger } from "@common/shared/logger";
-import { useInputType } from "@common/client/ui/hooks/useInputType";
+import useAnimateValue from "client/common/ui/hooks/useAnimateValue";
+import { A, assets } from "shared/common/assets";
+import { Logger } from "shared/common/logger";
+import { useInputType } from "client/common/ui/hooks/useInputType";
 const logger = new Logger("SpeedometerHud");
 
 const MAX_SPEED = 70;

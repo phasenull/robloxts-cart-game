@@ -1,18 +1,4 @@
 
-export type MovementDirection = 1 | -1 | 0
-export type log_base = Model & {
-	Hitbox: Part & {
-		left_char: Attachment
-		right_char: Attachment
-	}
-	Align: Model & {}
-	// Visuals: Model
-	// Align:Part & {
-	// 	LeftSeat:Seat
-	// 	RightSeat:Seat
-	// }
-}
-
 export type IConfig = {
 	CartConfig: ICartConfig
 	PurchasableConfig: IPurchasableConfig
@@ -68,38 +54,24 @@ export type ButtonModel = Model & {
 	["SpawnPlatform"]: Model
 }
 export type ICart = Model & {
-	VehicleSeat: Seat & {
-		WeldConstraint: WeldConstraint
-	}
+	VehicleSeat: VehicleSeat
 	Root: Part & {
-		RL_ATT: Attachment
-		RR_ATT: Attachment
-		FR_ATT: Attachment
 		Root: Attachment
-		FL_ATT: Attachment
-		VectorForce: VectorForce
+		Drive: Attachment
+		DriveForce: VectorForce
+		SteerTorque: Torque
+		Upright: AlignOrientation
 	}
 	Brake: ParticleEmitter
-	Wheels: Model & {
-		FL: IWheel
-		FR: IWheel
-		RL: IWheel
-		RR: IWheel
-	}
+	Wheels: Model
 }
 
 export type IWheel = Model & {
-	WHEEL: Part & {
-		WeldConstraint: WeldConstraint
+	WHEEL: BasePart
+	CONNECTION: BasePart & {
+		Caster: Motor6D
 	}
-	CONNECTION: Part & {
-		Attachment: Attachment
-		HingeConstraint: HingeConstraint
-	}
-	BALL: Part & {
-		BallSocketConstraint: BallSocketConstraint
-		Attachment: Attachment
-	}
+	BALL: Part
 }
 export type IShopConfig = Record<IShopItemTypes, IShopItem[]>
 export type IShopItem = {

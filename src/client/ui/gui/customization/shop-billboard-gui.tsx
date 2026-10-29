@@ -1,8 +1,8 @@
 import React, { ReactNode } from "@rbxts/react"
-import { GoofyText } from "@common/client/ui/components/goofy-text"
-import { ProgressBarComponent } from "@common/client/ui/components/progressbar-component"
-import { UIDIM } from "@common/client/ui/constants"
-import useAnimateValue from "@common/client/ui/hooks/useAnimateValue"
+import { GoofyText } from "client/common/ui/components/goofy-text"
+import { ProgressBarComponent } from "client/common/ui/components/progressbar-component"
+import { UIDIM } from "client/common/ui/constants"
+import useAnimateValue from "client/common/ui/hooks/useAnimateValue"
 
 export function ShopBillboardGui(props: {
 	target_instance: PVInstance

@@ -1,15 +1,15 @@
-import { Dependency } from "@flamework/core"
+import { Dependency } from "@typetorch/framework"
 import { useEffect, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
 import { Players, Workspace } from "@rbxts/services"
-import { CartController } from "client/controllers/cart.controller"
-import { UIHelper } from "@common/client/ui.helper"
+import type { CartController } from "client/controllers/cart.controller"
+import { UIHelper } from "client/common/ui.helper"
 import { useCart } from "client/ui/contexts/cart.context"
-import { assets } from "@common/shared/assets"
+import { assets } from "shared/common/assets"
 import { RigCartModel } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
-import { ClientEvents, ClientFunctions } from "shared/network.helper"
-import { __IS_EDIT__ } from "@common/shared/config.builder"
+import { network } from "shared/net"
+import { __IS_EDIT__ } from "shared/common/config.builder"
 
 interface UseDeathPreviewProps {
 	spawnPoint: CFrame | undefined
@@ -38,13 +38,13 @@ export function useDeathPreview() {
 	// Listen for clear preview event from server
 	useEffect(() => {
 		if (__IS_EDIT__) return
-		const connection = ClientEvents.CartService.clearDeathPreview.connect(() => {
+		const connection = network.client.CartService.clearDeathPreview.on(() => {
 			if (previewModel) {
 				previewModel.Destroy()
 				setPreviewModel(undefined)
 			}
 		})
-		return () => connection.Disconnect()
+		return () => connection()
 	}, [previewModel])
 	// const char = player.Character
 	// const pp = char?.PrimaryPart
@@ -93,7 +93,7 @@ async function buildPreviewCart(spawnPoint: CFrame) {
 	let cartSkin = "Cart" // Default
 	if (!__IS_EDIT__) {
 		const [prefs, err] =
-			await ClientFunctions.CustomizationService.getPlayerPreference.invoke(
+			await network.client.CustomizationService.getPlayerPreference.invoke(
 				"cart"
 			)
 		if (!err && prefs && prefs.size() > 0) {
@@ -106,8 +106,8 @@ async function buildPreviewCart(spawnPoint: CFrame) {
 		return
 	}
 
-	RigCartModel(example_cart)
-	const seat = example_cart.FindFirstChildOfClass("Seat")
+	RigCartModel(example_cart, "preview")
+	const seat = example_cart.FindFirstChildOfClass("VehicleSeat")
 	if (!seat) {
 		return
 	}
@@ -123,8 +123,9 @@ async function buildPreviewCart(spawnPoint: CFrame) {
 	const local_player = Players.LocalPlayer
 	let preview_char: Model | undefined = undefined
 	try {
+		// @rbxts/types 1.0.956 (the template's) types this as the new User datatype; the call passes the UserId as before
 		preview_char = Players.CreateHumanoidModelFromUserIdAsync(
-			local_player.UserId
+			local_player.UserId as unknown as User
 		)
 		preview_char.GetDescendants().forEach((desc) => {
 			if (["LocalScript", "Script", "ModuleScript"].includes(desc.ClassName)) {

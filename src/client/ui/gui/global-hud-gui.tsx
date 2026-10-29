@@ -1,12 +1,13 @@
-import React, { useEffect, useRef, useState } from "@rbxts/react";
-import { UIDIM } from "@common/client/ui/constants";
-import { ClientEvents, ClientFunctions } from "shared/network.helper";
-import { formatCash } from "@common/shared/util.helper";
+import React, { useContext, useEffect, useRef, useState } from "@rbxts/react";
+import { CashLabelContext } from "client/common/ui/contexts/cash-label.context";
+import { UIDIM } from "client/common/ui/constants";
+import { network } from "shared/net"
+import { formatCash } from "shared/common/util.helper";
 import { useQuery } from "@rbxts/react-query";
-import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { __IS_EDIT__ } from "shared/common/config.builder";
 import { MOCK_CASH } from "shared/mocks";
-import { useInputType } from "@common/client/ui/hooks/useInputType";
-import { useNavigator } from "@common/client/ui/hooks/useNavigator";
+import { useInputType } from "client/common/ui/hooks/useInputType";
+import { useNavigator } from "client/common/ui/hooks/useNavigator";
 import { CashPopupSignal } from "shared/components/cash.component";
 
 export function CashLabel() {
@@ -18,7 +19,7 @@ export function CashLabel() {
 			if (__IS_EDIT__) {
 				return MOCK_CASH;
 			}
-			const [result, err] = await ClientFunctions.DataService.getCash();
+			const [result, err] = await network.client.DataService.getCash.invoke();
 			if (result === false || result === undefined) {
 				return false;
 			}
@@ -30,15 +31,16 @@ export function CashLabel() {
 
 	useEffect(() => {
 		if (thisRef.current) {
-			(_G as any).cash_label = thisRef.current;
+			cash_label.current = thisRef.current;
 		}
 		if (__IS_EDIT__) return;
-		const conn = ClientEvents.DataService.updatePlayerCash.connect((amount) => {
+		const conn = network.client.DataService.updatePlayerCash.on((amount) => {
 			setCash(amount);
 		});
-		return () => conn.Disconnect();
+		return () => conn();
 	}, []);
 	const thisRef = useRef<TextLabel>();
+	const cash_label = useContext(CashLabelContext);
 	return (
 		<frame
 			key="CashLabel"

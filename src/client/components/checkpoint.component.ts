@@ -1,42 +1,49 @@
-import { Component, Components } from "@flamework/components"
-import { Logger } from "@common/shared/logger"
+import { Logger } from "shared/common/logger"
 import { CartTriggerComponent } from "./cart-trigger.component"
-import { t } from "@rbxts/t"
-import { Dependency, OnStart } from "@flamework/core"
+import { Dependency, TypeTorch } from "@typetorch/framework"
 import { CartClientComponent } from "./cart.client.component"
 import { Players } from "@rbxts/services"
-import { UIHelper } from "@common/client/ui.helper"
-import { A, assets } from "@common/shared/assets"
-import { sphere } from "@rbxts/better-gizmos"
-import { ClientEvents } from "shared/network.helper"
+import type { Trove } from "@rbxts/trove"
+import { UIHelper } from "client/common/ui.helper"
+import { A } from "shared/common/assets"
+import { network } from "shared/net"
 import { promptGroupJoin } from "client/group-prompt"
+import type { ComponentsController } from "client/controllers/components.controller"
+import { Tasks } from "shared/tasks"
+import { homeValue } from "shared/component"
 
-@Component({ tag: "CheckpointComponent" })
-export class CheckpointComponent
-	extends CartTriggerComponent<
-		{},
-		Model & {
-			CheckpointContainer: Model & {
-				Confetti: Attachment & {
-					ParticleEmitter: ParticleEmitter
-				}
-			}
-			Animate: Model & {
-				AnimationController: AnimationController & {
-					Animator: Animator
-				}
-			}
-			Trigger: BasePart
+export type CheckpointModel = Model & {
+	CheckpointContainer: Model & {
+		Confetti: Attachment & {
+			ParticleEmitter: ParticleEmitter
 		}
-	>
-	implements OnStart
-{
+	}
+	Animate: Model & {
+		AnimationController: AnimationController & {
+			Animator: Animator
+		}
+	}
+	Trigger: BasePart
+}
+
+/** The checkpoint this client last collected, kept across swaps so its looping animation carries on. */
+function collectedState() {
+	return TypeTorch.persist("checkpoint.collected.v1", () => ({ name: undefined as string | undefined }))
+}
+
+/** Tag "CheckpointComponent": collected by the local player's cart; tells the server and plays the effects. */
+export class CheckpointComponent extends CartTriggerComponent<CheckpointModel> {
+	private readonly tasks = new Tasks(this.trove)
 	private original_colorpart: BasePart | undefined
-	constructor() {
-		super(new Logger("CheckpointComponent"))
-		this.original_color =
-			this.instance.Trigger.FindFirstChildOfClass("Beam")?.Color.Keypoints[0]
-				.Value || new Color3(1, 1, 1)
+	constructor(instance: CheckpointModel, trove: Trove) {
+		super(instance, trove)
+		this.logger = new Logger("CheckpointComponent")
+		// home values: after a swap the beams and plate may still show the collected colour
+		this.original_color = homeValue(
+			this.instance.Trigger,
+			"checkpoint_color",
+			this.instance.Trigger.FindFirstChildOfClass("Beam")?.Color.Keypoints[0].Value || new Color3(1, 1, 1)
+		)
 		const plate = this.instance.Animate.FindFirstChild("Plate") as
 			| BasePart
 			| undefined
@@ -52,29 +59,38 @@ export class CheckpointComponent
 			`Checkpoint ${this.instance.GetFullName()} model is missing Animate.Plate.ColorPart part`
 		)
 
-		this.original_colorpart_color = color_part.Color
+		this.original_colorpart_color = homeValue(color_part, "checkpoint_colorpart", color_part.Color)
 		this.original_colorpart = color_part
 		const idle_animation = new Instance("Animation")
 		idle_animation.AnimationId = "rbxassetid://96210827042722"
 		const toggle_animation = new Instance("Animation")
 		toggle_animation.AnimationId = "rbxassetid://94868340504345"
-		this.idle_animation_track =
+		this.idle_animation_track = this.trove.add(
 			this.instance.Animate.AnimationController.Animator.LoadAnimation(
 				idle_animation
 			)
-		this.toggle_animation_track =
+		)
+		this.toggle_animation_track = this.trove.add(
 			this.instance.Animate.AnimationController.Animator.LoadAnimation(
 				toggle_animation
 			)
+		)
 		// this.idle_animation_track.Play()
 		this.is_collected = false
-		ClientEvents.CheckpointService.updateCheckpointState.connect((state,all) => {
+		this.trove.add(network.client.CheckpointService.updateCheckpointState.on((state,all) => {
 			const numbered = tonumber(this.instance.Name)
 			if (numbered !== state) {
 				return
 			}
 			this.collect()
-		})
+		}))
+		// Collected before a swap: same state, its idle loop playing again (no sound, effects or message)
+		if (collectedState().name === this.instance.GetFullName()) {
+			this.is_collected = true
+			this.idle_animation_track.AdjustSpeed(0)
+			this.idle_animation_track.Looped = true
+			this.idle_animation_track.Play()
+		}
 	}
 	private idle_animation_track: AnimationTrack
 	private toggle_animation_track: AnimationTrack
@@ -89,8 +105,7 @@ export class CheckpointComponent
 		const model = touch_part.FindFirstAncestorOfClass("Model")
 		if (!model) return
 
-		const dependency = Dependency<Components>()
-		const cart_component = dependency.getComponent(model, CartClientComponent)
+		const cart_component = Dependency<ComponentsController>().get(model, CartClientComponent)
 		if (!cart_component) return
 		const cart_owner = cart_component.resolvePlayer()
 		if (!cart_owner) return
@@ -100,13 +115,13 @@ export class CheckpointComponent
 	}
 	public collect() {
 		if (this.is_collected) return
-		const dependency = Dependency<Components>()
-		const all_checkpoints = dependency.getAllComponents(CheckpointComponent)
+		const all_checkpoints = Dependency<ComponentsController>().all(CheckpointComponent)
 		all_checkpoints.forEach((checkpoint) => {
 			if (checkpoint === this) return
 			checkpoint.cleanup()
 		})
 		this.is_collected = true
+		collectedState().name = this.instance.GetFullName()
 		this.logger.log(`Checkpoint reached at ${this.instance.GetFullName()}`)
 		this.setColor(new Color3(0.15, 1, 0))
 		if (this.original_colorpart) {
@@ -119,11 +134,11 @@ export class CheckpointComponent
 		this.idle_animation_track.Play()
 		UIHelper.playSound(A.sounds.party)
 		this.instance.CheckpointContainer.Confetti.ParticleEmitter.Enabled = true
-		task.delay(2, () => {
+		this.tasks.delay(2, () => {
 			this.instance.CheckpointContainer.Confetti.ParticleEmitter.Enabled = false
 		})
 		const name = this.instance.Name
-		ClientEvents.CheckpointService.setCheckpoint.fire(tonumber(name) || 0)
+		network.client.CheckpointService.setCheckpoint.fire(tonumber(name) || 0)
 
 		const is_big_checkpoint = !!this.instance.FindFirstChild("Spawn")
 		if (is_big_checkpoint) {

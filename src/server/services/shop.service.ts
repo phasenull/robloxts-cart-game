@@ -1,5 +1,5 @@
-import { Dependency, OnStart, Service } from "@flamework/core"
-import { Logger } from "@common/shared/logger"
+import { Dependency, Module, Service, type OnInit, type OnStart, type PlayerState } from "@typetorch/framework"
+import { Logger } from "shared/common/logger"
 import {
 	IShopItemTypes,
 	IShopItem,
@@ -9,71 +9,53 @@ import {
 	IRewardType
 } from "shared/type.helper"
 import { DataService } from "./data.service"
-import { CartService } from "./cart.service"
+import type { CartService } from "./cart.service"
 import { getConfig } from "shared/config.helper"
-import { ServerEvents, ServerFunctions } from "shared/network.helper"
-import { A, assets } from "@common/shared/assets"
-import { MarketplaceService, Players } from "@rbxts/services"
+import { network } from "shared/net"
+import { A, assets } from "shared/common/assets"
+import { MarketplaceService } from "@rbxts/services"
 import { PRODUCTS } from "shared/purchasables"
-import { ProperReturns } from "@common/shared/util.helper";
+import { ProperReturns } from "shared/common/util.helper";
 
 @Service()
-export class ShopService implements OnStart {
-	constructor(
-		private logger: Logger,
-		private DataService: DataService
-	) {}
+export class ShopService extends Module implements OnInit, OnStart {
+	private readonly logger = new Logger("shop.service")
+	constructor(private DataService: DataService) {
+		super()
+	}
 
-	// Tracks which honk a player intends to purchase (cleared after receipt is processed)
-	private readonly pendingHonkPurchases = new Map<Player, string>()
+	// Tracks which honk a player intends to purchase (cleared after receipt is processed). Kept across swaps, so a
+	// receipt that arrives after a deploy still finds it; removed on a real leave (playerState).
+	private pendingHonkPurchases!: PlayerState<string | undefined>
+
+	onInit() {
+		this.pendingHonkPurchases = this.ctx.playerState<string | undefined>("shop.pendingHonk.v1", () => undefined)
+	}
 
 	onStart(): void {
 		this.logger.log("ShopService started")
 
 		// Register network functions
-		ServerFunctions.ShopService.getShopConfig.setCallback(() => {
-			return this.getShopConfig()
-		})
-
-		ServerFunctions.ShopService.getShopItems.setCallback(
-			(player, item_type) => {
-				return this.getShopItems(item_type)
-			}
+		const shop = network.server.ShopService
+		this.trove.add(shop.getShopConfig.handle(() => this.getShopConfig()))
+		this.trove.add(shop.getShopItems.handle((player, item_type) => this.getShopItems(item_type)))
+		this.trove.add(
+			shop.canPlayerAffordItem.handle((player, item_type, item_name) =>
+				this.canPlayerAffordItem(player, item_type, item_name)
+			)
 		)
-
-		ServerFunctions.ShopService.canPlayerAffordItem.setCallback(
-			(player, item_type, item_name) => {
-				return this.canPlayerAffordItem(player, item_type, item_name)
-			}
+		this.trove.add(
+			shop.makePlayerPurchaseItem.handle((player, item_type, item_name) =>
+				this.makePlayerPurchaseItem(player, item_type, item_name)
+			)
 		)
-
-		ServerFunctions.ShopService.makePlayerPurchaseItem.setCallback(
-			(player, item_type, item_name) => {
-				return this.makePlayerPurchaseItem(player, item_type, item_name)
-			}
+		this.trove.add(shop.getPlayerInventory.handle((player, item_type) => this.getPlayerInventory(player, item_type)))
+		this.trove.add(
+			shop.doesPlayerOwnItem.handle((player, item_type, item_name) =>
+				this.doesPlayerOwnItem(player, item_type, item_name)
+			)
 		)
-
-		ServerFunctions.ShopService.getPlayerInventory.setCallback(
-			(player, item_type) => {
-				return this.getPlayerInventory(player, item_type)
-			}
-		)
-
-		ServerFunctions.ShopService.doesPlayerOwnItem.setCallback(
-			(player, item_type, item_name) => {
-				return this.doesPlayerOwnItem(player, item_type, item_name)
-			}
-		)
-
-		ServerFunctions.ShopService.promptHonkPurchase.setCallback(
-			(player, honk_name) => {
-				return this.promptHonkPurchase(player, honk_name)
-			}
-		)
-
-		Players.PlayerRemoving.Connect((player) => {
-			this.pendingHonkPurchases.delete(player)
-		})
+		this.trove.add(shop.promptHonkPurchase.handle((player, honk_name) => this.promptHonkPurchase(player, honk_name)))
 	}
 
 	promptHonkPurchase(player: Player, honk_name: string): ProperReturns<true> {
@@ -99,7 +81,7 @@ export class ShopService implements OnStart {
 	}
 
 	getPendingHonkPurchase(player: Player): string | undefined {
-		return this.pendingHonkPurchases.get(player)
+		return this.pendingHonkPurchases.has(player) ? this.pendingHonkPurchases.get(player) : undefined
 	}
 
 	clearPendingHonkPurchase(player: Player): void {
@@ -156,7 +138,7 @@ export class ShopService implements OnStart {
 				if (!profile.Data.inventory[item_type].includes(item_name)) {
 					profile.Data.inventory[item_type].push(item_name)
 				}
-				ServerEvents.NotificationService.sendNotification(player, {
+				network.server.NotificationService.sendNotification.fire(player, {
 					title: "<b>Item Purchased</b>",
 					description: `<font color='#00D4FF'>${item_name}</font>`,
 					duration: 4,

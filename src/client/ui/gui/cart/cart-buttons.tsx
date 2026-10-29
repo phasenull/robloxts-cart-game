@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from "@rbxts/react"
 
-import useAnimateValue from "@common/client/ui/hooks/useAnimateValue"
-import { UIDIM } from "@common/client/ui/constants"
-import { RottenButton } from "@common/client/ui/components/buttons/rotten-button"
+import useAnimateValue from "client/common/ui/hooks/useAnimateValue"
+import { UIDIM } from "client/common/ui/constants"
+import { RottenButton } from "client/common/ui/components/buttons/rotten-button"
 import { useMutation } from "@rbxts/react-query"
 
-import { A } from "@common/shared/assets"
+import { A } from "shared/common/assets"
 import { TweenService } from "@rbxts/services"
-import { UIHelper } from "@common/client/ui.helper"
+import { UIHelper } from "client/common/ui.helper"
 import { useCart } from "client/ui/contexts/cart.context"
-import { useInputType } from "@common/client/ui/hooks/useInputType"
+import { useInputType } from "client/common/ui/hooks/useInputType"
 
 export function CartButtons(props: {
 	__story?: {
@@ -38,43 +38,16 @@ export function CartButtons(props: {
 		return () => conn.Disconnect()
 	}, [cart])
 
-	const { mutate: mutateBrake, data: is_braking_data } = useMutation({
-		mutationFn: async (is_braking: boolean, force_value?: boolean) => {
-			if (force_value !== undefined) {
-				return force_value
-			}
-			if (!cart) return false
-			if (is_braking) {
-				const sound = UIHelper.playSound(A.sounds.drift)
-				if (sound) {
-					sound.PlaybackSpeed = 1.5
-					sound.Volume = 0
-					TweenService.Create(
-						sound,
-						new TweenInfo(
-							0.5,
-							Enum.EasingStyle.Linear,
-							Enum.EasingDirection.InOut,
-							0,
-							true
-						),
-						{
-							Volume: 1
-						}
-					).Play()
-				}
-			}
-			cart.toggleBrake(is_braking)
-			return is_braking
-		}
-	})
+	// handbrake: hold to lock up and drift; the cart reports back so the button mirrors its state
+	const [is_braking_data, setIsBraking] = useState(false)
+	const setHandbrake = (engaged: boolean) => cart?.setHandbrake(engaged)
 
 	const { mutate: mutateSwitchToResetScreen } = useMutation({
 		mutationFn: async () => {
 			if (!cart) return true
 			UIHelper.toggleFade(true)
 			task.wait(0.5)
-			await cart.cleanupRide("reset by player")
+			await cart.endRide("reset by player")
 			// Don't call changeState here - let CartController's death screen signal handle it
 			task.wait(0.5)
 			UIHelper.toggleFade(false)
@@ -154,11 +127,25 @@ export function CartButtons(props: {
 		if (!cart) {
 			return
 		}
-		const brakeConnection = cart.brakeListener.Connect((status) => {
-			mutateBrake(status)
+		setIsBraking(cart.isHandbrakeEngaged())
+		const brakeConnection = cart.handbrakeChanged.Connect((engaged) => {
+			setIsBraking(engaged)
+			if (engaged && cart.getSpeed() > 4) {
+				const sound = UIHelper.playSound(A.sounds.drift)
+				if (sound) {
+					sound.PlaybackSpeed = 1.5
+					sound.Volume = 0
+					TweenService.Create(
+						sound,
+						new TweenInfo(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0, true),
+						{ Volume: 1 }
+					).Play()
+				}
+			}
 		})
 		return () => {
 			brakeConnection.Disconnect()
+			cart.setHandbrake(false)
 		}
 	}, [cart])
 	const value = useAnimateValue({
@@ -247,7 +234,7 @@ export function CartButtons(props: {
 						AnchorPoint={UIDIM.A_CENTER}
 						Text="BRAKE"
 						Color={new Color3(1, 0.02, 0.02)}
-						onDown={(is_down) => mutateBrake(is_down)}
+						onDown={(is_down) => setHandbrake(is_down)}
 						mockMouseDown={IS_BRAKING === true ? true : undefined}
 						action="BRAKE"
 						overrideDevice={props.__story?.override_device}

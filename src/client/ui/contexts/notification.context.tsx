@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "@rbxts/react"
+import { useTasks } from "client/common/ui/hooks/useTasks"
 import { INotification } from "shared/type.helper"
 import { HttpService } from "@rbxts/services"
 
@@ -15,6 +16,7 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
 export function NotificationProvider(props: React.PropsWithChildren<{}>) {
+	const tasks = useTasks()
 	const [notifications, setNotifications] = useState<INotificationWithId[]>([])
 
 	const addNotification = (notification: INotification) => {
@@ -29,7 +31,7 @@ export function NotificationProvider(props: React.PropsWithChildren<{}>) {
 		setNotifications((prev) => [...prev, newNotification])
 
 		// Auto-remove after duration
-		task.delay(duration, () => {
+		tasks.delay(duration, () => {
 			setNotifications((prev) => prev.filter((n) => n.id !== id))
 		})
 	}

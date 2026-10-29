@@ -1,7 +1,7 @@
-import { OnStart, Service } from "@flamework/core"
 import { fetch, Request } from "@rbxts/fetch-patched"
-import { Logger } from "@common/shared/logger"
 import { Players } from "@rbxts/services"
+import { Module, Service, TypeTorch, type OnInit, type OnStop, type PlayerState } from "@typetorch/framework"
+import { Logger } from "shared/common/logger"
 
 interface SessionPayload {
 	uuid: string
@@ -16,55 +16,67 @@ interface SessionPayload {
 	last_collected_checkpoint: number
 }
 
+/** An open play session; plain data in playerState, so a swap keeps it open (and doesn't open a second one). */
+interface Session {
+	uuid: string
+	/** os.clock() at join, for playtime */
+	joinClock: number
+	/** os.time() at join, for joined_at */
+	joinTime: number
+}
+
 @Service()
-export class HttpService implements OnStart {
-	constructor(private logger: Logger) {}
+export class HttpService extends Module implements OnInit, OnStop {
+	private readonly logger = new Logger("http.service")
 	private readonly HttpService = game.GetService("HttpService")
 	private readonly host = "https://api.cart-game.project.phasenull.dev"
-	private readonly session_uuids = new Map<number, string>()
-	private readonly session_join_times = new Map<number, number>() // os.clock() for playtime
-	private readonly session_join_timestamps = new Map<number, number>() // os.time() for joined_at
-	private readonly leave_queue: SessionPayload[] = []
+	private sessions!: PlayerState<Session | undefined>
+	/** Leaves not sent yet: persisted, so a swap doesn't drop them. */
+	private leave_queue!: SessionPayload[]
+	private swapping = false
 
-	onStart() {
-		game.BindToClose(() => {
-			// Flush any sessions still open (e.g. server shutdown before PlayerRemoving)
-			for (const [user_id] of this.session_uuids) {
-				const player = Players.GetPlayerByUserId(user_id)
-				if (player) {
-					this.enqueueLeave(player, 0)
-				}
-			}
-			this.flushLeaveQueueSync()
-		})
+	onInit() {
+		this.sessions = this.ctx.playerState<Session | undefined>("http.sessions.v1", () => undefined)
+		this.leave_queue = this.ctx.persist<SessionPayload[]>("http.leaveQueue.v1", () => [])
+		this.trove.add(TypeTorch.onSwapOut(() => (this.swapping = true)))
+		// Leaves a swap interrupted before they were sent.
+		if (this.leave_queue.size() > 0) this.trove.add(task.spawn(() => this.flushLeaveQueueSync()))
+	}
+
+	/** Server shutdown only (a swap runs onSwapOut first): flush any sessions still open, as the old BindToClose did. */
+	onStop() {
+		if (this.swapping) return
+		for (const player of Players.GetPlayers()) {
+			if (this.sessions.get(player)) this.enqueueLeave(player, 0)
+		}
+		this.flushLeaveQueueSync()
 	}
 
 	sessionJoin(player: Player) {
-		const uuid = this.HttpService.GenerateGUID(false).lower()
-		this.session_uuids.set(player.UserId, uuid)
-		this.session_join_times.set(player.UserId, os.clock())
-		this.session_join_timestamps.set(player.UserId, os.time())
+		if (this.sessions.get(player)) return // already open: this is the join replay after a swap
+		this.sessions.set(player, {
+			uuid: this.HttpService.GenerateGUID(false).lower(),
+			joinClock: os.clock(),
+			joinTime: os.time(),
+		})
 	}
 
 	sessionLeave(player: Player, last_checkpoint: number) {
 		this.enqueueLeave(player, last_checkpoint)
-		task.spawn(() => this.flushLeaveQueueSync())
+		this.trove.add(task.spawn(() => this.flushLeaveQueueSync()))
 	}
 
 	private enqueueLeave(player: Player, last_checkpoint: number) {
-		const uuid = this.session_uuids.get(player.UserId)
-		if (!uuid) return
-		const join_clock = this.session_join_times.get(player.UserId) ?? os.clock()
-		const joined_at = (this.session_join_timestamps.get(player.UserId) ?? math.floor(os.time())) * 1000
-		const playtime = math.floor(os.clock() - join_clock)
+		const session = this.sessions.get(player)
+		if (!session) return
+		const joined_at = session.joinTime * 1000
+		const playtime = math.floor(os.clock() - session.joinClock)
 		const left_at = math.floor(os.time()) * 1000
 		const char = player.Character
 		const pos = char?.PrimaryPart?.Position ?? char?.FindFirstChildWhichIsA("BasePart")?.Position
-		this.session_uuids.delete(player.UserId)
-		this.session_join_times.delete(player.UserId)
-		this.session_join_timestamps.delete(player.UserId)
+		this.sessions.delete(player)
 		this.leave_queue.push({
-			uuid,
+			uuid: session.uuid,
 			user_id: player.UserId,
 			server_version: tostring(game.PlaceVersion),
 			joined_at,

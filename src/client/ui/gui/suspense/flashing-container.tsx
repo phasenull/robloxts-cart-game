@@ -1,7 +1,7 @@
 import React from "@rbxts/react";
-import { UIDIM } from "@common/client/ui/constants";
-import useAnimateValue from "@common/client/ui/hooks/useAnimateValue";
-import { RainbowGradient } from "@common/shared/util.helper";
+import { UIDIM } from "client/common/ui/constants";
+import useAnimateValue from "client/common/ui/hooks/useAnimateValue";
+import { RainbowGradient } from "shared/common/util.helper";
 
 export function FlashingContainer() {
 	const original_color = Color3.fromRGB(36, 37, 43);

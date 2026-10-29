@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from "@rbxts/react"
-import { EmptyContainer } from "@common/client/ui/components/empty-container"
-import { PurchasableContainer } from "@common/client/ui/components/purchasable-container"
-import { GoofyButton } from "@common/client/ui/components/buttons/goofy-button"
-import { PRIMARY, UIDIM } from "@common/client/ui/constants"
-import { A } from "@common/shared/assets"
+import { EmptyContainer } from "client/common/ui/components/empty-container"
+import { PurchasableContainer } from "client/common/ui/components/purchasable-container"
+import { GoofyButton } from "client/common/ui/components/buttons/goofy-button"
+import { PRIMARY, UIDIM } from "client/common/ui/constants"
+import { A } from "shared/common/assets"
 import { purchasables } from "shared/purchasables"
 import { Gamepasses } from "./shop/gamepasses"
 import { Products } from "./shop/products"
-import { Badge } from "@common/client/ui/components/badge"
+import { Badge } from "client/common/ui/components/badge"
 const frames = ["PASSES", "PRODUCTS", "BUNDLES"] as const
 export function PassShopGui() {
 	const [viewing_frame, set_viewing_frame] =

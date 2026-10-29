@@ -1,4 +1,4 @@
-import { UIHelper } from "@common/client/ui.helper";import useAnimateValue from "@common/client/ui/hooks/useAnimateValue";import React, { useState, useEffect } from "@rbxts/react"
+import { UIHelper } from "client/common/ui.helper";import useAnimateValue from "client/common/ui/hooks/useAnimateValue";import React, { useState, useEffect } from "@rbxts/react"
 
 interface NotificationEntryProps {
 	id: string

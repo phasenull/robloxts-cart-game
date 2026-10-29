@@ -2,11 +2,11 @@ import React, { useRef, useState } from "@rbxts/react";
 import { useMutation } from "@rbxts/react-query";
 import { MarketplaceService } from "@rbxts/services";
 import { IShopItem } from "shared/type.helper";
-import { ClientFunctions } from "shared/network.helper";
-import { __IS_EDIT__ } from "@common/shared/config.builder";
-import { A, assets } from "@common/shared/assets";
-import { UIHelper } from "@common/client/ui.helper";
-import { useProductPrice } from "@common/client/ui/hooks/useProductPrice";
+import { network } from "shared/net"
+import { __IS_EDIT__ } from "shared/common/config.builder";
+import { A, assets } from "shared/common/assets";
+import { UIHelper } from "client/common/ui.helper";
+import { useProductPrice } from "client/common/ui/hooks/useProductPrice";
 import { PRODUCTS } from "shared/purchasables";
 
 interface ShopHonkEntryProps {
@@ -37,7 +37,7 @@ function ShopHonkEntry({
 			if (isOwned && !isEquipped) {
 				// Equip
 				const [success, err] =
-					await ClientFunctions.CustomizationService.setPreference.invoke(
+					await network.client.CustomizationService.setPreference.invoke(
 						"honk",
 						item.name,
 					);
@@ -46,7 +46,7 @@ function ShopHonkEntry({
 				onEquipSuccess();
 			} else if (!isOwned) {
 				// Tell server to record intent and prompt the single honk product
-				const [ok, err] = await ClientFunctions.ShopService.promptHonkPurchase.invoke(item.name);
+				const [ok, err] = await network.client.ShopService.promptHonkPurchase.invoke(item.name);
 				if (!ok || err) return true;
 				// Wait for the Roblox purchase dialog to close
 				const [_, __, wasPurchased] = MarketplaceService.PromptProductPurchaseFinished.Wait();

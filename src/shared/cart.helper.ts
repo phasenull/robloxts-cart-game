@@ -1,13 +1,14 @@
 import { TweenService, Workspace } from "@rbxts/services"
 import { ICart, IWheel } from "./type.helper"
+import { CART_TUNING } from "./cart.tuning"
 
 import StringUtils from "@rbxts/string-utils"
 import { BuildDeepWeldConstraints,
 BuildWeldConstraints,
 capitalizeFirstLetter,MasslessPart, 
-OutlineHighlight} from "@common/shared/util.helper";
+OutlineHighlight} from "shared/common/util.helper";
 import { A,
-assets } from "@common/shared/assets";
+assets } from "shared/common/assets";
 import { getConfig } from "./config.helper";
 export type IHandBrake = Model & {
 	RootPart: BasePart & {
@@ -29,19 +30,55 @@ export function getRewardDisplay(reward: { type: string; value: number }): {
 	return { countText: `${reward.value}`, nameText: capitalizeFirstLetter(reward.type) };
 	// return { countText: `x${reward.value}`, nameText: reward.type };
 }
-export function RigCartModel(cart_model: ICart) {
+export type CartRigMode = "simulated" | "preview"
+
+/** Chassis forward from the authored FL/FR/RL/RR wheel names, falling back to the model's look vector. */
+function resolveChassisForward(cart_model: ICart, bounding_box: CFrame): Vector3 {
+	const wheels = cart_model.FindFirstChild("Wheels")
+	const pivot = (name: string) => (wheels?.FindFirstChild(name) as Model | undefined)?.GetPivot().Position
+	const [fl, fr, rl, rr] = [pivot("FL"), pivot("FR"), pivot("RL"), pivot("RR")]
+	const up = bounding_box.UpVector
+	if (fl && fr && rl && rr) {
+		const raw = fl.add(fr).sub(rl).sub(rr)
+		const flat = raw.sub(up.mul(raw.Dot(up)))
+		if (flat.Magnitude > 0.1) {
+			if (flat.Unit.Dot(bounding_box.LookVector) < 0.7) {
+				warn(`[RigCartModel] ${cart_model.Name}: wheel layout forward differs from model look vector, using wheel layout`)
+			}
+			return flat.Unit
+		}
+	}
+	return bounding_box.LookVector
+}
+
+/**
+ * Builds the physical cart: a massive chassis ("Mass"), a massless "Root" carrying the drive
+ * constraints, a VehicleSeat, and one sprung, frictionless "BALL" contact per wheel.
+ * "preview" mode welds everything rigidly for display-only clones (garage, shop, death screen).
+ */
+export function RigCartModel(cart_model: ICart, mode: CartRigMode = "simulated") {
+	const simulated = mode === "simulated"
 	const visuals = cart_model.FindFirstChild("Visuals") as Model
-	// logger.log(`Initializing cart: ${cart_model.GetFullName()}`)
 	const sv = new Instance("StringValue", cart_model)
 	sv.Name = "CartIdentifier"
 	sv.Value = cart_model.Name.split("_")[0]
-	// build required parts
 	const wheels = cart_model.Wheels
-	const [bounding_box, _] = cart_model.GetBoundingBox()
+	const [bounding_box] = cart_model.GetBoundingBox()
+	const forward = resolveChassisForward(cart_model, bounding_box)
+	const chassis = CFrame.lookAt(bounding_box.Position, bounding_box.Position.add(forward), bounding_box.UpVector)
+
+	// chassis mass, the only massive part in the assembly
 	const mass_part = MasslessPart(cart_model, "Mass")
 	mass_part.Size = new Vector3(2.712, 1, 2.475)
 	mass_part.CFrame = bounding_box.mul(new CFrame(0, -0.5, 0))
 	mass_part.Massless = false
+	const volume = mass_part.Size.X * mass_part.Size.Y * mass_part.Size.Z
+	mass_part.CustomPhysicalProperties = new PhysicalProperties(
+		math.clamp(CART_TUNING.chassis.mass / volume, 0.01, 100),
+		0.3,
+		0
+	)
+
 	const hitbox = MasslessPart(cart_model, "Hitbox")
 	const is_spike = StringUtils.startsWith(cart_model.Name, "Spiky Cart")
 	hitbox.Size = new Vector3(4, 3.851, 5)
@@ -51,131 +88,158 @@ export function RigCartModel(cart_model: ICart) {
 	hitbox.CanCollide = true
 	hitbox.CollisionGroup = "Hitbox"
 	hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7, 1, 0.01)
+
+	// Root keeps the model's own frame so authored offsets (honk, handbrake) stay put;
+	// the "Drive" attachment carries the chassis frame (LookVector = forward)
 	const root_part = MasslessPart(cart_model, "Root")
 	root_part.CFrame = bounding_box
 	root_part.Color = new Color3(0, 0.9, 1)
-	const vector_force = new Instance("VectorForce", root_part)
-	vector_force.Force = new Vector3(0, 0, 0)
-	vector_force.Attachment0 = new Instance("Attachment", root_part)
-	vector_force.Attachment0.Name = "Root"
-	vector_force.RelativeTo = Enum.ActuatorRelativeTo.World
+	const root_attachment = new Instance("Attachment", root_part)
+	root_attachment.Name = "Root"
+	const drive_attachment = new Instance("Attachment", root_part)
+	drive_attachment.Name = "Drive"
+	drive_attachment.WorldCFrame = chassis
 	BuildWeldConstraints(root_part, hitbox)
-	// build vehicle seat
-	const seat = new Instance("Seat", cart_model)
+
+	const seat = new Instance("VehicleSeat", cart_model)
 	seat.Name = "VehicleSeat"
 	seat.Size = new Vector3(4.278, 0.332, 5.622)
-	seat.CFrame = bounding_box.mul(new CFrame(0, -0.5, 0))
+	seat.CFrame = chassis.mul(new CFrame(0, -0.5, 0))
 	seat.Transparency = 1
 	seat.CanCollide = false
+	// input only: the controller reads ThrottleFloat/SteerFloat, the legacy seat motor stays off
+	seat.MaxSpeed = 0
+	seat.Torque = 0
+	seat.TurnSpeed = 0
+	seat.HeadsUpDisplay = false
 	BuildWeldConstraints(root_part, seat)
 	BuildWeldConstraints(root_part, mass_part)
 	BuildDeepWeldConstraints(root_part, visuals)
-	// build balls
 
-	cart_model.Wheels.GetChildren().forEach((_) => {
-		if (!_.IsA("Model")) return
-		const model = _ as IWheel
-		const ball = MasslessPart(model, `BALL`)
-		ball.Shape = Enum.PartType.Ball
-		ball.CFrame = model.GetPivot()
-		ball.CanCollide = true
-		ball.Transparency = 1
-		ball.CollisionGroup = "Wheels"
-		const wheel = model.FindFirstChild("WHEEL")
-		if (!wheel) return
-		ball.Destroying.Once(() => {
-			wheel?.Destroy()
-		})
-		wheel.Destroying.Once(() => {
-			ball?.Destroy()
-		})
-		// logger.log(`Built ball for wheel: ${model.GetFullName()}`)
-	})
+	if (simulated) {
+		const drive = new Instance("VectorForce")
+		drive.Name = "DriveForce"
+		drive.Attachment0 = root_attachment
+		drive.RelativeTo = Enum.ActuatorRelativeTo.World
+		drive.ApplyAtCenterOfMass = true
+		drive.Force = Vector3.zero
+		drive.Parent = root_part
+
+		// yaw-only, so it never fights the suspension pitching over crests
+		const steer = new Instance("Torque")
+		steer.Name = "SteerTorque"
+		steer.Attachment0 = root_attachment
+		steer.RelativeTo = Enum.ActuatorRelativeTo.World
+		steer.Torque = Vector3.zero
+		steer.Parent = root_part
+
+		// primary axis (X) of this attachment points along chassis up
+		const upright_attachment = new Instance("Attachment", root_part)
+		upright_attachment.Name = "UprightAxis"
+		upright_attachment.CFrame = CFrame.fromMatrix(Vector3.zero, Vector3.yAxis, new Vector3(-1, 0, 0))
+		const upright = new Instance("AlignOrientation")
+		upright.Name = "Upright"
+		upright.Mode = Enum.OrientationAlignmentMode.OneAttachment
+		upright.AlignType = Enum.AlignType.PrimaryAxisParallel
+		upright.PrimaryAxis = Vector3.yAxis
+		upright.Attachment0 = upright_attachment
+		upright.Responsiveness = CART_TUNING.air.uprightResponsiveness
+		upright.MaxTorque = 0
+		upright.Enabled = false
+		upright.Parent = root_part
+	}
+
 	cart_model.PrimaryPart = root_part
-	// cart physics and stuff
 	cart_model.GetDescendants().forEach((descendant) => {
 		if (descendant.IsA("BasePart") && descendant.Name !== "Mass") {
 			descendant.Massless = true
-			if (
-				descendant.IsDescendantOf(visuals) ||
-				(descendant.IsDescendantOf(wheels) && descendant.Name !== "BALL")
-			) {
+			if (descendant.IsDescendantOf(visuals) || descendant.IsDescendantOf(wheels)) {
 				descendant.CanCollide = false
 			}
 		}
 	})
-	// handle wheels
-	wheels.GetChildren().forEach((_) => {
-		if (!_.IsA("Model")) return
-		const model = _ as IWheel
-		const wheel = model.FindFirstChild("WHEEL") as Part | undefined
-		if (!wheel) return
-		const connection = model.CONNECTION
+
+	const wheel_models = wheels.GetChildren().filter((c): c is IWheel => c.IsA("Model"))
+	const wheel_count = math.max(wheel_models.size(), 1)
+	const susp = CART_TUNING.suspension
+	const sprung_mass = CART_TUNING.chassis.mass / wheel_count
+	const wheel_load = sprung_mass * Workspace.Gravity * CART_TUNING.chassis.gravityScale
+	const stiffness = wheel_load / susp.sag
+	const damping = 2 * susp.dampingRatio * math.sqrt(stiffness * sprung_mass)
+
+	wheel_models.forEach((model) => {
+		const wheel = model.FindFirstChild("WHEEL") as BasePart | undefined
+		const connection = model.FindFirstChild("CONNECTION") as BasePart | undefined
+		if (!wheel || !connection) return
 		connection.Size = new Vector3(0.7, 0.5, 0.875)
 		connection.CollisionGroup = "Wheels"
-		const ball = model.BALL
-		const attachment_ball = new Instance("Attachment", ball)
-		const attachment_connection = new Instance("Attachment", root_part)
-		attachment_connection.WorldPosition = connection.Position
-		// .add(
-		// new Vector3(0, 0, connection.Size.Z / 2)
-		// )
-		ball.Color = new Color3(1, 0, 0)
-		attachment_ball.Name = "ball->connection"
-		attachment_connection.Name = "connection->ball"
-		const attachment_root_to_ball = new Instance("Attachment", cart_model.Root)
-		attachment_root_to_ball.WorldPosition = connection.Position
-		attachment_root_to_ball.Orientation = new Vector3(0, 0, 90)
-		attachment_root_to_ball.Name = "root->ball"
-		const attachment_connector_to_root = new Instance("Attachment", connection)
-		attachment_connector_to_root.Name = "connection->root"
-		attachment_connector_to_root.WorldCFrame = connection.CFrame
-		attachment_connector_to_root.Orientation = new Vector3(0, 90, 0)
-		// connector
 
-		const hinge_constraint = new Instance("HingeConstraint", connection)
-		hinge_constraint.Attachment1 = attachment_connector_to_root
-		hinge_constraint.Attachment0 = attachment_root_to_ball
+		// caster fork: Motor6D so the client can swivel it visually with steering
+		const caster = new Instance("Motor6D")
+		caster.Name = "Caster"
+		caster.Part0 = root_part
+		caster.Part1 = connection
+		caster.C0 = root_part.CFrame.ToObjectSpace(connection.CFrame)
+		caster.C1 = new CFrame()
+		caster.Parent = connection
 
-		// ball
-		// const weld_constraints = new Instance("WeldConstraint", ball)
-		// weld_constraints.Part0 = connection
-		// weld_constraints.Part1 = ball
-		// ball.Position = connection.Position.sub(new Vector3(0, connection.Size.Y / 2 + ball.Size.Y/2, 0))
-
-		const ballsocket = new Instance("BallSocketConstraint", ball)
-		ballsocket.Attachment0 = attachment_connection
-		ballsocket.Attachment1 = attachment_ball
-		ballsocket.MaxFrictionTorque = 30
-		// wheel
 		const weld_wheel = new Instance("Weld", wheel)
-		weld_wheel.Part1 = wheel
 		weld_wheel.Part0 = connection
+		weld_wheel.Part1 = wheel
 		weld_wheel.C0 = new CFrame(0, 0, connection.Size.Z / 2)
-		attachment_connection.Position = attachment_connection.Position.add(
-			new Vector3(0, -0.4, 0)
-		)
 
-		// const following_mass = new Instance("Part", wheel)
-		// following_mass.Name = "Mass"
-		// following_mass.Size = new Vector3(1, 1, 1)
-		// following_mass.Transparency = 1
-		// following_mass.CanCollide = false
-		// following_mass.Massless = true
+		// contact sphere at the wheel centre
+		const rest_position = connection.Position.add(root_part.CFrame.UpVector.mul(CART_TUNING.wheel.mountOffsetY))
+		const ball = new Instance("Part")
+		ball.Name = "BALL"
+		ball.Shape = Enum.PartType.Ball
+		ball.Size = Vector3.one.mul(CART_TUNING.wheel.radius * 2)
+		ball.CFrame = root_part.CFrame.Rotation.add(rest_position)
+		ball.Transparency = 1
+		ball.Color = new Color3(1, 0, 0)
+		ball.CanCollide = simulated
+		ball.CollisionGroup = "Wheels"
+		ball.Anchored = false
+		// frictionless contact: grip, drive and braking are handled by the controller
+		ball.CustomPhysicalProperties = new PhysicalProperties(CART_TUNING.wheel.density, 0, 0, 100, 100)
+		ball.Massless = !simulated
+		ball.Parent = model
+		ball.Destroying.Once(() => wheel.Destroy())
+		wheel.Destroying.Once(() => ball.Destroy())
 
-		// const align_orientation = new Instance("AlignOrientation", connection)
-		// const wheel_att = new Instance("Attachment", connection)
-		// align_orientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
-		// align_orientation.Attachment0 = wheel_att
-		// wheel_att.Name = "AlignOrientationAttachment"
-		// wheel_att.Orientation = new Vector3(0, 90, 0)
-		// align_orientation.AlignType = Enum.AlignType.PrimaryAxisLookAt
+		if (!simulated) {
+			BuildWeldConstraints(root_part, ball)
+			return
+		}
+		// prismatic slider along chassis down (attachment X axis), positive = extension
+		const local_rest = root_part.CFrame.PointToObjectSpace(rest_position)
+		const mount = new Instance("Attachment", root_part)
+		mount.Name = `${model.Name}_mount`
+		mount.CFrame = CFrame.fromMatrix(local_rest, new Vector3(0, -1, 0), new Vector3(1, 0, 0))
+		const hub = new Instance("Attachment", ball)
+		hub.Name = "hub"
+		hub.WorldCFrame = mount.WorldCFrame
+		const top = new Instance("Attachment", root_part)
+		top.Name = `${model.Name}_spring_top`
+		top.Position = local_rest.add(new Vector3(0, susp.springLength, 0))
 
-		// const weld_mass = new Instance("Weld", following_mass)
-		// weld_mass.Part0 = wheel
-		// weld_mass.Part1 = following_mass
-		// weld_mass.C0 = new CFrame(.3, 0, 0)
-		// 	.mul(CFrame.Angles(math.rad(90), 0, 0))
+		const slider = new Instance("PrismaticConstraint")
+		slider.Attachment0 = mount
+		slider.Attachment1 = hub
+		slider.LimitsEnabled = true
+		slider.LowerLimit = -susp.travelUp
+		slider.UpperLimit = susp.travelDown
+		slider.Restitution = 0
+		slider.Parent = ball
+
+		const spring = new Instance("SpringConstraint")
+		spring.Attachment0 = top
+		spring.Attachment1 = hub
+		spring.FreeLength = susp.springLength + susp.sag
+		spring.Stiffness = stiffness
+		spring.Damping = damping
+		spring.Visible = false
+		spring.Parent = ball
 	})
 
 	const __hand_brake = assets.FindFirstChild("HandBrake") as IHandBrake
@@ -311,48 +375,61 @@ export const ISLAND_CONFIG = {
 
 const out_id = "rbxassetid://112110619324038"
 const in_id = "rbxassetid://108818865060170"
-const animation_in = new Instance("Animation")
-animation_in.AnimationId = in_id
-const animation_out = new Instance("Animation")
-animation_out.AnimationId = out_id
-const garage_preview = Workspace.FindFirstChild("GaragePreview")
-export const CartAnimator = garage_preview?.FindFirstChild("CartAnimator") as
-	| (Model & {
-			MovePart: BasePart
-			StandPart: BasePart
-			AnimationController: AnimationController & {
-				Animator: Animator
-			}
-	  })
-	| undefined
-assert(
-	CartAnimator,
-	"CartAnimator model not found in workspace.CartPreviewAttachment"
-)
-assert(
-	CartAnimator.AnimationController,
-	"CartAnimator.AnimationController not found"
-)
-const Animator = CartAnimator.AnimationController.Animator as Animator
-assert(Animator, "CartAnimator.AnimationController.Animator not found")
-Animator.GetPlayingAnimationTracks().forEach((track) => {
-	track.Stop()
-	track.Destroy()
-})
-Animator.GetPlayingAnimationTracks().forEach((track) => {
-	track.Destroy()
-})
-const anim_in = Animator.LoadAnimation(animation_in)
-const anim_out = Animator.LoadAnimation(animation_out)
+
+export type CartAnimatorModel = Model & {
+	MovePart: BasePart
+	StandPart: BasePart
+	AnimationController: AnimationController & {
+		Animator: Animator
+	}
+}
+
+/** The garage preview's animator rig in the place (looked up when needed, not when this module is required). */
+export function getCartAnimator(): CartAnimatorModel | undefined {
+	return Workspace.FindFirstChild("GaragePreview")?.FindFirstChild("CartAnimator") as CartAnimatorModel | undefined
+}
+
+export interface GarageTracks {
+	anim_in: AnimationTrack
+	anim_out: AnimationTrack
+}
+
+/**
+ * Loads the garage in/out tracks on the CartAnimator (what this module used to do when it was required). The client's
+ * GarageController keeps one pair per generation in its trove.
+ */
+export function loadGarageTracks(): GarageTracks {
+	const CartAnimator = getCartAnimator()
+	assert(CartAnimator, "CartAnimator model not found in workspace.CartPreviewAttachment")
+	assert(CartAnimator.AnimationController, "CartAnimator.AnimationController not found")
+	const Animator = CartAnimator.AnimationController.Animator as Animator
+	assert(Animator, "CartAnimator.AnimationController.Animator not found")
+	Animator.GetPlayingAnimationTracks().forEach((track) => {
+		track.Stop()
+		track.Destroy()
+	})
+	Animator.GetPlayingAnimationTracks().forEach((track) => {
+		track.Destroy()
+	})
+	const animation_in = new Instance("Animation")
+	animation_in.AnimationId = in_id
+	const animation_out = new Instance("Animation")
+	animation_out.AnimationId = out_id
+	return { anim_in: Animator.LoadAnimation(animation_in), anim_out: Animator.LoadAnimation(animation_out) }
+}
+
 export function AnimateGarageMovement(
 	model: ICart,
-	direction: "in" | "out" = "in"
+	direction: "in" | "out",
+	tracks: GarageTracks
 ) {
+	const { anim_in, anim_out } = tracks
 	const pp = model.FindFirstChild("Root") as BasePart
 	if (!pp) {
 		return
 	}
 	const weld = new Instance("Weld", pp)
+	const CartAnimator = getCartAnimator()
 	assert(
 		CartAnimator,
 		"CartAnimator model not found in workspace.CartPreviewAttachment"

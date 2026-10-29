@@ -1,6 +1,16 @@
-/node_modules
-/out
-/include
+# dependencies and build outputs
+node_modules/
+out/
+include/
 *.tsbuildinfo
-flamework.build
 openapi.json
+# generated before every compile (git identity of the build)
+src/shared/build.ts
+# local TypeTorch state (CLI cache, build output)
+.typetorch/
+# secrets
+.env
+.env.*
+# CLI build helpers (typetorch build/deploy)
+.payload.gen.project.json
+.tsconfig.typetorch.json

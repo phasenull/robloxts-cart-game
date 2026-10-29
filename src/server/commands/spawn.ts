@@ -1,5 +1,4 @@
-import { Components } from "@flamework/components"
-import { Dependency } from "@flamework/core"
+import { Dependency } from "@typetorch/framework"
 import {
 	CenturionType,
 	Command,
@@ -9,8 +8,8 @@ import {
 	Register
 } from "@rbxts/centurion"
 import { adminGuard } from "server/common/auth-guard"
-import { CartService } from "server/services/cart.service"
-import { CheckpointService } from "server/services/checkpoint.service"
+import type { CartService } from "server/services/cart.service"
+import type { CheckpointService } from "server/services/checkpoint.service"
 import { getCheckpointModelByIndex } from "shared/cart.helper"
 
 @Register()

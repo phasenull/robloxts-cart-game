@@ -1,9 +1,12 @@
 import { useMutation } from "@rbxts/react-query"
 import { Workspace } from "@rbxts/services"
-import { assets } from "@common/shared/assets"
+import { assets } from "shared/common/assets"
+import { TypeTorch } from "@typetorch/framework"
+import type { GarageController } from "client/controllers/garage.controller"
 import {
 	AnimateGarageMovement,
-	CartAnimator,
+	getCartAnimator,
+	loadGarageTracks,
 	RigCartModel
 } from "shared/cart.helper"
 import { ICart } from "shared/type.helper"
@@ -39,18 +42,20 @@ export function useShopGarageAnimation(cartName: string = "Cart") {
 			cartModel.GetTags().forEach((tag) => cartModel.RemoveTag(tag))
 			cartModel.Parent = Workspace.CurrentCamera
 			
-			RigCartModel(cartModel)
+			RigCartModel(cartModel, "preview")
 			cartModel.Name = GARAGE_CART_NAME
 			cartModel.ScaleTo(1.5)
 			
 			// Position cart at garage pivot
 			const [_, bbox] = cartModel.GetBoundingBox()
 			cartModel.PivotTo(
-				CartAnimator!.MovePart.CFrame.mul(new CFrame(0, bbox.Y / 2, 0))
+				getCartAnimator()!.MovePart.CFrame.mul(new CFrame(0, bbox.Y / 2, 0))
 			)
 			
 			// Play entrance animation
-			AnimateGarageMovement(cartModel, direction)
+			// the running GarageController's tracks; in UI Labs edit mode (no modules) a pair loaded for this call
+			const tracks = TypeTorch.tryModule<GarageController>()?.tracks() ?? loadGarageTracks()
+			AnimateGarageMovement(cartModel, direction, tracks)
 			return cartModel
 		},
 	})

@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from "@rbxts/react";
-import { PurchasableContainer } from "@common/client/ui/components/purchasable-container";
-import { useNavigator } from "@common/client/ui/hooks/useNavigator";
+import { PurchasableContainer } from "client/common/ui/components/purchasable-container";
+import { useNavigator } from "client/common/ui/hooks/useNavigator";
 import { purchasables } from "shared/purchasables";
 import { RottenShopList } from "./rotten-shop-list";
-import { UIHelper } from "@common/client/ui.helper";
+import { UIHelper } from "client/common/ui.helper";
 
 export function RottenShopGui() {
 	const { closeAll } = useNavigator();
@@ -12,9 +12,9 @@ export function RottenShopGui() {
 	useEffect(() => {
 		const button = closeButtonRef.current;
 		if (button) {
-			UIHelper.bind(button, 5);
+			const binding = UIHelper.bind(button, 5);
 			return () => {
-				UIHelper.unbind(button);
+				UIHelper.unbind(binding);
 			};
 		}
 	}, []);

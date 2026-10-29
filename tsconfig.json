@@ -15,15 +15,28 @@
 		"moduleDetection": "force",
 		"strict": true,
 		"target": "ESNext",
-		"typeRoots": ["node_modules/@rbxts", "node_modules/@flamework"],
-		"plugins": [{ "transform": "rbxts-transformer-flamework" }],
+		// Every npm scope the game imports from must be a type root (roblox-ts rule).
+		"typeRoots": ["node_modules/@rbxts", "node_modules/@typetorch"],
+		// Explicit global types: otherwise TypeScript auto-includes every folder in the type roots, and
+		// @typetorch/kernel (Luau only, no typings) fails with TS2688.
+		"types": ["types", "compiler-types"],
 		// configurable
 		"rootDir": "src",
-		"paths": { "@common/*": ["./src/common/*"], "*": ["./src/*"] },
+		"paths": { "*": ["./src/*"] },
 		"outDir": "out",
 		"incremental": true,
-		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo"
+		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo",
+		// Order matters: debug macros first, then @typetorch/transformer (guards for createNetwork, DI ids for
+		// @Service/@Controller, user macros written with Modding).
+		"plugins": [
+			{
+				"transform": "rbxts-transform-debug",
+				"environmentRequires": {}
+			},
+			{ "transform": "@typetorch/transformer" }
+		]
 	},
-	"include": ["src"],
-	"exclude": ["out", "node_modules", "src/common/domains"]
+	// Only the three payload realms (.ts and .tsx): never scripts/, and never the src/common submodule, which is
+	// vendored into src/{client,shared}/common and no longer compiled.
+	"include": ["./src/server", "./src/shared", "./src/client"]
 }

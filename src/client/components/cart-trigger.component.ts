@@ -1,50 +1,52 @@
-import { BaseComponent, Component } from "@flamework/components"
 import { TweenService } from "@rbxts/services"
-import { t } from "@rbxts/t"
-import { assets } from "@common/shared/assets"
-import { Logger } from "@common/shared/logger"
+import type { Trove } from "@rbxts/trove"
+import { Logger } from "shared/common/logger"
+import { rigOnce, TaggedComponent } from "shared/component"
+
 interface CartTrigger extends Model {
 	Trigger: BasePart
 }
-@Component({
-	tag: "CartTriggerComponent"
-})
-export class CartTriggerComponent<
-	ATTRIBUTES,
-	INTERFACE extends CartTrigger
-> extends BaseComponent<ATTRIBUTES, INTERFACE> {
-	constructor(protected logger: Logger) {
-		super()
+
+/**
+ * Tag "CartTriggerComponent" (Model with a Trigger part): calls onTouch on touches and tints the trigger's beams.
+ * The Color3Value the beams follow is world setup on the model, handed over between generations.
+ */
+export class CartTriggerComponent<INTERFACE extends CartTrigger = CartTrigger> extends TaggedComponent<INTERFACE> {
+	protected logger = new Logger("carttrigger.component")
+	private color_instance: Color3Value
+	constructor(instance: INTERFACE, trove: Trove) {
+		super(instance, trove)
 
 		// for checkpoints, set it to 30
-		this.instance.Trigger.Touched.Connect((part) => this.onTouch(part))
+		this.trove.connect(this.instance.Trigger.Touched, (part) => this.onTouch(part))
 		// logger.log(
 		// 	"Created CartTriggerComponent for " + this.instance.GetFullName()
 		// )
-		const color_instance = new Instance("Color3Value", this.instance)
-		color_instance.Name = "Color"
-		this.color_instance = color_instance
 		const beam = this.instance.Trigger.FindFirstChildOfClass("Beam")
-		if (beam) {
-			const w = this.instance.Trigger.Size.X
-			beam.Width0 = w
-			beam.Width1 = w
-		}
-		this.color_instance.Value = beam?.Color.Keypoints[0].Value || new Color3(1,1,1)
-	}
-	private color_instance: Color3Value
-	setColor(color: Color3) {
-		const tween = TweenService.Create(this.color_instance, new TweenInfo(0.2), {
-			Value: color
+		rigOnce(this.instance, "carttrigger", () => {
+			const color_instance = new Instance("Color3Value", this.instance)
+			color_instance.Name = "Color"
+			if (beam) {
+				const w = this.instance.Trigger.Size.X
+				beam.Width0 = w
+				beam.Width1 = w
+			}
+			color_instance.Value = beam?.Color.Keypoints[0].Value || new Color3(1, 1, 1)
 		})
-		tween.Play()
-		this.color_instance.GetPropertyChangedSignal("Value").Connect(() => {
+		this.color_instance = this.instance.FindFirstChild("Color") as Color3Value
+		this.trove.connect(this.color_instance.GetPropertyChangedSignal("Value"), () => {
 			this.instance.Trigger.GetChildren()
 				.filter((child) => child.IsA("Beam"))
 				.forEach((beam) => {
 					beam.Color = new ColorSequence(this.color_instance.Value)
 				})
 		})
+	}
+	setColor(color: Color3) {
+		const tween = TweenService.Create(this.color_instance, new TweenInfo(0.2), {
+			Value: color
+		})
+		tween.Play()
 	}
 	onTouch(touch_part: BasePart) {
 		this.logger.log(

@@ -1,673 +1,509 @@
-import { BaseComponent, Component } from "@flamework/components"
-import { Dependency, OnPhysics, OnStart } from "@flamework/core"
-import { arrow, line, sphere } from "@rbxts/better-gizmos"
-import { copy } from "@rbxts/object-utils"
-import { MarketplaceService, Players, Workspace } from "@rbxts/services"
+import { Players, Workspace } from "@rbxts/services"
 import Signal from "@rbxts/signal"
-import StringUtils from "@rbxts/string-utils"
-import { t } from "@rbxts/t"
-import { CartController } from "client/controllers/cart.controller"
+import type { Trove } from "@rbxts/trove"
+import { Dependency } from "@typetorch/framework"
+import type { AnimationController } from "client/controllers/animation.controller"
+import { Logger } from "shared/common/logger"
+import type { CartController } from "client/controllers/cart.controller"
 import { IHandBrake } from "shared/cart.helper"
-import { Logger } from "@common/shared/logger"
-import { ClientEvents, ClientFunctions } from "shared/network.helper"
-import { PRODUCTS } from "shared/purchasables"
-import { ICart, ICartEntry, IWheel } from "shared/type.helper"
-import {
-	calculateSteepDiffFromHumanoid,
-	normalizeVector3,
-	OutlineHighlight
-} from "@common/shared/util.helper"
-import { AnimationController } from "@common/client/controllers/animation.controller";
+import { buildCartRaycastParams, isSafeRestPose, probeWheels } from "shared/cart.physics"
+import { CART_TUNING, CartStats, resolveCartStats } from "shared/cart.tuning"
+import { TaggedComponent } from "shared/component"
+import { network } from "shared/net"
+import { ICart } from "shared/type.helper"
 
-@Component({
-	tag: "CartComponent",
-	instanceGuard: t.instanceOf("Model")
-})
-export class CartClientComponent
-	extends BaseComponent<{}, ICart>
-	implements OnPhysics, OnStart
-{
-	private stuck_at: undefined | number = 0
-	private readonly cart_lever_animation_id = 125184894660712
-	private readonly cart_spawn_animation_id = 95061387311577
-	private readonly cart_idle_animation_id = 126006910637391
+type CartRoot = ICart["Root"]
+
+function approach(current: number, target: number, step: number): number {
+	return current < target ? math.min(current + step, target) : math.max(current - step, target)
+}
+
+function lerp(a: number, b: number, alpha: number): number {
+	return a + (b - a) * alpha
+}
+
+/**
+ * Drives the local player's cart. The client owns the assembly's physics, so this sets the
+ * rig's constraints every physics step from VehicleSeat input:
+ * - DriveForce (VectorForce): throttle / brake / reverse along the ground plane, sideways tyre
+ *   grip, drag and a soft overspeed limiter. Gravity still acts, so slopes really matter.
+ * - SteerTorque (Torque): speed-sensitive yaw rate around the ground normal only.
+ * - Upright (AlignOrientation): gentle self-righting while airborne or tipping.
+ *
+ * Tag "CartComponent", guard t.instanceOf("Model").
+ */
+export class CartClientComponent extends TaggedComponent<ICart> {
+	public readonly handbrakeChanged = new Signal<(engaged: boolean) => void>()
+	private readonly logger: Logger
+	private readonly descriptor: string
+	private readonly stats: CartStats
+
 	private rider: Humanoid | undefined
-	resolvePlayer(): Player | undefined {
-		const rider_character = this.rider?.Parent
-		if (!rider_character) return undefined
-		return Players.GetPlayerFromCharacter(rider_character)
-	}
-	private wheel_hitboxes: BasePart[] = []
-	private power: number = 170
-	private max_velocity = 25
-	honk(): void {
-		print("honk!")
-		ClientEvents.CartService.honk.fire()
+	private riding = false
+	private ended = false
+	private handbrake = false
+	private flipping = false
+
+	private throttle = 0
+	private steer = 0
+	private airborne_since: number | undefined
+	private braking = false
+	private grounded = false
+	private slip = 0
+	private stuck_at: number | undefined
+	private next_rest_sample = 0
+
+	private wheels: BasePart[] = []
+	private initial_wheel_count = 0
+	private brake_emitters: ParticleEmitter[] = []
+	private casters: { motor: Motor6D; front: boolean }[] = []
+	private raycast_params = buildCartRaycastParams([])
+	private lever_track: AnimationTrack | undefined
+	private base_fov = CART_TUNING.feel.baseFov
+	/** yaw inertia per unit mass, from the "Mass" box (the only massive part) */
+	private yaw_inertia_per_mass = 1
+	private saved_jump = { height: 7.2, power: 50 }
+
+	constructor(instance: ICart, trove: Trove) {
+		super(instance, trove)
+		this.descriptor = this.instance.Name.split("_")[0]
+		this.logger = new Logger(`CartClientComponent::${this.descriptor}`)
+		this.stats = resolveCartStats(this.descriptor)
+		this.trove.add(this.handbrakeChanged)
 	}
 
-	/**
-	 * for client -> server -> clients (broadcast)
-	 * */
-	private replicatedHonk(): void {
-		
-	}
-	public readonly brakeListener = new Signal<(status: boolean) => void>()
-	private readonly brakes: ParticleEmitter[] = []
-	private descriptor: string = "Cart"
-	setDescriptor(new_descriptor: string): void {
-		this.descriptor = new_descriptor
-		// this.logger.log(`Cart descriptor set to ${new_descriptor}`)
-	}
-	overrideConfig(args: {
-		power: number
-		friction: number
-		max_velocity: number
-	}): void {
-		// this.logger.log(
-		// 	`Overriding cart config: power=${args.power}, friction=${args.friction}, max_velocity=${args.max_velocity}`
-		// )
-		this.power = args.power
-		this.wheel_friction = args.friction
-		this.max_velocity = args.max_velocity
-		// this.logger.log("total wheel hitboxes: " + this.wheel_hitboxes.size())
-		this.wheel_hitboxes.forEach((hitbox) => {
-			// this.logger.log(
-			// 	`Setting wheel friction to ${args.friction} for hitbox ${hitbox.Name}`
-			// )
-			const new_pp = new PhysicalProperties(1, 1, 0)
-			hitbox.CustomPhysicalProperties = new_pp
-		})
+	onStart(): void {
+		this.trove.add(task.spawn(() => this.bootstrap()))
 	}
 
-	getMaxVelocity(): number {
-		return this.max_velocity
-	}
-	getDescriptor(): string {
-		return this.descriptor
-	}
-	getWheelFriction(): number {
-		return this.wheel_friction
-	}
-	getStuckAt(): number | undefined {
-		return this.stuck_at
-	}
-	getSpeed(): number {
-		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
-		if (!root) return 0
-		return root.AssemblyLinearVelocity.Magnitude
-	}
-	getMissingWheelCount(): number {
-		return this.wheel_hitboxes.filter((w) => !w.IsDescendantOf(game)).size()
-	}
-	setWheelFriction(new_friction: number): void {
-		// this.wheel_hitboxes.forEach((hitbox) => {
-		// 	hitbox.CustomPhysicalProperties = new PhysicalProperties(
-		// 		0.7,
-		// 		new_friction,
-		// 		0.2
-		// 	)
-		// })
-		this.wheel_friction = new_friction
-	}
-	private anti_gravity_multiplier = 0.5
-	private getSteepAngle() {
-		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
-		if (!root) {
-			this.cleanupRide("Cart root not found (getSteepAngle)")
-			return 0
+	private bootstrap() {
+		const root = this.instance.WaitForChild("Root", 10) as CartRoot | undefined
+		const seat = this.instance.WaitForChild("VehicleSeat", 10) as VehicleSeat | undefined
+		if (!root || !seat) {
+			this.logger.warn("Cart rig did not replicate (Root/VehicleSeat missing)")
+			return
 		}
-		const up_vector = new CFrame().UpVector.Dot(root.CFrame.UpVector)
-		return math.acos(up_vector)
-	}
-	private getIsGrounded() {
-		const steepness = this.getSteepAngle()
-		return steepness > 0.5
-	}
-	private __steep_created_at = 0
-	private is_steep = false
-	toggleSteepState(enabled: boolean) {
-		// check if 2 seconds have passed since last toggle
-		if (enabled) {
-			this.is_steep = true
-			this.__steep_created_at = tick()
-		} else {
-			if (tick() - this.__steep_created_at > 2) {
-				this.is_steep = false
+		this.trove.connect(root.Destroying, () => this.endRide("Root destroyed"))
+
+		const brake_template = this.instance.FindFirstChild("Brake") as ParticleEmitter | undefined
+		const wheels = this.instance.WaitForChild("Wheels", 5)
+		wheels?.GetChildren().forEach((model) => {
+			if (!model.IsA("Model")) return
+			const ball = model.WaitForChild("BALL", 5) as BasePart | undefined
+			if (ball) {
+				this.wheels.push(ball)
+				const emitter = brake_template?.Clone()
+				if (emitter) {
+					this.trove.add(emitter)
+					emitter.Enabled = false
+					emitter.Parent = ball
+					this.brake_emitters.push(emitter)
+				}
 			}
-		}
-	}
-	onPhysics(dt: number, time: number) {
-		if (this.__is_cleaned_up) return
-		const local_player = Players.LocalPlayer
-		const character = local_player.Character
-		if (!character) return
-		const humanoid = character.FindFirstChildOfClass("Humanoid")
-		if (!humanoid) return
-		if (this.rider !== humanoid) {
-			return
-		}
-		if (!this.instance.FindFirstChild("Root"))
-			return this.cleanupRide("Cart root not found")
-		const velocity = this.instance.Root.AssemblyLinearVelocity
-		const h = this.getHeight()
-		const is_in_air = h > 5
-		const max_velocity = this.max_velocity
-		const is_going_down = velocity.Y < -10
-		this.toggleSteepState(is_going_down && !is_in_air)
-		const force = this.instance.Root.VectorForce
-		const mass = this.instance.FindFirstChild("Mass") as BasePart | undefined
-		if (!force || !mass) {
-			this.cleanupRide("Force or mass instance not found")
-			return
-		}
-		const root = this.instance.Root
-		if (this.brake && velocity.Magnitude > 0.01 && !is_in_air) {
-			const velocity_direction = normalizeVector3(velocity)
-			const brake_force = velocity_direction.mul(-this.wheel_friction * 5)
-			force.Force = brake_force
-		} else {
-			// Limit force only along the current velocity direction (forward speed cap).
-			// Perpendicular/steering force is always applied at full power so A/D works at top speed.
-			const move = humanoid.MoveDirection
-			const horizontal_velocity = new Vector3(velocity.X, 0, velocity.Z)
-			const horizontal_speed = horizontal_velocity.Magnitude
-			const speed_ratio = math.clamp(horizontal_speed / max_velocity, 0, 1)
-
-			let drive_force = new Vector3(0, 0, 0)
-			if (move.Magnitude > 0) {
-				const velocity_dir = horizontal_speed > 0.1 ? horizontal_velocity.Unit : move
-				const forward_component = move.Dot(velocity_dir) // how much input aligns with velocity
-				const forward_multiplier = forward_component > 0 ? math.max(1 - speed_ratio, 0) : 1
-				const lateral_component = move.sub(velocity_dir.mul(forward_component)) // perpendicular part
-				drive_force = velocity_dir.mul(this.power * forward_multiplier * forward_component)
-					.add(lateral_component.mul(this.power))
+			const caster = model.FindFirstChild("CONNECTION")?.FindFirstChild("Caster") as Motor6D | undefined
+			if (caster) {
+				this.casters.push({ motor: caster, front: model.Name.sub(1, 1) === "F" })
 			}
-			force.Force = drive_force.add(
-				new Vector3(
-					0,
-					((root.AssemblyMass * Workspace.Gravity) / 2) *
-						this.anti_gravity_multiplier,
-					0
-				)
-			)
-		}
-		// wheel alignment
-		// const direction = humanoid.MoveDirection.Unit
-		// if (direction.Magnitude > 0) {
-		// 	this.instance.Wheels.GetChildren().forEach((_) => {
-		// 		if (!_.IsA("Model")) return
-		// 		const model = _ as IWheel
-		// 		const wheel = model.WHEEL
-		// 		const connection = model.CONNECTION
-		// 		const align_orientation =
-		// 			connection.FindFirstChildOfClass("AlignOrientation")
-		// 		if (!align_orientation) return
-		// 		const lookat_pos = connection.Position.add(
-		// 			new Vector3(direction.X * 2, 0, direction.Z * 2)
-		// 		)
-		// 		// if (__STUDIO__) {
-
-		// 		// }
-		// 		align_orientation.LookAtPosition = lookat_pos
-		// 	})
-		// }
-		const is_checkpoint_available = this.checkCheckpointAvailability()
-		if (is_checkpoint_available) {
-			this.CartController.saveCheckpoint(this.instance.GetPivot())
-		}
-		const y_positon = this.instance.Root.Position.Y
-		
-		if (y_positon < -260) {
-			this.cleanupRide("Player fell off the map")
-		}
-	}
-	private logger: Logger
-	constructor(
-		private AnimationController: AnimationController,
-		private CartController: CartController
-	) {
-		super()
-
-		const instance_name = this.instance.Name
-		const cart_name = instance_name.split("_")[0]
-		this.logger = new Logger(`CartClientComponent::${cart_name}`)
-		this.setDescriptor(this.instance.Name.split("_")[0])
-	}
-	private brake_animation_track: AnimationTrack | undefined
-	private wheel_friction = 2
-	getPower(): number {
-		return this.power
-	}
-	setPower(new_power: number) {
-		this.power = new_power
-	}
-
-	toggleFriction(enabled: boolean) {
-		if (enabled) {
-			// this.wheel_hitboxes.forEach((hitbox) => {
-			// 	const new_pp = new PhysicalProperties(1, this.wheel_friction, 0)
-			// 	hitbox.CustomPhysicalProperties = new_pp
-			// })
-		} else {
-			// this.wheel_hitboxes.forEach((hitbox) => {
-			// 	hitbox.CustomPhysicalProperties = new PhysicalProperties(0.7, 0, 0.2)
-			// })
-		}
-		const wheel_constraints = this.instance
-			.GetDescendants()
-			.filter((descendant) =>
-				descendant.IsA("BallSocketConstraint")
-			) as BallSocketConstraint[]
-		wheel_constraints.forEach((constraint) => {
-			constraint.MaxFrictionTorque = enabled ? this.wheel_friction : 5
 		})
+		this.initial_wheel_count = this.wheels.size()
+		const mass_part = this.instance.WaitForChild("Mass", 5) as BasePart | undefined
+		if (mass_part) {
+			const size = mass_part.Size
+			this.yaw_inertia_per_mass = (size.X * size.X + size.Z * size.Z) / 12
+		}
+
+		Dependency<AnimationController>().preload({ key: "cart_spawn", animationId: CART_TUNING.animations.spawn })
+		Dependency<AnimationController>().preload({ key: "cart_idle", animationId: CART_TUNING.animations.idle })
+
+		this.trove.connect(seat.GetPropertyChangedSignal("Occupant"), () => this.onOccupantChanged())
+		this.onOccupantChanged()
 	}
-	private brake = false
-	onRide(): void {
-		const player = Players.LocalPlayer
-		const character = player.Character
-		const my_hunanoid = character?.FindFirstChildOfClass("Humanoid")
-		const model = this.rider?.Parent
-		if (model?.Name === "Player") return
-		if (my_hunanoid !== this.rider) {
-			return
+
+	private onOccupantChanged() {
+		const seat = this.instance.FindFirstChild("VehicleSeat") as VehicleSeat | undefined
+		const local_humanoid = Players.LocalPlayer.Character?.FindFirstChildOfClass("Humanoid")
+		const occupant = seat?.Occupant
+		if (!this.riding && !this.ended && occupant && occupant === local_humanoid) {
+			this.beginRide(occupant)
+		} else if (this.riding && occupant !== this.rider) {
+			this.endRide("Local player got off the cart")
 		}
-		if (!this.instance.WaitForChild("VehicleSeat", 1)) {
-			this.cleanupRide("no vehicle seat found at onride")
-			return
-		}
-		this.toggleBrake(false)
-		this.setPower(this.power)
-		if (!this.rider) {
-			return
-		}
-		this.rider.JumpHeight = 0
-		this.AnimationController.stopAll()
-		this.AnimationController.play({
+	}
+
+	private beginRide(humanoid: Humanoid) {
+		this.rider = humanoid
+		this.riding = true
+		this.raycast_params = buildCartRaycastParams([this.instance, humanoid.Parent].filterUndefined())
+		// jumping is how a seated humanoid leaves; Space is the handbrake while riding
+		this.saved_jump = { height: humanoid.JumpHeight, power: humanoid.JumpPower }
+		humanoid.JumpHeight = 0
+		humanoid.JumpPower = 0
+		humanoid.SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+
+		Dependency<AnimationController>().stopAll()
+		Dependency<AnimationController>().play({
 			key: "cart_spawn",
 			priority: Enum.AnimationPriority.Action2,
 			speed: 0.7,
-			animationId: this.cart_spawn_animation_id
+			animationId: CART_TUNING.animations.spawn
 		})
-		this.AnimationController.play({
+		Dependency<AnimationController>().play({
 			key: "cart_idle",
 			priority: Enum.AnimationPriority.Action2,
 			speed: 1,
-			animationId: this.cart_idle_animation_id,
+			animationId: CART_TUNING.animations.idle,
 			looped: true
 		})
-		const seat = this.instance.VehicleSeat
-		const seat_weld = seat.FindFirstChildOfClass("Weld")
-		const pp = character?.PrimaryPart
-		if (seat_weld) {
-			seat_weld.C0 = new CFrame(0.1, 0.3, 0.15)
-			seat_weld.C1 = new CFrame(0, 0, 0)
-		}
-		this.brake_animation_track = this.AnimationController.preload({
+		this.lever_track = Dependency<AnimationController>().preload({
 			key: "cart_lever",
-			animationId: this.cart_lever_animation_id
+			animationId: CART_TUNING.animations.lever
 		})
-		// const conn = this.rider.GetPropertyChangedSignal("Jump").Connect(() => {
-		// 	const value = humanoid.Jump
-		// 	if (!this.rider || this.rider !== humanoid) {
-		// 		conn.Disconnect()
-		// 		return
-		// 	}
-		// 	if (value) {
-		// 		this.toggleBrake(true)
-		// 	} else {
-		// 		this.toggleBrake(false)
-		// 	}
-		// })
-		const cart_controller = Dependency<CartController>()
-		cart_controller.onCartChange.Fire(this)
+		this.base_fov = Workspace.CurrentCamera?.FieldOfView ?? CART_TUNING.feel.baseFov
+		Dependency<CartController>().onCartChange.Fire(this)
 	}
-	getHeight(): number {
-		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
-		if (!root) {
-			this.cleanupRide("Cart root not found (getHeight)")
-			return 0
-		}
-		const ray_info = new RaycastParams()
-		ray_info.FilterDescendantsInstances = [
-			this.instance,
-			this.rider?.Parent
-		].filterUndefined()
-		ray_info.FilterType = Enum.RaycastFilterType.Blacklist
-		const ray = Workspace.Raycast(
-			root.Position,
-			new Vector3(0, -1, 0).mul(20),
-			ray_info
-		)
-		if (ray) {
-			return root.Position.Y - ray.Position.Y
-		}
-		return math.huge
-	}
-	toggleBrake(enable: boolean): void {
-		if (this.brake === enable) return
-		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
-		if (!root) {
-			this.cleanupRide("Cart root not found (toggleBrake)")
-			return
-		}
-		if (this.instance.Root.AssemblyLinearVelocity.Magnitude > 1 && enable) {
-			for (const brake of this.brakes) {
-				brake.Enabled = true
-			}
-		} else {
-			for (const brake of this.brakes) {
-				brake.Enabled = false
-			}
-		}
-		if (this.brake_animation_track) {
-			this.brake_animation_track.Priority = Enum.AnimationPriority.Action4
-			this.brake_animation_track.AdjustSpeed(0)
-			this.brake_animation_track.Looped = true
-			if (enable) {
-				this.brake_animation_track.Play()
-			} else {
-				this.brake_animation_track.Stop()
-			}
-		}
-		const wheel_constraints = this.instance
-			.GetDescendants()
-			.filter((descendant) =>
-				descendant.IsA("BallSocketConstraint")
-			) as BallSocketConstraint[]
-		wheel_constraints.forEach((constraint) => {
-			constraint.MaxFrictionTorque = enable ? 30 : 5
-		})
-		this.brake = enable
-		this.brakeListener.Fire(enable)
-		this.toggleFriction(enable)
-		const anim = this.brake_animation_track
-		if (anim) {
-			if (enable) {
-				anim.Looped = true
-				anim.Play()
-			} else {
-				anim.Stop()
-			}
-		}
-		const handbrake = this.instance.FindFirstChild("HandBrake") as IHandBrake
-		if (handbrake) {
-			const motor = handbrake.RootPart.FindFirstChildOfClass("Motor6D")
-			if (motor) {
-				motor.DesiredAngle = this.brake ? -0.3 : 0
-			} else {
-				this.logger.warn("Motor6D not found in HandBrake")
-			}
-		} else {
-			this.logger.warn("HandBrake model not found in cart instance")
-		}
-	}
-	private __is_flipping = false
-	async promptFlip(): Promise<boolean> {
-		if (this.__is_flipping) {
-			return false
-		}
-		this.__is_flipping = true
-		await ClientFunctions.CartService.useProduct.invokeWithTimeout(5000, "flips")
-		this.flipCart()
-		return true
-	}
-	flipCart() {
-		if (!this.rider) return false
-		const now = tick()
-		const attachment = this.instance.Root.FindFirstChild("Root") as Attachment
-		const align_position = new Instance("AlignPosition", this.instance.Root)
 
-		align_position.MaxForce = math.huge
-		align_position.Responsiveness = 20
-		align_position.Position = this.instance.Root.Position.add(
-			new Vector3(0, 5, 0)
-		)
-		align_position.Attachment0 = attachment
-		align_position.Mode = Enum.PositionAlignmentMode.OneAttachment
-		const align_orientation = new Instance(
-			"AlignOrientation",
-			this.instance.Root
-		)
-		align_orientation.MaxTorque = math.huge
-		align_orientation.Responsiveness = 20
-		align_orientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
-		align_orientation.Attachment0 = attachment
-		const y_orientation = this.instance.Root.Orientation.Y
-		print("Current Y orientation: " + y_orientation)
-		// make the cart look at the direction of its root
-
-		const rotated_cframe = new CFrame(
-			this.instance.Root.Position.add(new Vector3(0, 5, 0))
-		).mul(CFrame.Angles(math.rad(180), 0, math.rad(y_orientation)))
-		const lookat_pos = rotated_cframe.Position.add(
-			rotated_cframe.LookVector.mul(5)
-		)
-		align_orientation.LookAtPosition = lookat_pos
-
-		// align_orientation.LookAtPosition = new CFrame(this.instance.Root.Position)
-		// 	.mul(CFrame.Angles(0, math.rad(y_orientation), 0))
-		// 	.mul(new CFrame(0, 0, 1)).Position
-		task.delay(1, () => {
-			align_orientation.Destroy()
-			align_position.Destroy()
-			task.delay(1, () => {
-				this.__is_flipping = false
-			})
-		})
-		return true
-	}
-	private __is_cleaned_up = false
-	async cleanupRide(reason: string): Promise<void> {
-		const player = Players.LocalPlayer
-		const character = player.Character
-		const humanoid = character?.FindFirstChildOfClass("Humanoid")
-		const model = this.rider?.Parent
-		if (model?.Name === "Player") return
-		if (humanoid !== this.rider) {
-			return
-		}
-		if (this.__is_cleaned_up) return
-		if (this.resolvePlayer() !== Players.LocalPlayer) {
-			return
-		}
-		if (this.rider && this.rider === humanoid) {
-			if (this.rider.Seated) {
-				this.rider.Sit = false
-			}
-			this.rider.JumpHeight = 7.2
-		}
-		this.logger.warn(`Cleaning up ride due to: ${reason}`)
-		const cart_controller = Dependency<CartController>()
-		cart_controller.onCartChange.Fire(undefined)
-		this.__is_cleaned_up = true
-		this.AnimationController.stop("cart_idle", 0)
-		const controller = Dependency<CartController>()
-		// UIHelper.toggleFade(true)
-		// ClientEvents.CartService.cleanupCart.fire()
+	/** Ends the local ride: back to the last big checkpoint and the death screen. */
+	async endRide(reason: string): Promise<void> {
+		if (!this.riding || this.ended) return
+		this.ended = true
+		this.riding = false
+		this.logger.warn(`Ending ride: ${reason}`)
+		this.releaseControls()
+		this.setHandbrake(false)
+		const humanoid = this.rider
 		if (humanoid) {
+			humanoid.JumpHeight = this.saved_jump.height
+			humanoid.JumpPower = this.saved_jump.power
+			humanoid.SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
 			humanoid.Sit = false
 		}
-		await ClientFunctions.CheckpointService.tpMeToBigCheckpoint.invokeWithTimeout(
-			5000
-		)
-		controller.toggleDeathScreen(true)
-		// UIHelper.toggleFade(false)
-
-		// this.toggleFriction(false)
-		// this.setPower(0)
-		// if (!this.rider) {
-		// 	return
-		// }
+		const camera = Workspace.CurrentCamera
+		if (camera) camera.FieldOfView = this.base_fov
+		Dependency<AnimationController>().stop("cart_idle", 0)
+		Dependency<CartController>().onCartChange.Fire(undefined)
+		await network.client.CheckpointService.tpMeToBigCheckpoint.invokeWithTimeout(5)
+		Dependency<CartController>().toggleDeathScreen(true)
 	}
-	onStart(): void {
-		this.bootstrap()
+
+	private releaseControls() {
+		const root = this.instance.FindFirstChild("Root") as CartRoot | undefined
+		if (!root) return
+		const drive = root.FindFirstChild("DriveForce") as VectorForce | undefined
+		const steer = root.FindFirstChild("SteerTorque") as Torque | undefined
+		const upright = root.FindFirstChild("Upright") as AlignOrientation | undefined
+		if (drive) drive.Force = Vector3.zero
+		if (steer) steer.Torque = Vector3.zero
+		if (upright) upright.Enabled = false
 	}
-	triggetOccupantChanged(): void {
-		const seat = this.instance.FindFirstChild("VehicleSeat") as Seat | undefined
-		if (!seat) {
-			this.cleanupRide("Vehicle seat not found")
-			return
-		}
-		const new_rider = seat.Occupant as Humanoid | undefined
-		const player = Players.LocalPlayer
-		const char = player.Character
-		const humanoid = char?.FindFirstChildOfClass("Humanoid")
-		if (new_rider === undefined && this.rider === humanoid) {
-			// local player just got off
-			this.rider = undefined
-			this.logger.log("Local player got off the cart")
-			this.cleanupRide("Local player got off the cart")
-			return
-		}
-		if (new_rider === humanoid) {
-			// local player just got on
-			this.rider = humanoid
-			// this.logger.log("Local player got on the cart")
-			this.onRide()
-			return
-		}
-	}
-	private __is_bootstrapped = false
-	async bootstrap() {
-		if (this.__is_bootstrapped) return
 
-		this.__is_bootstrapped = true
-		const brake_original = this.instance.WaitForChild("Brake", 1) as
-			| ParticleEmitter
-			| undefined
-		this.instance.WaitForChild("Root", 10)?.Destroying.Once(() => {
-			this.cleanupRide("Root destroyed")
-		})
-		this.toggleBrake(true)
-		let cart_config: ICartEntry | undefined = undefined
-		try {
-			const [config, err] =
-				await ClientFunctions.CartService.getConfig.invokeWithTimeout(5000)
-			if (err) {
-				this.logger.error("Failed to get config from server: " + err)
-			}
-			assert(config, "Failed to get config from server")
-			cart_config = config.find((entry) => entry.name === this.descriptor)
-
-			if (!cart_config) {
-				this.logger.warn(
-					`No cart config found for descriptor ${this.descriptor}, falling back to "Cart"`
-				)
-				cart_config = config.find((entry) => entry.name === "Cart")
-				if (!cart_config) {
-					this.logger.warn(
-						`!!FATAL!! No cart config found for default cart, cleaning up ride ${this.descriptor}`
-					)
-					this.cleanupRide("Failed to get config from server")
-					return
-				}
-			}
-		} catch (e) {
-			this.logger.warn("Error while getting config from server: " + tostring(e))
-		}
-		if (cart_config) {
-			this.overrideConfig({
-				power: cart_config.power * 2.5,
-				friction: cart_config.friction,
-				max_velocity: cart_config.power / 4
-			})
-		}
-		this.instance
-			.FindFirstChild("Wheels")
-			?.GetDescendants()
-			.filter((child) => child.Name === "BALL")
-			.forEach((child) => {
-				if (child.IsA("BasePart")) {
-					const brake = brake_original?.Clone()
-					if (!brake) return
-					this.wheel_hitboxes.push(child as BasePart)
-					brake.Parent = child
-					brake.Enabled = false
-					this.brakes.push(brake)
-				}
-			})
-		this.AnimationController.preload({
-			key: "cart_spawn",
-			animationId: this.cart_spawn_animation_id
-		})
-		this.AnimationController.preload({
-			key: "cart_idle",
-			animationId: this.cart_idle_animation_id
-		})
-		if (!this.instance.WaitForChild("VehicleSeat", 1)) {
-			this.cleanupRide("no vehicle seat found at bootstrap")
-			return
-		}
-		const seat = this.instance.VehicleSeat
-		if (!this.rider && seat.Occupant) {
-			// handle case where player is already sitting in the cart before component initializes
-			this.triggetOccupantChanged()
-		}
-
-		seat.GetPropertyChangedSignal("Occupant").Connect(() => {
-			this.triggetOccupantChanged()
-		})
-	}
-	checkCheckpointAvailability(): boolean {
-		const h = this.getHeight()
-		const is_in_air = h > 5
-		if (is_in_air) {
-			if (!this.stuck_at) {
-				this.stuck_at = tick()
-			}
-			return false
-		}
-		const steepness = this.getSteepAngle()
-		if (steepness > math.rad(3)) {
-			if (!this.stuck_at) {
-				this.stuck_at = tick()
-			}
-			return false
-		}
-
-		// also send 4 raycasts from the bounding box corners to the ground and check if any of them are hitting the ground within 10 studs
-		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
+	onPhysics(dt: number): void {
+		if (!this.riding || this.flipping || dt <= 0) return
+		const root = this.instance.FindFirstChild("Root") as CartRoot | undefined
 		if (!root) {
-			this.cleanupRide("Cart root not found (checkCheckpointAvailability)")
-			if (!this.stuck_at) {
-				this.stuck_at = tick()
+			this.endRide("Cart root missing")
+			return
+		}
+		// rig still replicating
+		if (!root.FindFirstChild("DriveForce") || !root.FindFirstChild("SteerTorque") || !root.FindFirstChild("Upright") || !root.FindFirstChild("Drive")) {
+			return
+		}
+		if (root.Position.Y < CART_TUNING.chassis.fallKillY) {
+			this.endRide("Player fell off the map")
+			return
+		}
+		this.stepVehicle(root, dt)
+		this.sampleRestPose(root)
+	}
+
+	private stepVehicle(root: CartRoot, dt: number) {
+		const T = CART_TUNING
+		const stats = this.stats
+		const seat = this.instance.VehicleSeat
+		const frame = root.Drive.WorldCFrame
+		const contact = probeWheels(this.wheels, frame.UpVector, this.raycast_params)
+		const grounded = contact.contacts > 0
+		const traction = this.initial_wheel_count > 0 ? contact.contacts / this.initial_wheel_count : 0
+		const normal = contact.normal
+
+		// chassis axes projected onto the ground plane
+		const look = frame.LookVector
+		const projected = look.sub(normal.mul(look.Dot(normal)))
+		const forward = projected.Magnitude > 1e-3 ? projected.Unit : look
+		const right = forward.Cross(normal)
+
+		const velocity = root.AssemblyLinearVelocity
+		const mass = root.AssemblyMass
+		const v_fwd = velocity.Dot(forward)
+		const v_lat = velocity.Dot(right)
+		const gravity = Workspace.Gravity * T.chassis.gravityScale
+
+		// smoothed input; VehicleSeat maps keyboard, gamepad and the mobile thumbstick
+		const throttle_in = math.clamp(seat.ThrottleFloat, -1, 1)
+		const steer_in = math.clamp(seat.SteerFloat, -1, 1)
+		const rising = math.abs(throttle_in) > math.abs(this.throttle)
+		this.throttle = approach(
+			this.throttle,
+			throttle_in,
+			(rising ? T.drive.throttleRiseRate : T.drive.throttleFallRate) * dt
+		)
+		this.steer = approach(this.steer, steer_in, T.steering.steerRate * dt)
+
+		// longitudinal: drive / brake / reverse / coast / hold
+		const stopping = (decel: number) => -math.sign(v_fwd) * math.min(decel, math.abs(v_fwd) / dt)
+		let a_fwd = 0
+		let braking = false
+		if (grounded) {
+			if (this.handbrake) {
+				a_fwd = stopping(stats.handbrakeDecel)
+				braking = true
+			} else if (this.throttle > 0.01) {
+				if (v_fwd < -T.drive.reverseThreshold) {
+					a_fwd = stopping(stats.brakeDecel * this.throttle)
+					braking = true
+				} else {
+					a_fwd = this.throttle * stats.acceleration * math.max(0, 1 - math.max(v_fwd, 0) / stats.topSpeed)
+				}
+			} else if (this.throttle < -0.01) {
+				if (v_fwd > T.drive.reverseThreshold) {
+					a_fwd = stopping(stats.brakeDecel * -this.throttle)
+					braking = true
+				} else {
+					a_fwd =
+						this.throttle *
+						stats.reverseAcceleration *
+						math.max(0, 1 - math.max(-v_fwd, 0) / stats.reverseTopSpeed)
+				}
+			} else {
+				const slope = math.acos(math.clamp(normal.Dot(Vector3.yAxis), -1, 1))
+				if (velocity.Magnitude < T.drive.holdSpeed && slope <= math.rad(T.drive.holdMaxSlopeDeg)) {
+					// parked: cancel gravity along the slope and any creep
+					const gravity_along = -gravity * Vector3.yAxis.Dot(forward)
+					a_fwd = math.clamp(-gravity_along - v_fwd / dt, -stats.brakeDecel, stats.brakeDecel)
+				} else {
+					a_fwd = stopping(T.drive.rollingResistance)
+				}
 			}
+			a_fwd *= traction
+		}
+
+		// lateral tyre grip, weaker on the handbrake so the rear steps out
+		let a_lat = 0
+		if (grounded) {
+			const grip_factor = this.handbrake ? T.grip.handbrakeGripFactor : 1
+			const max_lat = math.min(T.grip.maxLateralAccel * traction * grip_factor, math.abs(v_lat) / dt)
+			a_lat = math.clamp(-v_lat * T.grip.response, -max_lat, max_lat)
+		}
+
+		// drag plus a soft limiter on gravity-fed overspeed (vertical falls are left alone in the air)
+		const planar = grounded ? velocity : new Vector3(velocity.X, 0, velocity.Z)
+		const planar_speed = planar.Magnitude
+		let drag = T.drive.quadraticDrag * planar_speed * planar_speed
+		const overspeed_cap = stats.topSpeed * T.drive.overspeedFactor
+		if (planar_speed > overspeed_cap) {
+			drag += (planar_speed - overspeed_cap) * T.drive.overspeedDamping
+		}
+		drag = math.min(drag, planar_speed / dt)
+		const a_drag = planar_speed > 1e-3 ? planar.Unit.mul(-drag) : Vector3.zero
+		const lift = Vector3.yAxis.mul(Workspace.Gravity * (1 - T.chassis.gravityScale))
+
+		root.DriveForce.Force = forward.mul(a_fwd).add(right.mul(a_lat)).add(a_drag).add(lift).mul(mass)
+
+		// yaw around the ground normal; reversing inverts steering like a real car
+		const steer_ctl = root.SteerTorque
+		if (grounded) {
+			const abs_fwd = math.abs(v_fwd)
+			const low_speed = math.clamp(abs_fwd / T.steering.fullSteerSpeed, T.steering.minSteerFactor, 1)
+			const high_speed = lerp(1, T.steering.highSpeedSteerFactor, math.clamp(abs_fwd / stats.topSpeed, 0, 1))
+			const direction = v_fwd < -0.5 ? -1 : 1
+			let yaw = -this.steer * T.steering.maxYawRate * low_speed * high_speed * direction
+			if (this.handbrake) yaw *= T.steering.handbrakeSteerBoost
+			// first-order yaw-rate controller about the ground normal only
+			const yaw_error = yaw - root.AssemblyAngularVelocity.Dot(normal)
+			const max_torque = mass * T.steering.torquePerMass * math.max(traction, 0.25)
+			const torque = (mass * this.yaw_inertia_per_mass * yaw_error) / T.steering.yawResponseTime
+			steer_ctl.Torque = normal.mul(math.clamp(torque, -max_torque, max_torque))
+		} else {
+			steer_ctl.Torque = Vector3.zero
+		}
+
+		// self-righting while airborne or balancing on fewer than two wheels
+		const now = os.clock()
+		if (contact.contacts >= 2) {
+			this.airborne_since = undefined
+		} else if (this.airborne_since === undefined) {
+			this.airborne_since = now
+		}
+		const upright_on = this.airborne_since !== undefined && now - this.airborne_since >= T.air.uprightDelay
+		root.Upright.Enabled = upright_on
+		root.Upright.MaxTorque = upright_on ? mass * T.air.uprightTorquePerMass : 0
+
+		this.grounded = grounded
+		this.braking = braking
+		this.slip = math.abs(v_lat)
+	}
+
+	private sampleRestPose(root: BasePart) {
+		const now = os.clock()
+		if (now < this.next_rest_sample) return
+		this.next_rest_sample = now + CART_TUNING.restPose.sampleInterval
+		if (isSafeRestPose(root, this.raycast_params)) {
+			this.stuck_at = undefined
+			Dependency<CartController>().saveCheckpoint(this.instance.GetPivot())
+		} else if (this.stuck_at === undefined) {
+			this.stuck_at = tick()
+		}
+	}
+
+	onRender(dt: number): void {
+		if (!this.riding) return
+		const F = CART_TUNING.feel
+		const speed = this.getSpeed()
+		const camera = Workspace.CurrentCamera
+		if (camera) {
+			const boost = F.maxFovBoost * math.clamp(speed / (this.stats.topSpeed * 1.5), 0, 1)
+			camera.FieldOfView = lerp(camera.FieldOfView, this.base_fov + boost, math.clamp(dt * F.fovLerpRate, 0, 1))
+		}
+		const smoking =
+			this.grounded &&
+			((this.braking && speed > F.brakeParticleMinSpeed) || this.slip > F.driftSlipSpeed)
+		for (const emitter of this.brake_emitters) {
+			emitter.Enabled = smoking && emitter.Parent !== undefined
+		}
+		const caster_angle = -this.steer * math.rad(CART_TUNING.steering.visualCasterAngleDeg)
+		for (const caster of this.casters) {
+			if (caster.front) caster.motor.Transform = CFrame.Angles(0, caster_angle, 0)
+		}
+	}
+
+	setHandbrake(engaged: boolean): void {
+		if (this.handbrake === engaged) return
+		this.handbrake = engaged
+		if (this.lever_track) {
+			this.lever_track.Priority = Enum.AnimationPriority.Action4
+			this.lever_track.Looped = true
+			if (engaged) {
+				this.lever_track.Play()
+				this.lever_track.AdjustSpeed(0)
+			} else {
+				this.lever_track.Stop()
+			}
+		}
+		const lever = (this.instance.FindFirstChild("HandBrake") as IHandBrake | undefined)?.RootPart.FindFirstChildOfClass(
+			"Motor6D"
+		)
+		if (lever) lever.DesiredAngle = engaged ? -0.3 : 0
+		this.handbrakeChanged.Fire(engaged)
+	}
+
+	isHandbrakeEngaged(): boolean {
+		return this.handbrake
+	}
+
+	honk(): void {
+		network.client.CartService.honk.fire()
+	}
+
+	/** Paid flip: the server has to accept the product use first. */
+	async promptFlip(): Promise<boolean> {
+		if (!this.riding || this.flipping) return false
+		const [ok, err] = await network.client.CartService.useProduct.invokeWithTimeout(5, "flips")
+		if (!ok) {
+			this.logger.warn(`Flip rejected: ${err}`)
 			return false
 		}
-		const size = root.Size
-		const dead_zone = 3
-		const corners = [
-			new Vector3(size.X / 2 + dead_zone, 0, size.Z / 2 + dead_zone),
-			new Vector3(-size.X / 2 - dead_zone, 0, size.Z / 2 + dead_zone),
-			new Vector3(size.X / 2 + dead_zone, 0, -size.Z / 2 - dead_zone),
-			new Vector3(-size.X / 2 - dead_zone, 0, -size.Z / 2 - dead_zone)
-		]
-		const ray_info = new RaycastParams()
-		ray_info.FilterDescendantsInstances = [
-			this.instance,
-			this.rider?.Parent
-		].filterUndefined()
-		ray_info.IgnoreWater = true
-		ray_info.FilterType = Enum.RaycastFilterType.Blacklist
-		for (const corner of corners) {
-			const ray = Workspace.Raycast(
-				root.Position.add(corner),
-				new Vector3(0, -1, 0).mul(9),
-				ray_info
-			)
-			if (!ray) {
-				if (!this.stuck_at) {
-					this.stuck_at = tick()
-				}
-				return false
-			}
-			if (ray.Instance.Name === "AntiRevive") {
-				return false
-			}
-		}
-		this.stuck_at = undefined
+		return this.flipUpright()
+	}
+
+	/** Lifts the cart and sets it back on its wheels, keeping its heading. */
+	flipUpright(): boolean {
+		if (!this.riding || this.flipping) return false
+		const root = this.instance.FindFirstChild("Root") as CartRoot | undefined
+		if (!root) return false
+		const F = CART_TUNING.flip
+		this.flipping = true
+		this.releaseControls()
+
+		const target_position = root.Position.add(new Vector3(0, F.lift, 0))
+		const frame = root.Drive.WorldCFrame
+		let heading = new Vector3(frame.LookVector.X, 0, frame.LookVector.Z)
+		if (heading.Magnitude < 0.1) heading = new Vector3(frame.UpVector.X, 0, frame.UpVector.Z)
+		if (heading.Magnitude < 0.1) heading = new Vector3(0, 0, -1)
+
+		const align_position = new Instance("AlignPosition")
+		align_position.Mode = Enum.PositionAlignmentMode.OneAttachment
+		align_position.Attachment0 = root.Root
+		align_position.Position = target_position
+		align_position.MaxForce = math.huge
+		align_position.Responsiveness = F.responsiveness
+		align_position.Parent = root
+
+		const align_orientation = new Instance("AlignOrientation")
+		align_orientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+		align_orientation.Attachment0 = root.Drive
+		align_orientation.CFrame = CFrame.lookAt(target_position, target_position.add(heading.Unit))
+		align_orientation.MaxTorque = math.huge
+		align_orientation.Responsiveness = F.responsiveness
+		align_orientation.Parent = root
+
+		this.trove.add(align_position)
+		this.trove.add(align_orientation)
+		this.trove.add(task.delay(F.duration, () => {
+				align_position.Destroy()
+				align_orientation.Destroy()
+				this.trove.add(task.delay(F.cooldown, () => {
+						this.flipping = false
+					})
+				)
+			})
+		)
 		return true
 	}
-}
 
+	isUpsideDown(): boolean {
+		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
+		return root !== undefined && root.CFrame.UpVector.Dot(Vector3.yAxis) < 0
+	}
+
+	resolvePlayer(): Player | undefined {
+		const occupant = (this.instance.FindFirstChild("VehicleSeat") as VehicleSeat | undefined)?.Occupant
+		return occupant ? Players.GetPlayerFromCharacter(occupant.Parent) : undefined
+	}
+
+	getDescriptor(): string {
+		return this.descriptor
+	}
+
+	getStats(): CartStats {
+		return this.stats
+	}
+
+	getSpeed(): number {
+		const root = this.instance.FindFirstChild("Root") as BasePart | undefined
+		return root ? root.AssemblyLinearVelocity.Magnitude : 0
+	}
+
+	getMissingWheelCount(): number {
+		return this.wheels.filter((w) => !w.IsDescendantOf(game)).size()
+	}
+
+	/** tick() since when the cart has not been in a safe rest pose, undefined while it is. */
+	getStuckAt(): number | undefined {
+		return this.stuck_at
+	}
+
+	destroy(): void {
+		// A swap (or the cart going away) while riding: give the humanoid its jump back and reset the camera. The
+		// next generation sets the ride up again if the player is still seated.
+		if (this.riding) {
+			this.releaseControls()
+			const humanoid = this.rider
+			if (humanoid) {
+				humanoid.JumpHeight = this.saved_jump.height
+				humanoid.JumpPower = this.saved_jump.power
+				humanoid.SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+			}
+			const camera = Workspace.CurrentCamera
+			if (camera) camera.FieldOfView = this.base_fov
+		}
+	}
+}

@@ -1,16 +1,16 @@
-import { BaseComponent, Component } from "@flamework/components"
-import { OnStart } from "@flamework/core"
 import { Players, TweenService } from "@rbxts/services"
 import Signal from "@rbxts/signal"
-import { Logger } from "@common/shared/logger"
-import { ClientEvents } from "shared/network.helper"
+import type { Trove } from "@rbxts/trove"
+import { Logger } from "shared/common/logger"
+import { homePivot, homeValue, TaggedComponent } from "shared/component"
+import { network } from "shared/net"
+import { Tasks } from "shared/tasks"
 import { ButtonModel } from "shared/type.helper"
 
-@Component({ tag: "ButtonComponent" })
-export class ButtonComponent
-	extends BaseComponent<{}, ButtonModel>
-	implements OnStart
-{
+/** Tag "ButtonComponent": a pressable pad; a cart spawner (under the CartSpawners folder) asks the server for a cart. */
+export class ButtonComponent extends TaggedComponent<ButtonModel> {
+	private readonly logger = new Logger("button.component")
+	private readonly tasks = new Tasks(this.trove)
 	private is_pressed: boolean = false
 	private __cooldown: number = 0
 	private readonly duration = 0.5
@@ -19,8 +19,9 @@ export class ButtonComponent
 	private readonly available_color: Color3
 	private readonly touch: BasePart
 	private readonly spawn_platform: CFrame
-	constructor(private logger: Logger) {
-		super()
+	constructor(instance: ButtonModel, trove: Trove) {
+		super(instance, trove)
+		this.trove.add(this.onPressed)
 		this.instance["Spawn Button"].WaitForChild("Part", 2)
 		const touch = this.instance["Spawn Button"]
 			.GetChildren()
@@ -38,8 +39,12 @@ export class ButtonComponent
 						.join(", ")
 			)
 		this.touch = touch
-		this.default_h = touch.Position.Y
-		this.available_color = touch.Color
+		// Home pose and colour, so a swap mid-press doesn't make the pressed state the new default
+		const home = homePivot(touch, "button")
+		this.default_h = home.Position.Y
+		this.available_color = homeValue(touch, "button_color", touch.Color)
+		touch.PivotTo(home)
+		touch.Color = this.available_color
 		const spawn_platform = this.instance["SpawnPlatform"]
 			.GetChildren()
 			.find(
@@ -51,7 +56,7 @@ export class ButtonComponent
 		touch.Name = "ButtonTouch"
 	}
 	onStart(): void {
-		this.touch.Touched.Connect((hit) => {
+		this.trove.connect(this.touch.Touched, (hit) => {
 			const char = hit.Parent
 			if (!char || !char.FindFirstChild("Humanoid")) {
 				return
@@ -93,13 +98,11 @@ export class ButtonComponent
 				this.instance.FindFirstAncestorOfClass("Folder")?.Name ===
 				"CartSpawners"
 			) {
-				ClientEvents.CartService.spawnCart.fire(this.instance)
+				network.client.CartService.spawnCart.fire(this.instance)
 			}
 		}
-		task.delay(this.duration, () => {
+		this.tasks.delay(this.duration, () => {
 			this.setPressed(false)
 		})
 	}
-
-	cleanup() {}
 }

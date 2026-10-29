@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
-import { ConfirmationPopup } from "@common/client/ui/components/confirmation-popup"
+import { ConfirmationPopup } from "client/common/ui/components/confirmation-popup"
 import { useCheckpoint } from "../gui/cart/hooks/useCheckpoint"
-import { useNavigator } from "@common/client/ui/hooks/useNavigator"
-import { ClientFunctions } from "shared/network.helper"
+import { useNavigator } from "client/common/ui/hooks/useNavigator"
+import { network } from "shared/net"
 import { getCheckpointModelByIndex } from "shared/cart.helper"
 
 export function BigCheckpointCartPopup() {
@@ -17,7 +17,7 @@ export function BigCheckpointCartPopup() {
 	const equippedCartName = useQuery({
 		queryKey: ["player-preference", "cart"],
 		queryFn: async () => {
-			const [prefs] = await ClientFunctions.CustomizationService.getPlayerPreference.invoke("cart")
+			const [prefs] = await network.client.CustomizationService.getPlayerPreference.invoke("cart")
 			if (!prefs) return "Cart"
 			return prefs[0] ?? "Cart"
 		},

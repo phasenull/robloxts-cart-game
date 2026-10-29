@@ -1,15 +1,15 @@
 import React, { useRef, useEffect } from "@rbxts/react";
 import { useMutation, useQuery } from "@rbxts/react-query";
 import { MarketplaceService, Players } from "@rbxts/services";
-import { UIHelper } from "@common/client/ui.helper";
-import { __STUDIO__,UIDIM } from "@common/client/ui/constants";
-import { ViewportHelper } from "@common/client/ui/components/viewport-helper";
+import { UIHelper } from "client/common/ui.helper";
+import { __STUDIO__,UIDIM } from "client/common/ui/constants";
+import { ViewportHelper } from "client/common/ui/components/viewport-helper";
 import { useCartModel } from "client/ui/gui/cart/hooks/useCartModel";
 import { useCartProductId } from "client/ui/hooks/useCartProductId";
-import { useProductPrice } from "@common/client/ui/hooks/useProductPrice";
-import { __IS_EDIT__ } from "@common/shared/config.builder";
-import { ClientFunctions } from "shared/network.helper";
-import { A } from "@common/shared/assets";
+import { useProductPrice } from "client/common/ui/hooks/useProductPrice";
+import { __IS_EDIT__ } from "shared/common/config.builder";
+import { network } from "shared/net"
+import { A } from "shared/common/assets";
 
 interface SoleCartEntryProps {
 	cartName: string;
@@ -39,7 +39,7 @@ export function SoleCartEntry({
 		queryFn: async () => {
 			if (__IS_EDIT__) return false;
 			const [owned, err] =
-				await ClientFunctions.ShopService.doesPlayerOwnItem.invoke(
+				await network.client.ShopService.doesPlayerOwnItem.invoke(
 					"cart",
 					cartName,
 				);
@@ -99,12 +99,10 @@ export function SoleCartEntry({
 	useEffect(() => {
 		const entryButton = entryButtonRef.current;
 
-		if (entryButton) {
-			UIHelper.bind(entryButton, 2);
-		}
+		const binding = entryButton ? UIHelper.bind(entryButton, 2) : undefined;
 
 		return () => {
-			if (entryButton) UIHelper.unbind(entryButton);
+			UIHelper.unbind(binding);
 		};
 	}, [is_owned]);
 

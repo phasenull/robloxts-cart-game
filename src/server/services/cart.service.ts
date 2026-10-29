@@ -1,5 +1,3 @@
-import { Components } from "@flamework/components"
-import { Dependency, OnStart, Service } from "@flamework/core"
 import {
 	MarketplaceService,
 	PhysicsService,
@@ -7,29 +5,76 @@ import {
 	Workspace
 } from "@rbxts/services"
 import { t } from "@rbxts/t"
+import type { Trove } from "@rbxts/trove"
+import {
+	Dependency,
+	Module,
+	Service,
+	TypeTorch,
+	type OnInit,
+	type OnPlayerAdded,
+	type OnStart,
+	type PlayerState
+} from "@typetorch/framework"
 import { CartServerComponent } from "server/components/cart.server.component"
-import { A, assets } from "@common/shared/assets"
+import { A, assets } from "shared/common/assets"
 import { getConfig } from "shared/config.helper"
-import { Logger } from "@common/shared/logger"
-import { ServerEvents, ServerFunctions } from "shared/network.helper"
+import { Logger } from "shared/common/logger"
+import { network } from "shared/net"
 import { ButtonModel, ICart } from "shared/type.helper"
 import { DataService } from "./data.service"
-import { PRODUCTS } from "shared/purchasables"
-import { CheckpointService } from "./checkpoint.service"
-import { CustomizationService } from "./customization.service"
-import { arrow } from "@rbxts/better-gizmos"
-import StringUtils from "@rbxts/string-utils"
-import { isTester } from "@common/shared/role.utils"
-import { OutlineHighlight } from "@common/shared/util.helper"
+import type { CheckpointService } from "./checkpoint.service"
+import type { ComponentsService } from "./components.service"
+import type { CustomizationService } from "./customization.service"
+import { OutlineHighlight } from "shared/common/util.helper"
+import { CART_TUNING } from "shared/cart.tuning"
+import { Tasks } from "shared/tasks"
+import type { ProperReturns } from "shared/common/util.helper"
+
+/** Per player, across swaps (plain data): the last safe pose the server saw, and the ride a swap interrupted. */
+interface RideState {
+	/** CFrame components of the last safe rest pose (the revive anchor). */
+	safePivot?: number[]
+	/** Set in onSwapOut for a player riding a cart: the next generation gives the cart back. */
+	resume?: { skin: string }
+}
+
+/** How long the shield lasts on a cart given back after a swap (as a small checkpoint spawn). */
+const RESUME_SHIELD = 5
 
 @Service()
-export class CartService implements OnStart {
-	constructor(
-		private logger: Logger,
-		private DataService: DataService
-	) {}
+export class CartService extends Module implements OnInit, OnStart, OnPlayerAdded {
+	private readonly logger = new Logger("cart.service")
+	constructor(private DataService: DataService) {
+		super()
+	}
 	private readonly PLAYER_CARTS = new Map<Player, ICart>()
+	/** The skin each player's current cart was spawned with (for the ride a swap gives back). */
+	private readonly PLAYER_SKINS = new Map<Player, string>()
+	/** Every cart this generation spawned and that still exists: destroyed when the generation stops. */
+	private readonly SPAWNED = new Set<Model>()
 	private readonly DEBOUNCE_TABLE = new Map<Player, number>()
+	private rides!: PlayerState<RideState>
+	private tasks!: Tasks
+
+	onInit() {
+		this.tasks = new Tasks(this.trove)
+		this.rides = this.ctx.playerState<RideState>("cart.rides.v1", () => ({}))
+		// Carts belong to the generation that spawned them; riders get theirs back from the next one (onPlayerAdded).
+		this.trove.add(() => {
+			for (const cart of this.SPAWNED) cart.Destroy()
+			this.SPAWNED.clear()
+		})
+		this.trove.add(
+			TypeTorch.onSwapOut(() => {
+				for (const [player, cart] of this.PLAYER_CARTS) {
+					const seat = cart.FindFirstChildOfClass("VehicleSeat")
+					const riding = seat?.Occupant !== undefined && seat.Occupant.Parent === player.Character
+					if (riding) this.rides.get(player).resume = { skin: this.PLAYER_SKINS.get(player) ?? this.getPlayerSkin(player) }
+				}
+			})
+		)
+	}
 	getPlayerCarts(player: Player) {
 		const profile = this.DataService.getProfile(player)
 		if (!profile) {
@@ -49,7 +94,7 @@ export class CartService implements OnStart {
 		this.logger.log(
 			`Granting player ${player.Name} permanent cart: ${cart_name}`
 		)
-		ServerEvents.NotificationService.sendNotification(player, {
+		network.server.NotificationService.sendNotification.fire(player, {
 			title: "<b>New Cart Unlocked!</b>",
 			duration: 10,
 			soundId: A.sounds.party,
@@ -62,10 +107,11 @@ export class CartService implements OnStart {
 		const player_carts = this.getPlayerCarts(player)
 		return player_carts.includes(cart_name)
 	}
-	playerAdded(player: Player) {
+	onPlayerAdded(player: Player, playerTrove: Trove) {
+		this.resumeRide(player)
 
 		// Set default cart and honk preferences if none exist
-		task.delay(1, () => {
+		playerTrove.add(task.delay(1, () => {
 			const customizationService = Dependency<CustomizationService>()
 			
 			// Set default cart
@@ -85,9 +131,9 @@ export class CartService implements OnStart {
 			if (!honkErr && (!honkPrefs || honkPrefs.size() === 0)) {
 				customizationService.setPreference(player, "honk", "Quack")
 			}
-		})
+		}))
 
-		player.CharacterAdded.Connect((char) => {
+		playerTrove.connect(player.CharacterAdded, (char) => {
 			this.logger.log(`Player ${player.Name} spawned in the world`)
 			OutlineHighlight(char)
 			const humanoid = char.WaitForChild("Humanoid") as Humanoid
@@ -142,11 +188,13 @@ export class CartService implements OnStart {
 	}
 	onStart(): void {
 		this.validateConfigs()
-		ServerEvents.CartService.spawnCart.connect((player, button) => {
-			this.spawnPlayerCart(player, button)
-		})
+		this.trove.add(
+			network.server.CartService.spawnCart.on((player, button) => {
+				this.spawnPlayerCart(player, button)
+			})
+		)
 		const cooldownEndTimes = new Map<Player, number>()
-		ServerEvents.CartService.honk.connect((player) => {
+		this.trove.add(network.server.CartService.honk.on((player) => {
 			const now = tick()
 			const cooldownEnd = cooldownEndTimes.get(player) ?? 0
 			if (now < cooldownEnd) return
@@ -171,10 +219,9 @@ export class CartService implements OnStart {
 					cloned.Destroy()
 				})
 				// Broadcast cart model directly so clients don't need to look it up
-				ServerEvents.CartService.honkVfx.broadcast(cart, soundDuration)
+				network.server.CartService.honkVfx.fireAll(cart, soundDuration)
 			}
-		})
-		Players.PlayerAdded.Connect((player) => this.playerAdded(player))
+		}))
 
 		const damage_parts = Workspace.FindFirstChild("DamageParts") as Folder
 		assert(damage_parts, "DamageParts folder not found in workspace")
@@ -184,54 +231,19 @@ export class CartService implements OnStart {
 				descendant.AddTag("DamageComponent")
 			}
 		})
-		ServerFunctions.CartService.useProduct.setCallback(
-			(player, product_key) => {
-				const profile = this.DataService.getProfile(player)
-				const available = ["revives", "flips"]
-				if (!profile) {
-					return [false, "Data not loaded"]
-				}
-				if (!available.includes(product_key)) {
-					return [false, "Invalid product key"]
-				}
-				switch (product_key) {
-					case "revives":
-						if ((profile.Data.revives || 0) <= 0) {
-							return [false, "Not enough revives"]
-						}
-						profile.Data.revives = (profile.Data.revives || 0) - 1
-						this.logger.log(
-							`Player ${player.Name} used a revive. Remaining: ${profile.Data.revives}`
-						)
-						this.refreshPlayerProducts(player)
-						return [true]
-					case "flips":
-						const cart2 = this.getPlayerCart(player)
-						if (cart2) {
-							this.addShield(cart2, 10)
-						}
-						return [true]
-					default:
-						this.refreshPlayerProducts(player)
-						return [false, "Unhandled product key"]
-				}
-			}
+		this.trove.add(
+			network.server.CartService.useProduct.handle((player, product_key) => this.useProduct(player, product_key))
 		)
 
-		ServerFunctions.CartService.getConfig.setCallback(() => {
-			const config = getConfig()
-			return [config.CartConfig]
-		})
-
-		ServerFunctions.CartService.revive.setCallback(
-			async (player, target, stage) => {
-				// this.logger.warn("REVIVE RF CALLED")
-				// return [true]
-				const [data, err] =
-					await ServerFunctions.CartService.useProduct.predict(
-						player,
-						"revives"
-					)
+		this.trove.add(network.server.CartService.revive.handle(
+			async (player, requested_target, stage) => {
+				// never trust the client's position: it must match a pose the server saw
+				const target = this.resolveReviveTarget(player, requested_target)
+				if (!target) {
+					return [false, "No safe position to revive at"]
+				}
+				// the same server-side product use the useProduct leaf runs (was useProduct.predict)
+				const [data, err] = this.useProduct(player, "revives")
 				if (!data || err) {
 					return [false, err || "Failed to use revive product"]
 				}
@@ -248,7 +260,7 @@ export class CartService implements OnStart {
 				// Add shield immediately to prevent race condition with damage parts
 				this.addShield(cart, 10)
 
-				const vehicle_seat = cart.FindFirstChildWhichIsA("Seat")
+				const vehicle_seat = cart.FindFirstChildWhichIsA("VehicleSeat")
 
 				const char = player.Character
 				const pp = char?.PrimaryPart
@@ -263,18 +275,20 @@ export class CartService implements OnStart {
 
 				return [true] as [true]
 			}
-		)
+		))
 
-		ServerFunctions.CartService.reset.setCallback((player) => {
-			// this.logger.log(`Respawning player ${player.Name}`)
-			const checkpoint_service = Dependency<CheckpointService>()
-			checkpoint_service.processPlayerDeath(player)
-		})
-		ServerEvents.CartService.cleanupCart.connect((player) => {
-			const cart = this.getPlayerCartComponent(player)
-			if (cart) {
-				cart.cleanup()
-			}
+		this.trove.add(
+			network.server.CartService.reset.handle((player) => {
+				// this.logger.log(`Respawning player ${player.Name}`)
+				const checkpoint_service = Dependency<CheckpointService>()
+				checkpoint_service.processPlayerDeath(player)
+				return [true]
+			})
+		)
+		// (the last safe pose lives in playerState, which drops a player on a real leave)
+		this.trove.connect(Players.PlayerRemoving, (player) => {
+			this.PLAYER_SKINS.delete(player)
+			this.DEBOUNCE_TABLE.delete(player)
 		})
 		assets.carts.GetChildren().forEach((cart) => {
 			if (!cart.IsA("Model")) return
@@ -311,7 +325,75 @@ export class CartService implements OnStart {
 		PhysicsService.CollisionGroupSetCollidable("BigSphere", "Default", false)
 		PhysicsService.CollisionGroupSetCollidable("BigSphere", "Players", false)
 	}
+	/** The product use behind the useProduct leaf (server-side checks; the client only asks). */
+	private useProduct(player: Player, product_key: string): ProperReturns<true> {
+		const profile = this.DataService.getProfile(player)
+		const available = ["revives", "flips"]
+		if (!profile) {
+			return [false, "Data not loaded"]
+		}
+		if (!available.includes(product_key)) {
+			return [false, "Invalid product key"]
+		}
+		switch (product_key) {
+			case "revives":
+				if ((profile.Data.revives || 0) <= 0) {
+					return [false, "Not enough revives"]
+				}
+				profile.Data.revives = (profile.Data.revives || 0) - 1
+				this.logger.log(
+					`Player ${player.Name} used a revive. Remaining: ${profile.Data.revives}`
+				)
+				this.refreshPlayerProducts(player)
+				return [true]
+			case "flips":
+				const cart2 = this.getPlayerCart(player)
+				if (cart2) {
+					this.addShield(cart2, 10)
+				}
+				return [true]
+			default:
+				this.refreshPlayerProducts(player)
+				return [false, "Unhandled product key"]
+		}
+	}
 	destroyPlayerCart(player: Player) {}
+	/** Called by the cart component whenever the server observes the cart in a safe rest pose. */
+	recordSafePivot(player: Player, pivot: CFrame) {
+		if (player.Parent !== Players) return
+		this.rides.get(player).safePivot = [...pivot.GetComponents()]
+	}
+	private getSafePivot(player: Player): CFrame | undefined {
+		const components = this.rides.has(player) ? this.rides.get(player).safePivot : undefined
+		if (!components) return undefined
+		const [x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22] = components
+		return new CFrame(x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22)
+	}
+	/** A ride a swap interrupted: a new cart at the last safe pose the server saw, with a short shield. */
+	private resumeRide(player: Player) {
+		if (!this.rides.has(player)) return
+		const ride = this.rides.get(player)
+		const resume = ride.resume
+		ride.resume = undefined
+		const safe = this.getSafePivot(player)
+		if (!resume || !safe || !player.Character) return
+		this.logger.log(`Giving ${player.Name} their cart back after the update`)
+		const cart = this.spawnPlayerCartAtLocation(player, safe, resume.skin)
+		this.addShield(cart, RESUME_SHIELD)
+	}
+	/** The client's target if it is close to a pose the server saw, otherwise the server's own. */
+	resolveReviveTarget(player: Player, requested: CFrame): CFrame | undefined {
+		const safe = this.getSafePivot(player)
+		if (!safe) return undefined
+		const distance = requested.Position.sub(safe.Position).Magnitude
+		if (distance <= CART_TUNING.server.reviveTolerance) {
+			return requested
+		}
+		this.logger.warn(
+			`Revive target from ${player.Name} is ${math.floor(distance)} studs from the last safe pose, using the server's`
+		)
+		return safe
+	}
 	getPlayerCart(player: Player): ICart | undefined {
 		return this.PLAYER_CARTS.get(player)
 	}
@@ -320,9 +402,7 @@ export class CartService implements OnStart {
 		if (!cart) {
 			return undefined
 		}
-		const dependecy = Dependency<Components>()
-		const component = dependecy.getComponent(cart, CartServerComponent)
-		return component
+		return Dependency<ComponentsService>().get(cart, CartServerComponent)
 	}
 	getPlayerFromCart(cart: Model): Player | undefined {
 		for (const [player, playerCart] of this.PLAYER_CARTS) {
@@ -354,12 +434,11 @@ export class CartService implements OnStart {
 		const products = new Map<string, number>()
 		products.set("revives", profile.Data.revives || 0)
 		products.set("flips", profile.Data.flips || 0)
-		ServerEvents.CartService.playerProductsUpdated(player, products)
+		network.server.CartService.playerProductsUpdated.fire(player, products)
 	}
 	destroyExistingCartsIfAny(player: Player) {
 		const existing = this.PLAYER_CARTS.get(player)
-		const dep = Dependency<Components>()
-		const all_carts = dep.getAllComponents<CartServerComponent>()
+		const all_carts = Dependency<ComponentsService>().all(CartServerComponent)
 		const my_cart = all_carts.filter((c) => c.resolvePlayer() === player || c.instance.Name.split("_")[1] === player.Name)
 		if (existing) {
 			existing.Destroy()
@@ -392,27 +471,15 @@ export class CartService implements OnStart {
 		assert(orig_cart, `Cart model ${target_skin} not found in assets`)
 		const cart_model = orig_cart.Clone() as ICart
 
+		this.track(player, cart_model, target_skin)
 		cart_model.Parent = Workspace.FindFirstChild("Carts") || Workspace
 		cart_model.PivotTo(cframe.mul(new CFrame(0, 2, 0)))
+		this.recordSafePivot(player, cframe)
 		this.PLAYER_CARTS.set(player, cart_model)
-		const dependecy = Dependency<Components>()
 		cart_model.Name = `${cart_model.Name}_${player.Name}`
-		const cart = dependecy.addComponent(cart_model, CartServerComponent)
-		task.spawn(async () => {
-			const component = await dependecy.waitForComponent(
-				cart_model,
-				CartServerComponent
-			)
-			component.instance.Destroying.Once(() => {
-				cart.cleanup()
-				// Only remove if this is still the player's active cart
-				if (this.PLAYER_CARTS.get(player) === cart_model) {
-					this.PLAYER_CARTS.delete(player)
-				}
-			})
-		})
+		// The "CartComponent" tag (cloned with the model) makes ComponentsService build its CartServerComponent.
 		// Sit player after a short delay to ensure seat is ready
-		const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
+		const vehicle_seat = cart_model.FindFirstChildWhichIsA("VehicleSeat")
 		if (vehicle_seat && player.Character) {
 			const humanoid = player.Character.FindFirstChildOfClass("Humanoid")
 			if (humanoid) {
@@ -420,8 +487,20 @@ export class CartService implements OnStart {
 				vehicle_seat.Sit(humanoid)
 			}
 		}
-		ServerEvents.CartService.clearDeathPreview(player)
+		network.server.CartService.clearDeathPreview.fire(player)
 		return cart_model
+	}
+	/** A cart this generation spawned: owned by it until destroyed, and forgotten as the player's cart then. */
+	private track(player: Player, cart_model: Model, skin: string) {
+		this.SPAWNED.add(cart_model)
+		this.PLAYER_SKINS.set(player, skin)
+		cart_model.Destroying.Once(() => {
+			this.SPAWNED.delete(cart_model)
+			// Only remove if this is still the player's active cart
+			if (this.PLAYER_CARTS.get(player) === cart_model) {
+				this.PLAYER_CARTS.delete(player)
+			}
+		})
 	}
 	private readonly SHIELDS = new Map<Model, number>() // Tracks shield expiry time per cart
 	private readonly SHIELD_TASKS = new Map<Model, thread>() // Tracks scheduled shield removal tasks
@@ -457,12 +536,12 @@ export class CartService implements OnStart {
 		// Cancel existing scheduled removal task if any
 		const existingTask = this.SHIELD_TASKS.get(cart)
 		if (existingTask) {
-			task.cancel(existingTask)
+			this.tasks.cancel(existingTask)
 		}
 
 		const player = this.getPlayerFromCart(cart)
 		if (player) {
-			ServerEvents.NotificationService.sendNotification(player, {
+			network.server.NotificationService.sendNotification.fire(player, {
 				title: "<b>Shield Activated</b>",
 				description: `<font color='#00D4FF'>${duration}</font> seconds of protection`,
 				duration: 3,
@@ -475,7 +554,7 @@ export class CartService implements OnStart {
 
 			// Schedule new removal for the extended time
 			const totalDuration = existing + duration - tick()
-			const removalTask = task.delay(totalDuration, () => {
+			const removalTask = this.tasks.delay(totalDuration, () => {
 				this.SHIELD_TASKS.delete(cart) // Remove task before cleanup
 				this.removeShield(cart)
 			})
@@ -500,7 +579,7 @@ export class CartService implements OnStart {
 		this.setCartCollisionGroup(cart, "Invincible")
 
 		// Schedule automatic removal
-		const removalTask = task.delay(duration, () => {
+		const removalTask = this.tasks.delay(duration, () => {
 			this.SHIELD_TASKS.delete(cart) // Remove task before cleanup
 			this.removeShield(cart)
 		})
@@ -515,7 +594,7 @@ export class CartService implements OnStart {
 		// Cancel scheduled removal task if any
 		const existingTask = this.SHIELD_TASKS.get(cart)
 		if (existingTask) {
-			task.cancel(existingTask)
+			this.tasks.cancel(existingTask)
 			this.SHIELD_TASKS.delete(cart)
 		}
 
@@ -581,22 +660,12 @@ export class CartService implements OnStart {
 				wheel?.Destroy()
 				ball?.Destroy()
 			}
-			const weld_constraints = part.FindFirstChildOfClass("WeldConstraint")
-			const weld = part.FindFirstChildOfClass("Weld")
-			const ball_socket = part.FindFirstChildOfClass("BallSocketConstraint")
-			const hinge = part.FindFirstChildOfClass("HingeConstraint")
-			if (ball_socket) {
-				ball_socket.Destroy()
-			}
-			if (hinge) {
-				hinge.Destroy()
-			}
-			if (weld_constraints) {
-				weld_constraints.Destroy()
-			}
-			if (weld) {
-				weld.Destroy()
-			}
+			// detach the part from the cart, whatever joins it (welds, caster motor, suspension)
+			part.GetChildren().forEach((child) => {
+				if (child.IsA("JointInstance") || child.IsA("WeldConstraint") || child.IsA("Constraint")) {
+					child.Destroy()
+				}
+			})
 			droppedCount++
 		}
 
@@ -639,7 +708,7 @@ export class CartService implements OnStart {
 		this.logger.log(
 			`Incrementing revives for player ${player.Name}, new total: ${profile.Data.revives}`
 		)
-		ServerEvents.NotificationService.sendNotification(player, {
+		network.server.NotificationService.sendNotification.fire(player, {
 			title: "<b>Revives Earned</b>",
 			description: `<font color='#00FF88'>+${amount}</font> ${amount === 1 ? "revive" : "revives"}`,
 			duration: 10
@@ -654,7 +723,7 @@ export class CartService implements OnStart {
 		}
 		this.logger.log(`Incrementing flips for player ${player.Name}`)
 		profile.Data.flips = (profile.Data.flips || 0) + amount
-		ServerEvents.NotificationService.sendNotification(player, {
+		network.server.NotificationService.sendNotification.fire(player, {
 			title: "<b>Flips Earned</b>",
 			description: `<font color='#FFD700'>+${amount}</font> ${amount === 1 ? "flip" : "flips"}`,
 			duration: 10
@@ -689,24 +758,13 @@ export class CartService implements OnStart {
 				.mul(new CFrame(0, cart_model.GetExtentsSize().Y / 2, 0))
 				.mul(CFrame.Angles(0, math.rad(-90), 0))
 		)
+		this.track(player, cart_model, cart_skin)
 		cart_model.Parent = Workspace.FindFirstChild("Carts") || Workspace
+		this.recordSafePivot(player, cart_model.GetPivot())
 		this.PLAYER_CARTS.set(player, cart_model)
-		const dependecy = Dependency<Components>()
 		cart_model.Name = `${cart_model.Name}_${player.Name}`
-		task.spawn(async () => {
-			const component = await dependecy.waitForComponent(
-				cart_model,
-				CartServerComponent
-			)
-			component.instance.Destroying.Once(() => {
-				// Only remove if this is still the player's active cart
-				if (this.PLAYER_CARTS.get(player) === cart_model) {
-					this.PLAYER_CARTS.delete(player)
-				}
-			})
-		})
 		// Sit player after a short delay to ensure seat is ready
-		const vehicle_seat = cart_model.FindFirstChildWhichIsA("Seat")
+		const vehicle_seat = cart_model.FindFirstChildWhichIsA("VehicleSeat")
 		if (vehicle_seat && player.Character) {
 			const humanoid = player.Character.FindFirstChildOfClass("Humanoid")
 			if (humanoid) {
@@ -718,7 +776,7 @@ export class CartService implements OnStart {
 				`Could not find vehicle seat for cart ${cart_model.GetFullName()}`
 			)
 		}
-		ServerEvents.CartService.clearDeathPreview(player)
+		network.server.CartService.clearDeathPreview.fire(player)
 		return cart_model
 	}
 }

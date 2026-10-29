@@ -1,24 +1,23 @@
-import { Component, Components } from "@flamework/components"
-import { Dependency } from "@flamework/core"
 import { RunService } from "@rbxts/services"
-import { t } from "@rbxts/t"
+import type { Trove } from "@rbxts/trove"
+import { Dependency } from "@typetorch/framework"
 import type { RobotArmComponent } from "server/components/robot-arm.component"
 import type { CartService } from "server/services/cart.service"
-import { Logger } from "@common/shared/logger"
+import type { ComponentsService } from "server/services/components.service"
+import { Logger } from "shared/common/logger"
 import { ICart } from "shared/type.helper"
 import { PlatformComponent } from "./platform.component"
 
-@Component({
-	tag: "ElevatorPlatformComponent",
-	instanceGuard: t.instanceIsA("BasePart"),
-})
+/** Tag "ElevatorPlatformComponent" (any BasePart): hands the rider's cart to the platform's robot arm. */
 export class ElevatorPlatformComponent extends PlatformComponent {
+	private readonly logger = new Logger("elevatorplatform.component")
 	private currentCart: ICart | undefined
 	private pickLoop: RBXScriptConnection | undefined
 
-	constructor(private logger: Logger) {
-		super()
-		logger.log("ElevatorPlatformComponent initialized")
+	constructor(instance: BasePart, trove: Trove) {
+		super(instance, trove)
+		this.trove.add(() => this.pickLoop?.Disconnect())
+		this.logger.log("ElevatorPlatformComponent initialized")
 	}
 
 	override onEnter(): void {
@@ -34,11 +33,6 @@ export class ElevatorPlatformComponent extends PlatformComponent {
 		this.pickLoop = undefined
 	}
 
-	destroy(): void {
-		this.pickLoop?.Disconnect()
-		super.destroy()
-	}
-
 	protected override validatePlayerNearPlatform(player: Player): boolean {
 		const cart = Dependency<CartService>().getPlayerCart(player)
 		print(`[ElevatorPlatform] validatePlayerNearPlatform override called, cart=${cart !== undefined}`)
@@ -51,7 +45,7 @@ export class ElevatorPlatformComponent extends PlatformComponent {
 			this.logger.log("[ElevatorPlatform] no RobotArm child found on instance")
 			return undefined
 		}
-		const robotArm = Dependency<Components>().getComponent<RobotArmComponent>(robotArmModel)
+		const robotArm = Dependency<ComponentsService>().getRobotArm(robotArmModel)
 		if (!robotArm) {
 			this.logger.log("[ElevatorPlatform] RobotArmComponent not found on RobotArm model (is it tagged?)")
 		}
@@ -72,5 +66,4 @@ export class ElevatorPlatformComponent extends PlatformComponent {
 			}
 		})
 	}
-
 }

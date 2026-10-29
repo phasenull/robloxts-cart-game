@@ -1,23 +1,23 @@
-import { Dependency } from "@flamework/core"
+import { Dependency } from "@typetorch/framework"
 import React, { useEffect, useRef, useState } from "@rbxts/react"
 import { useMutation, useQuery } from "@rbxts/react-query"
 import { MarketplaceService, Players } from "@rbxts/services"
 import { promptGroupJoin } from "client/group-prompt"
-import { CartController } from "client/controllers/cart.controller"
-import { REVIVE_TIME, UIDIM } from "@common/client/ui/constants"
+import type { CartController } from "client/controllers/cart.controller"
+import { REVIVE_TIME, UIDIM } from "client/common/ui/constants"
 import { useCart } from "client/ui/contexts/cart.context"
-import { ClientFunctions } from "shared/network.helper"
+import { network } from "shared/net"
 import { useCheckpoint } from "../hooks/useCheckpoint"
 import Object from "@rbxts/object-utils"
 import { PRODUCTS } from "shared/purchasables"
 import Signal from "@rbxts/signal"
-import { UIHelper } from "@common/client/ui.helper";
-import { __IS_EDIT__ } from "@common/shared/config.builder";
-import { RadialProgress } from "@common/client/ui/components/radial-progress";
-import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
-import { GoofyText } from "@common/client/ui/components/goofy-text";
-import { ConfirmationPopup } from "@common/client/ui/components/confirmation-popup";
-import { useNavigator } from "@common/client/ui/hooks/useNavigator";
+import { UIHelper } from "client/common/ui.helper";
+import { __IS_EDIT__ } from "shared/common/config.builder";
+import { RadialProgress } from "client/common/ui/components/radial-progress";
+import { RottenButton } from "client/common/ui/components/buttons/rotten-button";
+import { GoofyText } from "client/common/ui/components/goofy-text";
+import { ConfirmationPopup } from "client/common/ui/components/confirmation-popup";
+import { useNavigator } from "client/common/ui/hooks/useNavigator";
 
 
 interface DeathButtonsProps {
@@ -49,7 +49,7 @@ export function DeathButtons({
 	const equippedCartName = useQuery({
 		queryKey: ["player-preference", "cart"],
 		queryFn: async () => {
-			const [prefs] = await ClientFunctions.CustomizationService.getPlayerPreference.invoke("cart")
+			const [prefs] = await network.client.CustomizationService.getPlayerPreference.invoke("cart")
 			if (!prefs) return "Cart"
 			return prefs[0] ?? "Cart"
 		},
@@ -141,7 +141,7 @@ export function DeathButtons({
 			UIHelper.toggleFade(false)
 			if (__IS_EDIT__) return true
 			try {
-				await ClientFunctions.CartService.reset.invokeWithTimeout(5000)
+				await network.client.CartService.reset.invokeWithTimeout(5)
 				return true
 			} catch (err) {
 				warn(`Failed to respawn player: ${err}`)

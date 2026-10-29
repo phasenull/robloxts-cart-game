@@ -14,13 +14,13 @@ import {
 	getPreviousBigCheckpoint
 } from "shared/cart.helper"
 import { PRODUCTS } from "shared/purchasables"
-import { useRendering } from "@common/client/ui/hooks/useRendering";
-import { ProgressBarComponent } from "@common/client/ui/components/progressbar-component";
+import { useRendering } from "client/common/ui/hooks/useRendering";
+import { ProgressBarComponent } from "client/common/ui/components/progressbar-component";
 import { PRIMARY,
-UIDIM } from "@common/client/ui/constants";
-import { PlayerAvatar } from "@common/client/ui/components/player-avatar";
-import { RottenButton } from "@common/client/ui/components/buttons/rotten-button";
-import { GoofyText } from "@common/client/ui/components/goofy-text";
+UIDIM } from "client/common/ui/constants";
+import { PlayerAvatar } from "client/common/ui/components/player-avatar";
+import { RottenButton } from "client/common/ui/components/buttons/rotten-button";
+import { GoofyText } from "client/common/ui/components/goofy-text";
 export function StageProgress() {
 	const { cart } = useCart()
 	const { currentCheckpoint } = useCheckpoint()

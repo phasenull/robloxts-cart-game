@@ -1,11 +1,11 @@
 import React, { useContext } from "@rbxts/react";
-import { GUI_KEYS, PRIMARY } from "@common/client/ui/constants";
-import { SidebarButton } from "@common/client/ui/components/buttons/sidebar-button";
-import { A } from "@common/shared/assets";
-import { GuiContext } from "@common/client/ui/contexts/gui-manager.context";
-import useAnimateValue from "@common/client/ui/hooks/useAnimateValue";
+import { GUI_KEYS, PRIMARY } from "client/common/ui/constants";
+import { SidebarButton } from "client/common/ui/components/buttons/sidebar-button";
+import { A } from "shared/common/assets";
+import { GuiContext } from "client/common/ui/contexts/gui-manager.context";
+import useAnimateValue from "client/common/ui/hooks/useAnimateValue";
 import { Lighting } from "@rbxts/services";
-import { Badge } from "@common/client/ui/components/badge";
+import { Badge } from "client/common/ui/components/badge";
 export default function Sidebar() {
 	const { is_sidebar_open, setOpenGui } = useContext(GuiContext);
 	const horizontal_size = 0.2;

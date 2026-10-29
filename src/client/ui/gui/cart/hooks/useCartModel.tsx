@@ -1,11 +1,8 @@
-import { Components } from "@flamework/components"
-import { Dependency } from "@flamework/core"
 import { useEffect, useState } from "@rbxts/react"
 import { Workspace } from "@rbxts/services"
-import { CartClientComponent } from "client/components/cart.client.component"
-import { assets } from "@common/shared/assets"
-import { CartAnimator, RigCartModel } from "shared/cart.helper"
-import { __IS_EDIT__ } from "@common/shared/config.builder"
+import { assets } from "shared/common/assets"
+import { RigCartModel } from "shared/cart.helper"
+import { __IS_EDIT__ } from "shared/common/config.builder"
 import { ICart } from "shared/type.helper"
 
 export function useCartModel(cart_name?: string, auto_destroy = true) {
@@ -19,12 +16,9 @@ export function useCartModel(cart_name?: string, auto_destroy = true) {
 		| undefined
 		if (cloned) {
 			cloned.GetTags().map((tag) => cloned.RemoveTag(tag))
+			// untagged and outside the world: no CartClientComponent is ever built for a preview
 			cloned.RemoveTag("CartComponent")
-			if (!__IS_EDIT__) {
-				const components = Dependency<Components>()
-				components.removeComponent(cloned, CartClientComponent)
-			}
-			RigCartModel(cloned)
+			RigCartModel(cloned, "preview")
 			setModel(cloned)
 		}
 		return () => {

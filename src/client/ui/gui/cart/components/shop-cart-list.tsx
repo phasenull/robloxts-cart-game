@@ -1,13 +1,13 @@
 import React, { useEffect } from "@rbxts/react"
 import { useQuery } from "@rbxts/react-query"
-import { ClientFunctions } from "shared/network.helper"
+import { network } from "shared/net"
 import { ShopCartEntry } from "./shop-cart-entry"
-import { LoadingIndicator } from "@common/client/ui/components/loading-indicator"
+import { LoadingIndicator } from "client/common/ui/components/loading-indicator"
 import { IInventoryData, IShopItem } from "shared/type.helper"
-import { useNavigator } from "@common/client/ui/hooks/useNavigator"
+import { useNavigator } from "client/common/ui/hooks/useNavigator"
 import { MOCK_CART_SHOP, MOCK_INVENTORY } from "shared/mocks"
-import { UIDIM } from "@common/client/ui/constants"
-import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { UIDIM } from "client/common/ui/constants"
+import { __IS_EDIT__ } from "shared/common/config.builder";
 import { getConfig } from "shared/config.helper";
 
 interface ShopCartListProps {
@@ -37,7 +37,7 @@ export function ShopCartList({
 				return MOCK_CART_SHOP as IShopItem[]
 			}
 			const [items, itemsError] =
-				await ClientFunctions.ShopService.getShopItems.invoke("cart")
+				await network.client.ShopService.getShopItems.invoke("cart")
 			if (itemsError || !items) {
 				throw itemsError || "Failed to load cart items"
 			}
@@ -59,7 +59,7 @@ export function ShopCartList({
 				return { carts: MOCK_INVENTORY }
 			}
 			const [inv, inventoryError] =
-				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart")
+				await network.client.ShopService.getPlayerInventory.invoke("cart")
 			if (inventoryError || !inv) {
 				throw inventoryError || "Failed to load player inventory"
 			}

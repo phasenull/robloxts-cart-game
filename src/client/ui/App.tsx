@@ -1,17 +1,17 @@
 import React, { useState } from "@rbxts/react";
-import { A } from "@common/shared/assets";
-import { ErrorPopup } from "@common/client/ui/components/error-popup";
-import { GUI_KEYS, PRIMARY, UIDIM } from "@common/client/ui/constants";
+import { A } from "shared/common/assets";
+import { ErrorPopup } from "client/common/ui/components/error-popup";
+import { GUI_KEYS, PRIMARY, UIDIM } from "client/common/ui/constants";
 import {
 	ErrorProvider,
 	useErrorPage,
-} from "@common/client/ui/contexts/error.context";
-import { GuiProvider } from "@common/client/ui/contexts/gui-manager.context";
-import { SettingsProvider } from "@common/client/ui/contexts/settings.context";
+} from "client/common/ui/contexts/error.context";
+import { GuiProvider } from "client/common/ui/contexts/gui-manager.context";
+import { SettingsProvider } from "client/common/ui/contexts/settings.context";
 import { CartProvider } from "./contexts/cart.context";
 import { NotificationProvider } from "./contexts/notification.context";
 import { NotificationListener } from "./components/notification-listener";
-import BlurGui from "@common/client/ui/gui/blur-gui";
+import BlurGui from "client/common/ui/gui/blur-gui";
 import { QueryClient, QueryClientProvider } from "@rbxts/react-query";
 import { CartHud } from "./gui/cart/cart-hud";
 import { DeathGui } from "./gui/cart/death-gui";
@@ -22,20 +22,24 @@ import Sidebar from "./gui/sidebar";
 import { CartCustomizationGui } from "./gui/cart/shop-gui";
 import { GlobalHUDGui } from "./gui/global-hud-gui";
 import { NotificationsGui } from "./gui/notifications/notifications-gui";
-import { CartGui } from "./gui/cart-gui";
 import { RottenShopGui } from "./gui/rotten-shop/rotten-shop-gui";
 import { TPGui } from "./gui/tp-gui";
 import { SettingsGui } from "./gui/settings-gui";
 import { FeedbackGui } from "./gui/feedback-gui";
 import { BigCheckpointCartPopup } from "./components/BigCheckpointCartPopup";
-import { FadeGui } from "@common/client/ui/gui/fade-gui";
+import { FadeGui } from "client/common/ui/gui/fade-gui";
 import { CashHUD } from "./components/cash-hud";
 import { ProductPurchasing } from "./gui/suspense/product-purchasing";
-import { __IS_EDIT__ } from "@common/shared/config.builder";
-import PopGui from "@common/client/ui/components/pop-gui";
-const query_client = new QueryClient();
+import { __IS_EDIT__ } from "shared/common/config.builder";
+import PopGui from "client/common/ui/components/pop-gui";
+import { CashLabelProvider } from "client/common/ui/contexts/cash-label.context";
+import { AppTasksProvider } from "client/common/ui/contexts/app-tasks.context";
 export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
+	// one query cache per mounted App (per generation), not module-level state
+	const [query_client] = useState(() => new QueryClient());
 	return (
+		<AppTasksProvider>
+		<CashLabelProvider>
 		<ErrorProvider>
 			<QueryClientProvider value={query_client}>
 				<CartProvider>
@@ -93,9 +97,6 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 										>
 											<RottenShopGui />
 										</PopGui>
-										<PopGui id={"cart"}>
-											<CartGui />
-										</PopGui>
 
 										<PopGui
 											Size={UDim2.fromScale(1, 1)}
@@ -115,5 +116,7 @@ export function App(props: { initial_gui?: GUI_KEYS; cart_enabled?: boolean }) {
 				</CartProvider>
 			</QueryClientProvider>
 		</ErrorProvider>
+		</CashLabelProvider>
+		</AppTasksProvider>
 	);
 }

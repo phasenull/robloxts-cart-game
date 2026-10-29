@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from "@rbxts/react";
 import { useMutation, useQuery } from "@rbxts/react-query";
 import { MarketplaceService, Players } from "@rbxts/services";
-import { UIHelper } from "@common/client/ui.helper";
-import { __STUDIO__ } from "@common/client/ui/constants";
-import { A } from "@common/shared/assets";
+import { UIHelper } from "client/common/ui.helper";
+import { __STUDIO__ } from "client/common/ui/constants";
+import { A } from "shared/common/assets";
 
 interface CurrencyEntryProps {
 	productId: number;
@@ -71,12 +71,10 @@ export function CurrencyEntry({
 	useEffect(() => {
 		const entryButton = entryButtonRef.current;
 
-		if (entryButton) {
-			UIHelper.bind(entryButton, 2);
-		}
+		const binding = entryButton ? UIHelper.bind(entryButton, 2) : undefined;
 
 		return () => {
-			if (entryButton) UIHelper.unbind(entryButton);
+			UIHelper.unbind(binding);
 		};
 	}, []);
 

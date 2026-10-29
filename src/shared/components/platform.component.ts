@@ -1,27 +1,27 @@
-import { BaseComponent, Component } from "@flamework/components"
-import { Dependency, OnStart } from "@flamework/core"
 import { Players, RunService, Workspace } from "@rbxts/services"
-import { t } from "@rbxts/t"
+import type { Trove } from "@rbxts/trove"
+import { Dependency } from "@typetorch/framework"
 import type { CartService } from "server/services/cart.service"
-import { ClientEvents, ServerEvents } from "shared/network.helper"
+import { TaggedComponent } from "shared/component"
+import { network } from "shared/net"
+import { Tasks } from "shared/tasks"
 
 // Maximum allowed distance (studs) between cart root and platform centre for server validation
 const MAX_VALIDATION_DISTANCE = 40
 
-@Component({
-	tag: "PlatformComponent",
-	instanceGuard: t.instanceOf("BasePart"),
-})
-export class PlatformComponent
-	extends BaseComponent<{}, BasePart>
-	implements OnStart
-{
+/** Tag "PlatformComponent" (BasePart): the client reports its cart on/off the platform, the server validates it. */
+export class PlatformComponent extends TaggedComponent<BasePart> {
 	private isOn = false
 	private heartbeat: RBXScriptConnection | undefined
-	private touched: RBXScriptConnection | undefined
+	protected readonly tasks = new Tasks(this.trove)
 
 	/** The player whose cart triggered the current onEnter. Available during onEnter(). */
 	protected currentPlayer: Player | undefined
+
+	constructor(instance: BasePart, trove: Trove) {
+		super(instance, trove)
+		this.trove.add(() => this.heartbeat?.Disconnect())
+	}
 
 	/** Override in subclasses — called when the cart is confirmed on this platform. */
 	public onEnter(): void {}
@@ -37,12 +37,6 @@ export class PlatformComponent
 		if (RunService.IsServer()) {
 			this.setupServerListeners()
 		}
-	}
-
-	destroy(): void {
-		this.heartbeat?.Disconnect()
-		this.touched?.Disconnect()
-		super.destroy()
 	}
 
 	// ─── Client ───────────────────────────────────────────────────────────────
@@ -64,7 +58,7 @@ export class PlatformComponent
 	}
 
 	private setupClientTouch(): void {
-		this.touched = this.instance.Touched.Connect((hit) => {
+		this.trove.connect(this.instance.Touched, (hit) => {
 			const local_player = Players.LocalPlayer
 			const suffix = `_${local_player.Name}`
 
@@ -110,9 +104,9 @@ export class PlatformComponent
 		this.isOn = value
 		print(`[PlatformComponent] clientSetOn -> ${value} on ${this.instance.Name}`)
 		if (value) {
-			ClientEvents.PlatformService.onEnter.fire(this.instance)
+			network.client.PlatformService.onEnter.fire(this.instance)
 		} else {
-			ClientEvents.PlatformService.onLeave.fire(this.instance)
+			network.client.PlatformService.onLeave.fire(this.instance)
 		}
 	}
 
@@ -123,38 +117,42 @@ export class PlatformComponent
 		// Track which players are currently on this platform so retries can be cancelled on leave
 		const activePlayers = new Set<Player>()
 
-		ServerEvents.PlatformService.onEnter.connect((player, platform) => {
-			if (platform !== this.instance) return
-			print(`[PlatformComponent] server onEnter received from ${player.Name} for ${this.instance.Name}`)
-			activePlayers.add(player)
-			task.spawn(() => {
-				const [ok, err] = pcall(() => {
-					print(`[PlatformComponent] validation loop starting for ${player.Name}`)
-					const result = this.validatePlayerNearPlatform(player)
-					print(`[PlatformComponent] validatePlayerNearPlatform returned ${result} for ${player.Name}`)
-					while (activePlayers.has(player) && !this.validatePlayerNearPlatform(player)) {
-						task.wait(0.25)
+		this.trove.add(
+			network.server.PlatformService.onEnter.on((player, platform) => {
+				if (platform !== this.instance) return
+				print(`[PlatformComponent] server onEnter received from ${player.Name} for ${this.instance.Name}`)
+				activePlayers.add(player)
+				this.tasks.spawn(() => {
+					const [ok, err] = pcall(() => {
+						print(`[PlatformComponent] validation loop starting for ${player.Name}`)
+						const result = this.validatePlayerNearPlatform(player)
+						print(`[PlatformComponent] validatePlayerNearPlatform returned ${result} for ${player.Name}`)
+						while (activePlayers.has(player) && !this.validatePlayerNearPlatform(player)) {
+							task.wait(0.25)
+						}
+						if (!activePlayers.has(player)) {
+							print(`[PlatformComponent] player ${player.Name} left before cart was ready, aborting`)
+							return
+						}
+						this.currentPlayer = player
+						print(`[PlatformComponent] calling onEnter for ${player.Name}`)
+						this.onEnter()
+					})
+					if (!ok) {
+						print(`[PlatformComponent] ERROR in validation/onEnter: ${err}`)
 					}
-					if (!activePlayers.has(player)) {
-						print(`[PlatformComponent] player ${player.Name} left before cart was ready, aborting`)
-						return
-					}
-					this.currentPlayer = player
-					print(`[PlatformComponent] calling onEnter for ${player.Name}`)
-					this.onEnter()
 				})
-				if (!ok) {
-					print(`[PlatformComponent] ERROR in validation/onEnter: ${err}`)
-				}
 			})
-		})
+		)
 
-		ServerEvents.PlatformService.onLeave.connect((player, platform) => {
-			if (platform !== this.instance) return
-			print(`[PlatformComponent] server onLeave received from ${player.Name} for ${this.instance.Name}`)
-			activePlayers.delete(player)
-			this.onLeave()
-		})
+		this.trove.add(
+			network.server.PlatformService.onLeave.on((player, platform) => {
+				if (platform !== this.instance) return
+				print(`[PlatformComponent] server onLeave received from ${player.Name} for ${this.instance.Name}`)
+				activePlayers.delete(player)
+				this.onLeave()
+			})
+		)
 	}
 
 	protected validatePlayerNearPlatform(player: Player): boolean {
@@ -168,5 +166,4 @@ export class PlatformComponent
 		const distance = root.Position.sub(this.instance.Position).Magnitude
 		return distance <= MAX_VALIDATION_DISTANCE
 	}
-
 }

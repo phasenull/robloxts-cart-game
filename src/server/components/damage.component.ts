@@ -1,13 +1,12 @@
-import { Component } from "@flamework/components"
-import { Dependency } from "@flamework/core"
-import { CartService } from "server/services/cart.service"
+import type { Trove } from "@rbxts/trove"
+import { Dependency } from "@typetorch/framework"
+import type { CartService } from "server/services/cart.service"
 import { CartTouch } from "shared/components/cart-touch.component"
-import { Logger } from "@common/shared/logger"
 
-@Component({ tag: "DamageComponent" })
+/** Tag "DamageComponent" (BasePart): knocks parts off carts that touch it. */
 export class DamageComponent extends CartTouch {
-	constructor(private logger: Logger) {
-		super()
+	constructor(instance: BasePart, trove: Trove) {
+		super(instance, trove)
 		this.instance.CollisionGroup = "Spike"
 	}
 	onTouch(other_part: BasePart, cart_model: Model) {

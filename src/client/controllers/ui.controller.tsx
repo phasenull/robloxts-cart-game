@@ -1,18 +1,19 @@
-import { Controller, OnStart } from "@flamework/core"
-import { Logger } from "@common/shared/logger"
+import { Controller, Module, type OnStart } from "@typetorch/framework"
+import { Logger } from "shared/common/logger"
 import React, { StrictMode } from "@rbxts/react"
 import { createPortal, createRoot } from "@rbxts/react-roblox"
-import { Players,StarterPlayer } from "@rbxts/services"
+import { Players, StarterPlayer } from "@rbxts/services"
 import { App } from "client/ui/App"
-import { promptGroupJoin } from "client/group-prompt"
+import { groupPromptState, promptGroupJoin } from "client/group-prompt"
 
 const GROUP_PROMPT_INTERVAL = 180 // seconds
 
 @Controller()
-export class UIController implements OnStart {
-	constructor(private logger: Logger) {}
+export class UIController extends Module implements OnStart {
+	private readonly logger = new Logger("ui.controller")
 	onStart(): void {
-        StarterPlayer.DevTouchMovementMode = Enum.DevTouchMovementMode.Thumbpad
+		StarterPlayer.DevTouchMovementMode = Enum.DevTouchMovementMode.Thumbpad
+		groupPromptState()
 
 		const root = createRoot(new Instance("Folder"))
 		const player_gui = Players.LocalPlayer.FindFirstChildOfClass("PlayerGui")
@@ -26,13 +27,15 @@ export class UIController implements OnStart {
 		screen_gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 		root.render(<StrictMode>{createPortal(<App />, screen_gui)}</StrictMode>)
+		// A trove cleans in insertion order: unmount the React tree, then remove its ScreenGui.
+		this.trove.add(() => root.unmount())
+		this.trove.add(screen_gui)
 
-		task.spawn(() => {
-			task.wait(60)
-			while (true) {
-				promptGroupJoin()
-				task.wait(GROUP_PROMPT_INTERVAL)
-			}
-		})
+		// A loop directly in onStart runs inside this module's trove.
+		task.wait(60)
+		while (true) {
+			promptGroupJoin()
+			task.wait(GROUP_PROMPT_INTERVAL)
+		}
 	}
 }

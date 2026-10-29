@@ -1,19 +1,19 @@
 import { useEffect } from "@rbxts/react"
-import { ClientEvents } from "shared/network.helper"
+import { network } from "shared/net"
 import { useNotifications } from "../contexts/notification.context"
-import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { __IS_EDIT__ } from "shared/common/config.builder";
 
 export function useNotificationListener() {
 	const { addNotification } = useNotifications()
 
 	useEffect(() => {
 		if (__IS_EDIT__) return
-		const connection = ClientEvents.NotificationService.sendNotification.connect((notification) => {
+		const connection = network.client.NotificationService.sendNotification.on((notification) => {
 			addNotification(notification)
 		})
 
 		return () => {
-			connection.Disconnect()
+			connection()
 		}
 	}, [])
 }

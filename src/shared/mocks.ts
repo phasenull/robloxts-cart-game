@@ -1,4 +1,4 @@
-import { assets } from "common/shared/assets";
+import { assets } from "shared/common/assets";
 import { PRODUCTS } from "./purchasables";
 import { ICartEntry } from "./type.helper";
 

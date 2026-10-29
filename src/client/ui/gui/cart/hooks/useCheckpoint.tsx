@@ -1,11 +1,11 @@
-import { __IS_EDIT__ } from "@common/shared/config.builder";import React, {
+import { __IS_EDIT__ } from "shared/common/config.builder";import React, {
 	createContext,
 	useContext,
 	useEffect,
 	useState
 } from "@rbxts/react"
 import Signal from "@rbxts/signal"
-import { ClientEvents, ClientFunctions } from "shared/network.helper"
+import { network } from "shared/net"
 
 export const CheckpointContext = createContext<{
 	currentCheckpoint: number
@@ -35,7 +35,7 @@ export function CheckpointProvider(props: {
 		})
 		refresh()
 		const collected_conn =
-			ClientEvents.CheckpointService.updateCheckpointState.connect(
+			network.client.CheckpointService.updateCheckpointState.on(
 				(new_collected, collected) => {
 					print(
 						`Received checkpoint update: ${new_collected} collected: ${collected}`
@@ -47,12 +47,12 @@ export function CheckpointProvider(props: {
 
 		return () => {
 			changed_conn.Disconnect()
-			collected_conn.Disconnect()
+			collected_conn()
 		}
 	}, [])
 	async function refresh() {
-		return await ClientFunctions.CheckpointService.getCheckpointState
-			.invokeWithTimeout(5000)
+		return await network.client.CheckpointService.getCheckpointState
+			.invokeWithTimeout(5)
 			.then((result) => {
 				if (!result) {
 					print("Failed to get checkpoint state from server")

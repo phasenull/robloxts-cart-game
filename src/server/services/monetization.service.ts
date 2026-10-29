@@ -1,33 +1,43 @@
-import { Dependency, OnStart, Service } from "@flamework/core"
 import { AnalyticsService, MarketplaceService, Players } from "@rbxts/services"
+import { Dependency, Module, Service, type OnInit, type OnStart } from "@typetorch/framework"
 import { t } from "@rbxts/t"
 import { getConfig } from "shared/config.helper"
-import { Logger } from "@common/shared/logger"
+import { Logger } from "shared/common/logger"
 import { PRODUCTS, ISLAND_SKIP_PRODUCTS, getAllBigCheckpoints } from "shared/purchasables"
 import { IPurchasableConfig, IReward, IRewardType } from "shared/type.helper"
-import { CartService } from "./cart.service"
+import type { CartService } from "./cart.service"
 import { DataService } from "./data.service"
-import { CheckpointService } from "./checkpoint.service"
-import { CustomizationService } from "./customization.service"
-import { ShopService } from "./shop.service"
+import type { CheckpointService } from "./checkpoint.service"
+import type { CustomizationService } from "./customization.service"
+import type { ShopService } from "./shop.service"
 import {
 	getCheckpointDataFromIndex,
 	getNextBigCheckpoint
 } from "shared/cart.helper"
-import { ServerEvents } from "shared/network.helper"
-import { A } from "@common/shared/assets"
+import { network } from "shared/net"
+import { A } from "shared/common/assets"
+import { Tasks } from "shared/tasks"
 
 @Service()
-export class MonetizationService implements OnStart {
-	constructor(private logger: Logger) {}
+export class MonetizationService extends Module implements OnInit, OnStart {
+	private readonly logger = new Logger("monetization.service")
+	private tasks!: Tasks
+	constructor(private readonly data: DataService) {
+		super()
+	}
 	getPurchasables() {
 		return getConfig().PurchasableConfig as IPurchasableConfig
 	}
+	onInit(): void {
+		this.tasks = new Tasks(this.trove)
+		MarketplaceService.ProcessReceipt = (receipt) => this.processReceipt(receipt)
+		// The callback belongs to this generation. A receipt that arrives between two generations is sent again.
+		this.trove.add(() => {
+			(MarketplaceService as unknown as { ProcessReceipt?: unknown }).ProcessReceipt = undefined
+		})
+	}
 	onStart(): void {
 		this.validateConfigs()
-		Players.PlayerAdded.Connect((p) => this.playerAdded(p))
-		MarketplaceService.ProcessReceipt = (receipt) =>
-			this.processReceipt(receipt)
 	}
 	validateConfigs(): void {
 		const config = getConfig()
@@ -96,15 +106,18 @@ export class MonetizationService implements OnStart {
 			this.logger.log(`Config validation passed — ${purchasables.size()} purchasables, ${cartConfig.size()} cart entries all OK`)
 		}
 	}
+	/**
+	 * Developer product receipts, granted once (Player data guide, "Developer products"): the grant and the PurchaseId
+	 * go into the buyer's profile together, and PurchaseGranted is answered only once a save holds the id. A receipt
+	 * Roblox sends again (a retry, another server, after a swap) grants nothing and only waits for that save.
+	 */
 	processReceipt(reciept: ReceiptInfo): Enum.ProductPurchaseDecision {
 		const user_id = reciept.PlayerId
 		const player = Players.GetPlayerByUserId(user_id)
 		if (!player) {
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		}
-		const data_service = Dependency<DataService>()
-		data_service.changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
-		task.spawn(() => {
+		this.tasks.spawn(() => {
 			const product_data = MarketplaceService.GetProductInfoAsync(
 				reciept.ProductId,
 				Enum.InfoType.Product
@@ -118,6 +131,20 @@ export class MonetizationService implements OnStart {
 				`PURCHASE_RECEIPT: player=${player.Name}, product_id=${reciept.ProductId}, product_name=${product_data.Name}`
 			)
 		})
+		if (this.data.wasGranted(reciept)) {
+			return this.data.grantOnce(reciept, () => {})
+		}
+		const grant = this.resolveGrant(player, reciept)
+		if (!grant) {
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		}
+		return this.data.grantOnce(reciept, () => {
+			this.data.changeOrderedStat(player, "robux_spent", reciept.CurrencySpent)
+			grant()
+		})
+	}
+	/** What a receipt grants (run once by grantOnce), or undefined when it can't be granted (NotProcessedYet). */
+	private resolveGrant(player: Player, reciept: ReceiptInfo): (() => void) | undefined {
 		const purchasables = this.getPurchasables()
 		const product_id = reciept.ProductId
 		const purchasable = purchasables.find((p) => p.product_id === product_id)
@@ -131,6 +158,7 @@ export class MonetizationService implements OnStart {
 		})
 		
 		if (skip_count !== undefined) {
+			const skip = skip_count
 			// Get player's highest unlocked checkpoint
 			const checkpoint_service = Dependency<CheckpointService>()
 			const collected = checkpoint_service.getPlayerCheckpoints(player)
@@ -140,21 +168,19 @@ export class MonetizationService implements OnStart {
 			const big_checkpoints = getAllBigCheckpoints()
 			const current_index = big_checkpoints.indexOf(highest_unlocked)
 
-			if (current_index !== -1 && current_index + skip_count < big_checkpoints.size()) {
-				const target_checkpoint = big_checkpoints[current_index + skip_count]
-
-				// Unlock all checkpoints up to and including target
-				for (let i = current_index + 1; i <= current_index + skip_count; i++) {
-					const checkpoint_to_unlock = big_checkpoints[i]
-					const virtual_reward: IReward<"unlock_island"> = {
-						type: "unlock_island",
-						value: checkpoint_to_unlock,
-						handler: undefined
+			if (current_index !== -1 && current_index + skip < big_checkpoints.size()) {
+				return () => {
+					// Unlock all checkpoints up to and including target
+					for (let i = current_index + 1; i <= current_index + skip; i++) {
+						const checkpoint_to_unlock = big_checkpoints[i]
+						const virtual_reward: IReward<"unlock_island"> = {
+							type: "unlock_island",
+							value: checkpoint_to_unlock,
+							handler: undefined
+						}
+						this.giveRewardToPlayer(player, virtual_reward, `island_skip_${skip}_purchase`)
 					}
-					this.giveRewardToPlayer(player, virtual_reward, `island_skip_${skip_count}_purchase`)
 				}
-
-				return Enum.ProductPurchaseDecision.PurchaseGranted
 			}
 		}
 		
@@ -162,21 +188,22 @@ export class MonetizationService implements OnStart {
 		if (product_id === PRODUCTS.honk) {
 			const shop_service = Dependency<ShopService>()
 			const honk_name = shop_service.getPendingHonkPurchase(player)
-			shop_service.clearPendingHonkPurchase(player)
 			if (!honk_name) {
 				this.logger.warn(
 					`Player ${player.Name} purchased honk product but had no pending honk`
 				)
-				return Enum.ProductPurchaseDecision.NotProcessedYet
+				return undefined
 			}
-			const virtual_reward: IReward<"honk"> = {
-				type: "honk",
-				value: honk_name,
-				handler: undefined
+			return () => {
+				shop_service.clearPendingHonkPurchase(player)
+				const virtual_reward: IReward<"honk"> = {
+					type: "honk",
+					value: honk_name,
+					handler: undefined
+				}
+				this.logger.log(`Processing honk purchase for player ${player.Name}, granting honk: ${honk_name}`)
+				this.giveRewardToPlayer(player, virtual_reward, `honk_purchase_${honk_name}`)
 			}
-			this.logger.log(`Processing honk purchase for player ${player.Name}, granting honk: ${honk_name}`)
-			this.giveRewardToPlayer(player, virtual_reward, `honk_purchase_${honk_name}`)
-			return Enum.ProductPurchaseDecision.PurchaseGranted
 		}
 
 		// If not found in PurchasableConfig, check CartConfig
@@ -187,31 +214,32 @@ export class MonetizationService implements OnStart {
 			)
 			
 			if (cart_entry) {
-				// Create virtual reward for cart purchase
-				const virtual_reward: IReward<"cart"> = {
-					type: "cart",
-					value: cart_entry.name,
-					handler: undefined
+				return () => {
+					// Create virtual reward for cart purchase
+					const virtual_reward: IReward<"cart"> = {
+						type: "cart",
+						value: cart_entry.name,
+						handler: undefined
+					}
+					this.logger.log(`Processing cart purchase for product id ${product_id}, granting cart: ${cart_entry.name}`)
+					this.giveRewardToPlayer(player, virtual_reward, `cart_purchase_${product_id}`)
 				}
-				this.logger.log(`Processing cart purchase for product id ${product_id}, granting cart: ${cart_entry.name}`)
-				this.giveRewardToPlayer(player, virtual_reward, `cart_purchase_${product_id}`)
-				return Enum.ProductPurchaseDecision.PurchaseGranted
 			}
 			
 			this.logger.warn(`No purchasable found for product id ${product_id}`)
-			return Enum.ProductPurchaseDecision.NotProcessedYet
+			return undefined
 		}
 		
-		const rewards = purchasable.rewards
-		for (const reward of rewards) {
-			this.giveRewardToPlayer(
-				player,
-				reward,
-				`${purchasable.product_id || "unknown purchasable"}`
-			)
+		return () => {
+			const rewards = purchasable.rewards
+			for (const reward of rewards) {
+				this.giveRewardToPlayer(
+					player,
+					reward,
+					`${purchasable.product_id || "unknown purchasable"}`
+				)
+			}
 		}
-		
-		return Enum.ProductPurchaseDecision.PurchaseGranted
 	}
 	giveRewardToPlayer(
 		player: Player,
@@ -286,11 +314,11 @@ export class MonetizationService implements OnStart {
 				const data = getCheckpointDataFromIndex(target_checkpoint)
 				checkpoint_service.setCheckpointIndex(player, target_checkpoint)
 				checkpoint_service.spawnPlayerAtTheirBigCheckpoint(player)
-				task.delay(0.1, () => {
-					ServerEvents.CartService.forceCloseDeathScreen.fire(player)
+				this.tasks.delay(0.1, () => {
+					network.server.CartService.forceCloseDeathScreen.fire(player)
 					player.LoadCharacterAsync()
 				})
-				ServerEvents.NotificationService.sendNotification.fire(player, {
+				network.server.NotificationService.sendNotification.fire(player, {
 					description: `<font color="rgb(0, 255, 0)">${data?.name || "Unknown Island"}</font>`,
 					title: "Island Skipped",
 					duration: 10,
@@ -310,7 +338,7 @@ export class MonetizationService implements OnStart {
 				}
 				const customization_svc = Dependency<CustomizationService>()
 				customization_svc.setPreferenceUnchecked(player, "honk", reward.value as string)
-				ServerEvents.NotificationService.sendNotification.fire(player, {
+				network.server.NotificationService.sendNotification.fire(player, {
 					title: "<b>Honk Unlocked!</b>",
 					description: `<font color='#00D4FF'>${reward.value}</font>`,
 					duration: 4,
@@ -329,7 +357,7 @@ export class MonetizationService implements OnStart {
 				const checkpoint_index = reward.value as number
 				checkpoint_service.unlockCheckpointForPlayer(player, checkpoint_index)
 				const data = getCheckpointDataFromIndex(checkpoint_index)
-				ServerEvents.NotificationService.sendNotification.fire(player, {
+				network.server.NotificationService.sendNotification.fire(player, {
 					description: `<font color="rgb(255, 215, 0)">${data?.name || "Unknown Island"}</font> is now unlocked!`,
 					title: "Island Unlocked",
 					duration: 10,
@@ -341,5 +369,4 @@ export class MonetizationService implements OnStart {
 				this.logger.warn(`Unknown reward type ${reward.type}`)
 		}
 	}
-	playerAdded(player: Player) {}
 }

@@ -1,18 +1,18 @@
 import React, { useEffect, useRef, useState } from "@rbxts/react";
 import { useQuery } from "@rbxts/react-query";
 import { ICart, IInventoryData, IShopItem } from "shared/type.helper";
-import { ClientFunctions } from "shared/network.helper";
+import { network } from "shared/net"
 import { ShopCartList } from "./components/shop-cart-list";
 import { ShopBottomHud } from "./components/shop-bottom-hud";
 import { useShopPreview } from "./hooks/useShopPreview";
 import { useShopGarageAnimation } from "./hooks/useShopGarageAnimation";
 import { useGarageCamera } from "./hooks/useGarageCamera";
 import { MOCK_CART_SHOP, MOCK_HONK_INVENTORY, MOCK_HONK_SHOP, MOCK_INVENTORY } from "shared/mocks";
-import { UIHelper } from "@common/client/ui.helper";
+import { UIHelper } from "client/common/ui.helper";
 import { ShopHonkGrid } from "./components/shop-honk-grid";
 import { Workspace } from "@rbxts/services";
 import { ShopWorldviewGuis } from "../customization/shopWorldviewGuis";
-import { __IS_EDIT__ } from "@common/shared/config.builder";
+import { __IS_EDIT__ } from "shared/common/config.builder";
 
 export function CartCustomizationGui() {
 	const isFirstRenderRef = useRef(true);
@@ -25,7 +25,7 @@ export function CartCustomizationGui() {
 				return ["Cart"];
 			}
 			const [prefs, err] =
-				await ClientFunctions.CustomizationService.getPlayerPreference.invoke(
+				await network.client.CustomizationService.getPlayerPreference.invoke(
 					"cart",
 				);
 			if (err || !prefs) {
@@ -91,7 +91,7 @@ export function CartCustomizationGui() {
 				return { carts: MOCK_INVENTORY };
 			}
 			const [inv, inventoryError] =
-				await ClientFunctions.ShopService.getPlayerInventory.invoke("cart");
+				await network.client.ShopService.getPlayerInventory.invoke("cart");
 			if (inventoryError || !inv) {
 				return { carts: [] };
 			}
@@ -105,7 +105,7 @@ export function CartCustomizationGui() {
 		queryFn: async () => {
 			if (__IS_EDIT__) return ["Pizza Scream"];
 			const [prefs, err] =
-				await ClientFunctions.CustomizationService.getPlayerPreference.invoke("honk");
+				await network.client.CustomizationService.getPlayerPreference.invoke("honk");
 			if (err || !prefs) return [];
 			return prefs;
 		},
@@ -117,7 +117,7 @@ export function CartCustomizationGui() {
 		queryFn: async () => {
 			if (__IS_EDIT__) return MOCK_HONK_INVENTORY;
 			const [inv, err] =
-				await ClientFunctions.ShopService.getPlayerInventory.invoke("honk");
+				await network.client.ShopService.getPlayerInventory.invoke("honk");
 			if (err || !inv) return [];
 			return (inv["honk"] as string[] | undefined) ?? [];
 		},

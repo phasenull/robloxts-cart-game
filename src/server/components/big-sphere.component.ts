@@ -1,21 +1,17 @@
-import { BaseComponent, Component } from "@flamework/components"
-import { OnStart } from "@flamework/core"
+import { rigOnce, TaggedComponent } from "shared/component"
 
-@Component({
-	tag: "BigSphereComponent"
-})
-export class BigSphereComponent
-	extends BaseComponent<{}, BasePart>
-	implements OnStart
-{
-	private rope?: RopeConstraint
-	private anchorPart?: BasePart
-
+/**
+ * Tag "BigSphereComponent" (BasePart): a wrecking ball on a rope, pushed by a constant force. The rope and forces are
+ * world setup, handed over between generations (rigOnce), so a swap never stops the ball.
+ */
+export class BigSphereComponent extends TaggedComponent<BasePart> {
 	onStart(): void {
-		this.instance.Anchored = false
-		this.instance.CollisionGroup = "BigSphere"
-		this.setupRope()
-		this.applyRandomVelocity()
+		rigOnce(this.instance, "bigsphere", () => {
+			this.instance.Anchored = false
+			this.instance.CollisionGroup = "BigSphere"
+			this.setupRope()
+			this.applyRandomVelocity()
+		})
 	}
 
 	private setupRope(): void {
@@ -27,9 +23,9 @@ export class BigSphereComponent
 		anchorPart.Anchored = true
 		anchorPart.Transparency = 1
 		anchorPart.CanCollide = false
-		anchorPart.Parent = this.instance.Parent
-
-		this.anchorPart = anchorPart
+		// Under the sphere (an anchored child isn't joined to it), so it goes when the sphere does, with no connection
+		// a generation would have to own.
+		anchorPart.Parent = this.instance
 
 		// Create attachment on the anchor part
 		const anchorAttachment = new Instance("Attachment")
@@ -50,8 +46,6 @@ export class BigSphereComponent
 		rope.Thickness = 1
 		rope.Color = new BrickColor("Dark grey")
 		rope.Parent = this.instance
-
-		this.rope = rope
 	}
 
 	private applyRandomVelocity(): void {
@@ -75,14 +69,8 @@ export class BigSphereComponent
 			math.random(-10, 10),
 			math.random(-10, 10)
 		)
-        bodyAngularVelocity.P = 50000
-        this.instance.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0, 100,0)
+		bodyAngularVelocity.P = 50000
+		this.instance.CustomPhysicalProperties = new PhysicalProperties(100, 0, 0, 100, 0)
 		bodyAngularVelocity.Parent = this.instance
-	}
-
-	destroy(): void {
-		if (this.anchorPart) {
-			this.anchorPart.Destroy()
-		}
 	}
 }

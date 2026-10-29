@@ -2,12 +2,12 @@ import React from "@rbxts/react";
 import ReactRoblox from "@rbxts/react-roblox";
 import { Choose, InferFusionProps } from "@rbxts/ui-labs";
 import { App } from "client/ui/App";
-import { Badge } from "@common/client/ui/components/badge";
-import { EmptyContainer } from "@common/client/ui/components/empty-container";
-import { SidebarButton } from "@common/client/ui/components/buttons/sidebar-button";
-import { GUI_KEYS } from "@common/client/ui/constants";
+import { Badge } from "client/common/ui/components/badge";
+import { EmptyContainer } from "client/common/ui/components/empty-container";
+import { SidebarButton } from "client/common/ui/components/buttons/sidebar-button";
+import { GUI_KEYS } from "client/common/ui/constants";
 import Sidebar from "client/ui/gui/sidebar";
-import { A } from "@common/shared/assets";
+import { A } from "shared/common/assets";
 
 const controls = {
 	text: "NEW!",

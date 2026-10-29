@@ -1,34 +1,32 @@
-import { Component } from "@flamework/components"
-import { Dependency } from "@flamework/core"
 import { Players } from "@rbxts/services"
-import { CartClientComponent } from "client/components/cart.client.component"
+import type { Trove } from "@rbxts/trove"
+import { Dependency } from "@typetorch/framework"
+import type { CartClientComponent } from "client/components/cart.client.component"
 import { CartTriggerComponent } from "client/components/cart-trigger.component"
-import { CartController } from "client/controllers/cart.controller"
-import { Logger } from "@common/shared/logger"
+import type { CartController } from "client/controllers/cart.controller"
+import { Logger } from "shared/common/logger"
 
 interface AutoFlipTrigger extends Model {
 	Trigger: BasePart
 }
 
-@Component({ tag: "AutoFlipComponent" })
-export class AutoFlipComponent extends CartTriggerComponent<{}, AutoFlipTrigger> {
+/** Tag "AutoFlipComponent": flips the local player's cart upright when it drives through upside down. */
+export class AutoFlipComponent extends CartTriggerComponent<AutoFlipTrigger> {
+	protected logger = new Logger("autoflip.component")
 	private currentCart: CartClientComponent | undefined
 
-	constructor(logger: Logger) {
-		super(logger)
+	constructor(instance: AutoFlipTrigger, trove: Trove) {
+		super(instance, trove)
 		this.setColor(new Color3(0, 1, 0.5))
-
-		const cartController = Dependency<CartController>()
-		cartController.onCartChange.Connect((cart) => {
-			this.currentCart = cart
-		})
 	}
 
-	private isCartFlipped(): boolean {
-		const root = this.currentCart?.instance.FindFirstChild("Root") as BasePart | undefined
-		if (!root) return false
-		// Cart is flipped when its up-vector points downward
-		return new CFrame().UpVector.Dot(root.CFrame.UpVector) < 0
+	onStart(): void {
+		const cartController = Dependency<CartController>()
+		this.trove.add(
+			cartController.onCartChange.Connect((cart) => {
+				this.currentCart = cart
+			})
+		)
 	}
 
 	onTouch(touch_part: BasePart): void {
@@ -36,8 +34,8 @@ export class AutoFlipComponent extends CartTriggerComponent<{}, AutoFlipTrigger>
 		if (!character) return
 		if (!touch_part.IsDescendantOf(character)) return
 		if (!this.currentCart) return
-		if (!this.isCartFlipped()) return
+		if (!this.currentCart.isUpsideDown()) return
 
-		this.currentCart.flipCart()
+		this.currentCart.flipUpright()
 	}
 }

@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from "@rbxts/react"
+import { useAppTasks } from "client/common/ui/contexts/app-tasks.context"
 import { useMutation } from "@rbxts/react-query"
 import { IShopItem } from "shared/type.helper"
-import { ClientFunctions } from "shared/network.helper"
-import { UIHelper } from "@common/client/ui.helper"
-import { __IS_EDIT__ } from "@common/shared/config.builder"
-import { A } from "@common/shared/assets"
-import { useNavigator } from "@common/client/ui/hooks/useNavigator"
-import { useProductPrice } from "@common/client/ui/hooks/useProductPrice"
+import { network } from "shared/net"
+import { UIHelper } from "client/common/ui.helper"
+import { __IS_EDIT__ } from "shared/common/config.builder"
+import { A } from "shared/common/assets"
+import { useNavigator } from "client/common/ui/hooks/useNavigator"
+import { useProductPrice } from "client/common/ui/hooks/useProductPrice"
 import { MarketplaceService, Players } from "@rbxts/services"
 
 interface ShopBottomHudProps {
@@ -22,6 +23,7 @@ export function ShopBottomHud({
 	isEquipped,
 	onPurchaseSuccess
 }: ShopBottomHudProps) {
+	const tasks = useAppTasks()
 	const { closeAll } = useNavigator()
 	const purchaseButtonRef = useRef<ImageButton>()
 	const exitButtonRef = useRef<ImageButton>()
@@ -36,20 +38,12 @@ export function ShopBottomHud({
 	const isRobuxItem = selectedItem?.product_id !== undefined
 
 	useEffect(() => {
-		if (purchaseButtonRef.current) {
-			UIHelper.bind(purchaseButtonRef.current)
-		}
-		if (exitButtonRef.current) {
-			UIHelper.bind(exitButtonRef.current)
-		}
+		const purchaseBinding = purchaseButtonRef.current ? UIHelper.bind(purchaseButtonRef.current) : undefined
+		const exitBinding = exitButtonRef.current ? UIHelper.bind(exitButtonRef.current) : undefined
 
 		return () => {
-			if (purchaseButtonRef.current) {
-				UIHelper.unbind(purchaseButtonRef.current)
-			}
-			if (exitButtonRef.current) {
-				UIHelper.unbind(exitButtonRef.current)
-			}
+			UIHelper.unbind(purchaseBinding)
+			UIHelper.unbind(exitBinding)
 		}
 	}, [])
 
@@ -80,7 +74,7 @@ export function ShopBottomHud({
 
 			// Handle cash purchases
 			const [success, err] =
-				await ClientFunctions.ShopService.makePlayerPurchaseItem.invoke(
+				await network.client.ShopService.makePlayerPurchaseItem.invoke(
 					"cart",
 					selectedItem.name
 				)
@@ -103,7 +97,7 @@ export function ShopBottomHud({
 			if (__IS_EDIT__) return true
 
 			const [success, err] =
-				await ClientFunctions.CustomizationService.setPreference.invoke(
+				await network.client.CustomizationService.setPreference.invoke(
 					"cart",
 					selectedItem.name
 				)
@@ -267,7 +261,8 @@ export function ShopBottomHud({
 				Size={new UDim2(0.432, 0, 0.286, 0)}
 				Event={{
 					MouseButton1Click: () => {
-						task.spawn(() => {
+						// outlives this component: closeAll() unmounts it mid-fade
+						tasks.spawn(() => {
 							UIHelper.toggleFade(true)
 							task.wait(0.5)
 							closeAll()

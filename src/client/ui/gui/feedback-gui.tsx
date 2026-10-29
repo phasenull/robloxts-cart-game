@@ -1,12 +1,12 @@
 import React, { useState } from "@rbxts/react"
 import { useMutation, useQuery } from "@rbxts/react-query"
-import { RottenButton } from "@common/client/ui/components/buttons/rotten-button"
-import { GoofyText } from "@common/client/ui/components/goofy-text"
-import { LoadingIndicator } from "@common/client/ui/components/loading-indicator"
-import { PRIMARY, UIDIM } from "@common/client/ui/constants"
-import { A } from "@common/shared/assets"
-import { ClientFunctions } from "shared/network.helper"
-import { __IS_EDIT__ } from "@common/shared/config.builder"
+import { RottenButton } from "client/common/ui/components/buttons/rotten-button"
+import { GoofyText } from "client/common/ui/components/goofy-text"
+import { LoadingIndicator } from "client/common/ui/components/loading-indicator"
+import { PRIMARY, UIDIM } from "client/common/ui/constants"
+import { A } from "shared/common/assets"
+import { network } from "shared/net"
+import { __IS_EDIT__ } from "shared/common/config.builder"
 
 type FeedbackStatus = "pending" | "rejected" | "approved"
 
@@ -227,7 +227,7 @@ export function FeedbackGui() {
 		queryKey: ["feedbacks"],
 		queryFn: async () => {
 			if (__IS_EDIT__) return [] as IFeedbackItem[]
-			const result = await ClientFunctions.FeedbackService.getMyFeedbacks()
+			const result = await network.client.FeedbackService.getMyFeedbacks.invoke()
 			if (!result[0]) throw result[1]
 			return result[0] as IFeedbackItem[]
 		},
@@ -236,7 +236,7 @@ export function FeedbackGui() {
 	const { mutate: submitFeedback, isPending: isSubmitting } = useMutation({
 		mutationFn: async (description: string) => {
 			if (__IS_EDIT__) return undefined as unknown as IFeedbackItem
-			const result = await ClientFunctions.FeedbackService.submitFeedback(description)
+			const result = await network.client.FeedbackService.submitFeedback.invoke(description)
 			if (!result[0]) throw result[1]
 			return result[0] as IFeedbackItem
 		},

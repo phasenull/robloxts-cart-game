@@ -1,4 +1,4 @@
-import { Dependency } from "@flamework/core"
+import { Dependency } from "@typetorch/framework"
 import {
 	CenturionType,
 	Command,
@@ -7,8 +7,8 @@ import {
 	Register
 } from "@rbxts/centurion"
 import { adminGuard } from "server/common/auth-guard"
-import { CartService } from "server/services/cart.service"
-import { DataService } from "server/services/data.service"
+import type { CartService } from "server/services/cart.service"
+import type { DataService } from "server/services/data.service"
 
 type GiveType = "revives" | "cart" | "honk" | "cash"
 

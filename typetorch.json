@@ -1,0 +1,22 @@
+{
+	"project": "cart-or-die",
+	"universeId": 9679582296,
+	"placeId": 111117843453520,
+	"creator": {
+		"groupId": 1059580522
+	},
+	"defaultBranch": "prod",
+	"branches": {
+		"master": "prod"
+	},
+	"channels": {
+		"prod": "prod"
+	},
+	"members": {},
+	"devBadgeId": null,
+	"approval": "prod",
+	"kernel": "node_modules/@typetorch/kernel",
+	"signingPublicKeys": ["G0VSQ7tD4MzL8Wlta/ZnvLI5ad1rw1pQyNbIoBN+6DQ="],
+	"keyAssetId": 74489130089983,
+	"fallbackPublicKey": "Qk7/bc68ImwXr6qilNrYFdiL8+k1V86tvAl+GRaR/Sc="
+}
