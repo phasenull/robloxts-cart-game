@@ -360,3 +360,35 @@ Undo, newest first: a bad build `typetorch rollback --branch prod`; the backup `
   Drive: acceleration, top speed, braking, reverse, steering and handbrake drift should feel like before. Drive off a
   drop or a ramp: it lands without bouncing away. Use a revive and a flip: neither flings. Try a few skins (Fast
   Cart's pivot differs). F9 > Server should have no "suspension is numerically unstable" warning.
+
+## Fix: visual wheels steer on the wrong axis and don't roll (2026-10-29)
+
+- **Symptom** (owner, live prod #10): holding D tilts the front wheels sideways (camber) instead of turning them; no
+  wheel spins with speed.
+- **Root cause, steering**: `RigCartModel` (`src/shared/cart.helper.ts`, the caster block) built each `Caster`
+  Motor6D with `C0 = Root⁻¹·CONNECTION` (the fork's own rotation) and `C1 = identity`, and the client set
+  `Transform = CFrame.Angles(0, steer, 0)` (`cart.client.component.ts` `onRender`). `Transform` acts in the C0 frame. In
+  all 14 skins in `ReplicatedStorage.assets.carts` (Luau Execution dump on v2057, 56 of 56 forks the same) CONNECTION
+  is authored with local **Y = chassis fore/aft** and **Z = chassis down**. So "yaw" rotated the fork and wheel about
+  the forward axis through the fork centre, which rolls them sideways: measured axle·up 0 → 0.4695 (= sin 28°) and 0.06°
+  of real yaw.
+- **Root cause, rolling**: the WHEEL was fixed to the fork with a static `Weld` (`C0 = (0, 0, Z/2)`) and no code ever
+  rotated it.
+- **Fix** `d916f7b` (visual only, wheel parts stay massless/non-colliding, drive physics and suspension untouched):
+  `Caster.C0` = the wheel centre in the chassis `Drive` frame (Y = chassis up), `C1 = (Root⁻¹·CONNECTION)⁻¹·C0` (same
+  rest pose). The WHEEL weld is now a `Spin` Motor6D with the same rest pose (`C0 = (0, 0, Z/2)`, axle = the Cylinder's
+  X). `CartClientComponent.animateWheels` runs every frame for every cart within `wheel.animateDistance` (250) on
+  every client. It yaws the front casters by `-steer·28°` (the rider's smoothed input; other players' carts use the
+  replicated `SteerFloat`) and rolls each wheel at `v_wheel·(axle × up) / r`. That follows forward, reverse, turning and
+  sliding, with roll applied under the yaw. Hover Cart's invisible WHEELs steer but don't roll. `destroy()` resets the
+  Transforms. The hook is the component's `onRender`, so it has no connection of its own to leak.
+- **Verified** (Luau Execution on v2057: every skin, FR/FL, level cart yawed 1.1 rad and a tilted cart; the exact rig
+  C0/C1): steer yaw about chassis up −28.000° (error < 0.00001°), axle·up change 0.00000, wheel centre shift 0.00000.
+  Roll-only (1 rad, all wheels): centre shift 0.00000, axle change 0.00000. Steered + rolling at 10 studs/s:
+  −20.00 rad/s (r = 0.5), contact-patch slip 0.00001 studs/s. The joint chain read back from the engine (rotation put
+  into C0, since Luau Execution doesn't step Motor6D.Transform) matched to 0.00003 studs.
+- **Deploys** (clean worktree `/tmp/cod-wheel`, removed afterwards): dev **#11 `d916f7b-5ace43`** (asset
+  130238896916726), cloud test passed on v2057 (the usual 3-leftover-instances warning). **Prod not deployed**: the
+  agent's sandbox refused the prod deploy, so the owner has to run it: from `master`, `bun run typetorch deploy`
+  (answer the y/N), then `bun run typetorch backup refresh --build '#<that deploy>' --force --yes`. Until then prod is
+  #10 `480a271-ce8735` and the backup is still `480a271-ce8735` #10. `doctor`: all required checks passed.
