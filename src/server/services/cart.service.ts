@@ -433,14 +433,15 @@ export class CartService extends Module implements OnInit, OnStart, OnPlayerAdde
 			const humanoid = rider?.FindFirstChildOfClass("Humanoid")
 			const after = census(cart)
 			const owned = this.SPAWNED.has(cart)
+			const seated = rider !== undefined && occupant?.Parent === rider && seats.size() === 1
 			const detail =
 				`rig ${before.join(",")} -> ${after.join(",")} (descendants, constraints, joints, welds, seats, balls), ` +
 				`rigged ${cart.GetAttribute("TypeTorchRig_cart.v1")}, occupant ${occupant?.GetFullName()}, ` +
 				`seat weld ${seats[0]?.FindFirstChild("SeatWeld") !== undefined}, rider health ${humanoid?.Health} ` +
 				`state ${humanoid?.GetState().Name} sit ${humanoid?.Sit}, component ${component !== undefined}, owned ${owned}`
-			cart.Destroy()
+			cart.Destroy() // (parents every descendant to nil: everything is read above)
 			assert(component, `cart handoff: no CartServerComponent on the adopted cart; ${detail}`)
-			assert(occupant?.Parent === rider && rider !== undefined, `cart handoff: the rider isn't seated after the swap; ${detail}`)
+			assert(seated, `cart handoff: the rider isn't seated after the swap; ${detail}`)
 			assert(owned, `cart handoff: the adopted cart isn't owned by this generation; ${detail}`)
 			assert(before.join(",") === after.join(","), `cart handoff: the rig changed; ${detail}`)
 			print(`cart handoff self-test: same cart ${id} adopted by generation ${TypeTorch.generation}; ${detail}`)
