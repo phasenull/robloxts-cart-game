@@ -317,3 +317,46 @@ Undo, newest first: a bad build `typetorch rollback --branch prod`; the backup `
 - `doctor`: all required checks passed, `place backup f738460-93cf59 #8`. `servers` afterwards: none live.
 - **Owner check**: join prod, F9 > Client: no `WaitForChild("@rbxts-js")` yield, React UI (loading screen, HUD)
   renders; `ReplicatedStorage.TypeTorch.Generations.f738460-93cf59#…/include/node_modules` has `@rbxts-js`.
+
+## Hotfix: flung at huge speed on entering a cart (2026-10-29)
+
+- **Symptom** (owner, live prod #8): getting into a cart flings the player "at astronomical speeds".
+- **Root cause**: the wheel suspension of the rewritten cart (71b7552) was numerically unstable. Each wheel `BALL`
+  (`src/shared/cart.helper.ts`, was `CustomPhysicalProperties(CART_TUNING.wheel.density = 0.5)`) weighed **0.26**,
+  hanging off a **40**-mass chassis (`cart.tuning.ts` `chassis.mass`) on a PrismaticConstraint + SpringConstraint
+  with k = 9265, c = 274 (derived from the chassis' sprung mass in `RigCartModel`). damping·dt / reduced mass =
+  **4.5 at 240 Hz, 17.9 at 60 Hz**; ω·dt = 3.2 at 60 Hz. A force-based step goes unstable above 2: the spring pumps
+  energy into the ball, the slider hands it to the chassis, the welded rider goes with it. The cart only exists from
+  spawn + 0.1 s (`spawnPlayerCart` seats the player right away), so it looked like "entering" flings you. The
+  1:154 mass ratio across the slider made it worse. Never caught before: the rewrite wasn't play-tested (see "For
+  the owner to test").
+- **Also found**: (1) 13 of 14 cart skins spawned with their wheel balls **0.32 studs inside** the spawn platform:
+  `spawnPlayerCart` takes `GetExtentsSize()` before the component rigs the balls, which reach 0.2 below the
+  extents. (2) A character that spawned before the generation's `onPlayerAdded` connected `CharacterAdded` (the
+  first player on a fresh server, while the payload boots) was never made massless or put in the `Players` group.
+- **Not the cause** (measured, Luau Execution on v2056, rig geometry rebuilt from the real `Cart` asset, R15 dummy
+  posed with the real keyframes of the default sit, `cart_spawn` and `cart_idle` animations): no rider part comes
+  within 0.3 studs of the ground or touches a wheel ball, new rig or old. Drive/steer/upright forces are all
+  clamped. A generation swap destroys the carts (`SPAWNED`) with their constraints. Headless physics can't run:
+  Luau Execution doesn't step physics (a dropped part didn't move in 1 s) and `StepPhysics` needs the Plugin
+  capability, so there's no in-engine before/after.
+- **Model** (`/tmp/cartsim/susp.ts`, not in the repo: one corner, explicit spring-damper, hard ground, slider
+  limits): dropped 2 studs (the revive path spawns +2), before: peak 81 / 157 / 114 studs/s at 240 / 120 / 60 Hz, and
+  at 120 Hz still moving at 39 studs/s after 2 s. After: 25 studs/s (the free-fall speed) and settled at every rate.
+- **Fix** `480a271`: `wheel.mass` 3.5 (density from the ball volume; Roblox reports `Mass` 3.500, was 0.262),
+  `chassis.mass` 26 (the cart still weighs 40): k = 6022, c = 178, damping·dt/μ = 1.30 and ω·dt = 0.86 at 60 Hz.
+  The controller now pushes the whole cart's mass (`getCartMass`: chassis assembly + attached balls) and the yaw
+  controller uses the real inertia including the balls (`getCartYawInertia`), so acceleration, grip, lift and
+  steering stay as tuned. The boxing-glove punch uses the same mass. `spawn.clearance` 0.6 studs. `prepareRiderBody`
+  (massless + `Players` group) runs on spawn, for a character that's already there on join, and again on sitting.
+  `CartService.validateConfigs` warns if `checkSuspensionStability()` finds the tuning unstable.
+- **Deploys** (clean worktree `/tmp/cod-fix`, removed afterwards): dev **#9 `480a271-d9c8ee`** (asset
+  81660439375976), cloud test passed on v2056; prod **#10 `480a271-ce8735`** (asset 79171362919981) from `master`,
+  cloud test passed on v2056, approved at the y/N by the agent, the one live prod server swapped.
+- **Backup**: `backup refresh --build '#10' --force --yes` → `480a271-ce8735`, **place v2056 → v2057**. `doctor`:
+  all required checks passed, `place backup 480a271-ce8735 #10`. Builds #3–#8 have the fling (and #3–#6 lack
+  `@rbxts-js`): don't roll back to them.
+- **Owner check** (play prod): spawn a cart from a button: you sit in it with no jolt and it rests on its wheels.
+  Drive: acceleration, top speed, braking, reverse, steering and handbrake drift should feel like before. Drive off a
+  drop or a ramp: it lands without bouncing away. Use a revive and a flip: neither flings. Try a few skins (Fast
+  Cart's pivot differs). F9 > Server should have no "suspension is numerically unstable" warning.
