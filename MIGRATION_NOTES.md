@@ -156,8 +156,9 @@ in `async main()`); 119 flags (3 Flamework API, 5 networking, 1 Dependency-in-co
 8. **Survives a swap** (`persist` / `playerState`, plain data): ProfileService handles, playtime clock, HTTP sessions
    and leave queue, current checkpoint, last server-verified safe pose (the revive anchor), pending honk purchase,
    cash pickup cooldowns, client revive anchor and death-screen state, collected checkpoint, music position,
-   settings (mute, animation speed). A rider's cart is destroyed with the old generation and given back by the new one
-   at the last safe pose, with a 5 s shield.
+   settings (mute, animation speed). A ridden cart is handed over to the next generation on a same-branch swap (the
+   template's `handoff.ts` pattern; adopted with its rider, rig and shield expiry) and only rebuilt at the last safe
+   pose, with a 5 s shield, after a branch switch (see "Fix: carts survive hot swaps").
 9. **Player data**: PD option B (`TypeTorch.runDetached`); store `players_2` (prod) / `players_2_dev` (other
    channels), key `${UserId}`, template unchanged; `AddUserId` added (guide; metadata only); `profile.Save()` calls
    are detached jobs; `BindToClose` loops removed (ProfileService releases on close in the place; shutdown extras in
@@ -470,3 +471,62 @@ Undo, newest first: a bad build `typetorch rollback --branch prod`; the backup `
 - **Owner check**: die from damage (wheels knocked off): death screen opens; free revive, paid revive (0 revives →
   buy), at checkpoint 0 and a later one: you sit in the new cart where you died, one revive used; Spawn button;
   TP menu to checkpoint 0: no death screen after it; F9: no `Root is not a valid member`, no `Slow down!`.
+
+## Fix: carts survive hot swaps (2026-10-29)
+
+- **Symptom** (owner): "carts dont persist through hot swaps": a deploy while riding removes the cart
+  (`cartserver.component` logs "Cleaning up cart" at the swap) instead of the rider going on.
+- **Root cause**: `CartService.onInit` (`src/server/services/cart.service.ts`, the trove cleanup before this fix)
+  destroyed every cart it spawned when the generation stopped, and the next generation spawned a fresh one at the last
+  safe pose (`resumeRide`): the ride was cut off and put back, possibly far behind; until `703fe8b` that new cart
+  couldn't even seat the rider (no `VehicleSeat` yet), so the cart simply disappeared. `CartServerComponent` also
+  rigged every tagged cart it saw (`RigCartModel` isn't idempotent) and only picked up a rider on an `Occupant`
+  *change*, so a cart surviving a swap would have been rigged twice and left without a rider.
+- **What TypeTorch prescribes**: instances a module creates go in its trove (docs `agents/AGENTS.md` rule 8,
+  `getting-started/migrate.md` rule 9) and state that must survive goes in `persist` / `playerState` as plain data,
+  never instances (framework README "`persist(key, init)`"). For world instances that must not vanish in the frames
+  with no code between two generations, the reference is the template's world handoff
+  (`template/src/server/services/rush/handoff.ts`: still owned by the trove, handed over in `TypeTorch.onSwapOut` on a
+  swap that stays on the branch, adopted by the next generation, rebuilt on a branch switch), and rigs on instances that
+  outlive generations are built once (`rigOnce`, the same pattern, already in `src/shared/component.ts`). In-progress
+  activities resume from persisted plain data (PB 4.3.9): the fallback rebuild.
+- **Fix** `9417dca` (+ test fixups `b7f1296`, `25dca7f`):
+  - `CartService`: `onSwapOut` sets `handOver` (same branch); the trove destroys every cart except the ones their
+    owner is riding when handing over. `adoptCarts()` in `onInit` (before `onPlayerAdded` replays players) takes them
+    over: `PLAYER_CARTS`, skin, `Destroying` tracking; destroys a handed-over cart nobody rides any more. `resume`
+    is still written in `onSwapOut` and cleared on adoption, so a branch switch (or a cart that couldn't be adopted)
+    still gives the rider a new cart at the last safe pose.
+  - `CartServerComponent`: `rigOnce(instance, "cart.v1", RigCartModel)`; takes over a rider already in the seat at
+    start (ownership re-asserted, safe-pose sampling resumes).
+  - Shields: expiry on the cart (`ShieldUntil`, server time); the adopting generation schedules the removal (or ends an
+    expired one). Honk sounds are removed by `Debris` (connections die with their generation).
+  - Carts carry `CartId` (GUID). Client `CartController.beginRide` persists the ridden `CartId` (`cart.death.v1`
+    `rideCartId`): a handed-over cart continues the ride (no spawn animation, the revive anchor is not reset to a
+    possibly mid-air pose).
+  - Death screen: no cart to hand over; its state was already persisted (client `cart.death.v1`, server
+    `cart.rides.v1` safe pose), unchanged.
+- **Swap test** (headless): `CartService.selfTestCartHandoff` runs in the cloud test (`TypeTorchTest`). Generation 1
+  spawns a probe `Cart` (owner −1) with a dummy humanoid seated; the stub kernel stops it as a swap (persist kept);
+  generation 2 must find the same cart (`CartId`), with its component, rider seated, rig unchanged. Result (task log,
+  dev #16): `probe cart d16bd365… rigged and ridden, 226,11,11,80,1,4` → at swap-out occupant
+  `HandoffProbeRider.Humanoid` → `Adopted the probe cart d16bd365…` → `same cart d16bd365… adopted by generation 2;
+  rig 226,11,11,80,1,4 -> 226,11,11,80,1,4 (descendants, constraints, joints, welds, seats, balls), rigged true,
+  seat weld true, rider health 100 sit true, component true, owned true`. Before the fix the cart would have been
+  destroyed at the stop (0 carts), and a re-rig doubles every count. Leftover warning: 13 instances (the 3 usual
+  rigOnce ones + the probe cart, handed over at the stop, as intended). Physics doesn't step in Luau Execution, so
+  motion across a swap (velocity, mid-air) is the owner's play check.
+- **Deploys** (this worktree, `TYPETORCH_STATE_DIR` at the main checkout): dev **#16 `25dca7f-9a1af7`** (asset
+  120771121855659) and **#17 `25dca7f-69f589`** (asset 124666827913398), back to back, cloud test passed both (place
+  v2059). The one live dev server (1 player) swapped to #16 and #17, health ok, `report latest`: 1 swapped, no
+  failures. Two earlier uploads failed the gate on a bug in the self-test itself (it read the seat after destroying
+  the probe), never published. **Prod not deployed**: the agent's sandbox refused it; prod stays #15 `703fe8b-21223e`,
+  backup #15. Owner: from `master` (`25dca7f` or later), `bun run typetorch deploy` (answer y), then
+  `bun run typetorch backup refresh --build '#<that deploy>' --force --yes`, `typetorch deployments`, `typetorch doctor`.
+- **The first swap onto this build still rebuilds** (the old generation runs the old teardown): deploy twice before
+  judging it.
+- **Owner check** (dev now, prod after the deploy above; deploy twice): (1) ride and deploy: you stay seated in the same
+  cart, keep driving, no spawn animation, no shield popup, no death screen; F9 > Server `Adopted <you>'s cart … from the
+  previous generation`. (2) deploy while airborne off a ramp: you land and keep going. (3) deploy with a shield on: it
+  ends on time. (4) deploy on the death screen: it stays up, revive (free and paid) works, you sit in the revived cart.
+  (5) after several deploys `Workspace.Carts` has one cart per rider, and no duplicate `BALL`/`VehicleSeat` in it.
+
